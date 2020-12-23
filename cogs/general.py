@@ -1,3 +1,6 @@
+import random
+
+from common.cfg import bot, poggers_links
 from discord.ext import commands
 
 
@@ -13,12 +16,24 @@ class GeneralCommands(commands.Cog):
     @commands.command(name="help")
     async def help(self, ctx):
         """The standard help command."""
-        await ctx.send("Placeholder for help command")
+        await ctx.send("Help dont exist yet")
 
     @commands.command(name='howdy')
     async def howdy(self, ctx):
         """Says howdy!"""
         await ctx.send(f"Howdy, {ctx.message.author.mention}!")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Listen to messages."""
+
+        # ignore the bot user
+        if message.author.id == bot.user.id:
+            return
+
+        # poggers support
+        if message.content in ("pog", "poggies", "poggers"):
+            await message.channel.send(random.choice(poggers_links))
 
 
 def setup(bot):

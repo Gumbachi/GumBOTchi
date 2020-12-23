@@ -3,7 +3,7 @@ import os
 
 import discord
 
-from cfg import bot, extensions
+from common.cfg import bot, extensions
 
 
 @bot.event
@@ -26,9 +26,6 @@ async def on_message(message):
         await message.channel.send(f"Type `{bot.command_prefix}`help for help.")
 
     await bot.process_commands(message)
-
-########### PUT EXTRA EVENT REFERENCES HERE ###########
-# https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#event-reference
 
 # loads extensions(cogs) listed in vars.py
 if __name__ == '__main__':
