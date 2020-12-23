@@ -116,7 +116,6 @@ class SbonkCommands(commands.Cog):
             # Send weirdchamp if unrecognized symbol
             if not embed:
                 weirdchamp = bot.get_emoji(746570904032772238)
-                await message.channel.send(f"{symbol}?")
                 await message.channel.send(str(weirdchamp))
             else:
                 await message.channel.send(embed=embed)  # send sbonk embed
