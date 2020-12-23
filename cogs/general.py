@@ -32,7 +32,7 @@ class GeneralCommands(commands.Cog):
             return
 
         # poggers support
-        if message.content in ("pog", "poggies", "poggers"):
+        if message.content in ("pog", "poggies", "poggers", "pongas"):
             await message.channel.send(random.choice(poggers_links))
 
 
