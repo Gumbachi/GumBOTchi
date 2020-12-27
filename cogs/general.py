@@ -7,8 +7,7 @@ from discord.ext import commands
 
 class GeneralCommands(commands.Cog):
     """Handles all of the simple commands such as saying howdy or
-    the help command. These commands are unrelated to anything
-    color-related and most work in disabled channels
+    the help command.
     """
 
     def __init__(self, bot):
