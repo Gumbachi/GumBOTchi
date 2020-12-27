@@ -43,7 +43,7 @@ class SbonkCommands(commands.Cog):
         change_symbol += f"{change:.2f}"
         change_percent = round(data["changePercent"]*100, 2)
         is_guh = change_percent <= -5
-        is_moon = not is_guh
+        is_moon = not is_guh and change_percent >= 5
 
         # generate and send sbonk embed
         sbonk_embed = discord.Embed(
@@ -53,7 +53,7 @@ class SbonkCommands(commands.Cog):
         )
         sbonk_embed.set_footer(text=data["latestTime"])
 
-        # check if guh or moon
+        # check if guh or moonS
         if is_guh:
             sbonk_embed.set_thumbnail(
                 url="https://cdn.discordapp.com/emojis/755546594446671963.png?v=1")
