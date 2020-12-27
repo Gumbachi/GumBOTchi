@@ -51,7 +51,13 @@ class SbonkCommands(commands.Cog):
             color=discord.Color.green() if change >= 0 else discord.Color.red()
         )
         sbonk_embed.set_footer(text=data["latestTime"])
-        return sbonk_embed, is_guh
+
+        # check if guh
+        if is_guh:
+            sbonk_embed.set_thumbnail(
+                "https://cdn.discordapp.com/emojis/755546594446671963.png?v=1")
+
+        return sbonk_embed
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -70,7 +76,7 @@ class SbonkCommands(commands.Cog):
         symbols = [s[1:-1] for s in prefixed_symbols]
 
         for symbol in symbols:
-            embed, is_guh = self.fetch_stock_data(symbol)
+            embed = self.fetch_stock_data(symbol)
 
             # Send weirdchamp if unrecognized symbol
             if not embed:
@@ -78,11 +84,6 @@ class SbonkCommands(commands.Cog):
                 await message.channel.send(str(weirdchamp))
             else:
                 await message.channel.send(embed=embed)  # send sbonk embed
-
-            # Check if guh
-            if is_guh:
-                guh = bot.get_emoji(755546594446671963)
-                await message.channel.send(str(guh))
 
 
 def setup(bot):
