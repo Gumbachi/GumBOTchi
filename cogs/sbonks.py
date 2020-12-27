@@ -66,7 +66,7 @@ class SbonkCommands(commands.Cog):
         return sbonk_embed
 
     # create a graph based on stock intraday prices and return as an image
-    def __create_graph(self, symbol):
+    def create_graph(self, symbol):
         average_list, label_list = list(), list()
         buffer = BytesIO()
 
@@ -109,7 +109,7 @@ class SbonkCommands(commands.Cog):
                 await message.channel.send(embed=embed)  # send sbonk embed
 
                 # send stock graph
-                file = discord.File(self.__create_graph(symbol), filename=f"{symbol}.png")
+                file = discord.File(self.create_graph(self, symbol), filename=f"{symbol}.png")
                 await message.channel.send(file=file)
 
 
