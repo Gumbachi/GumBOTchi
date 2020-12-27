@@ -7,6 +7,8 @@ from discord.ext import commands
 from discord.ext.commands.errors import CommandError
 import requests
 from common.cfg import bot
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
 class UnknownSymbolError(CommandError):
@@ -63,6 +65,23 @@ class SbonkCommands(commands.Cog):
 
         return sbonk_embed
 
+    # create a graph based on stock intraday prices and return as an image
+    def __create_graph(self, symbol):
+        average_list, label_list = list(), list()
+        buffer = BytesIO()
+
+        response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
+        content = json.loads((response.content.decode("utf-8")))
+
+        for x in content:
+            average_list.append(x['average'])
+            label_list.append(x['label'])
+
+        plt.plot(label_list, average_list)
+        plt.savefig(buffer, dpi=72, transparent=True, format='png')
+
+        return buffer
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listens for sbonks"""
@@ -88,6 +107,10 @@ class SbonkCommands(commands.Cog):
                 await message.channel.send(str(weirdchamp))
             else:
                 await message.channel.send(embed=embed)  # send sbonk embed
+
+                # send stock graph
+                file = discord.File(self.__create_graph(symbol), filename=f"{symbol}.png")
+                await message.channel.send(file=file)
 
 
 def setup(bot):
