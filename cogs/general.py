@@ -1,6 +1,7 @@
 import random
 
-from common.cfg import bot, poggers_links
+import common.cfg as cfg
+from common.cfg import bot
 from discord.ext import commands
 
 
@@ -31,9 +32,15 @@ class GeneralCommands(commands.Cog):
         if message.author.id == bot.user.id:
             return
 
-        # poggers support
-        if message.content.lower() in ("pog", "poggies", "poggers", "pongas"):
-            await message.channel.send(random.choice(poggers_links))
+        # poggers listener
+        if message.content.lower() in cfg.poggers_activation_phrases:
+            await message.channel.send(random.choice(cfg.poggers_links))
+
+        # guh listener
+        if message.content.lower() == "guh":
+            guh = bot.get_emoji(755546594446671963)
+            if guh:
+                await message.channel.send(str(guh))
 
 
 def setup(bot):

@@ -23,6 +23,18 @@ admin_ids = {
     244574519027564544  # SoloMan98#3426
 }
 
+poggers_activation_phrases = {
+    "pog",
+    "poggers",
+    "poggies",
+    "pogchamp",
+    "pongas",
+    "pogchampius",
+    "poggas",
+    "pongies",
+    "pogeroni"
+}
+
 poggers_links = [
     "https://tenor.com/view/anime-poggers-anime-poggers-anime-gif-18290521",
     "https://tenor.com/view/anime-poggers-anime-poggers-anime-gif-18290518",
