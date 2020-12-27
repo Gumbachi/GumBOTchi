@@ -55,7 +55,7 @@ class SbonkCommands(commands.Cog):
         # check if guh
         if is_guh:
             sbonk_embed.set_thumbnail(
-                "https://cdn.discordapp.com/emojis/755546594446671963.png?v=1")
+                url="https://cdn.discordapp.com/emojis/755546594446671963.png?v=1")
 
         return sbonk_embed
 
