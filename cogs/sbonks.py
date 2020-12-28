@@ -65,6 +65,26 @@ class SbonkCommands(commands.Cog):
 
         return sbonk_embed
 
+    # create a graph based on stock intraday prices and return as an image
+    def create_graph(self, symbol):
+        average_list, label_list = list(), list()
+        buffer = BytesIO()
+
+        print(symbol)
+        print(self.iexcloud_key)
+
+        response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
+        content = json.loads((response.content.decode("utf-8")))
+
+        for x in content:
+            average_list.append(x['average'])
+            label_list.append(x['label'])
+
+        plt.plot(label_list, average_list)
+        plt.savefig(buffer, dpi=72, transparent=True, format='png')
+
+        return buffer
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listens for sbonks"""
@@ -89,29 +109,10 @@ class SbonkCommands(commands.Cog):
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
             else:
-                file = discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png")
+                print("psalm")
+                graph = self.create_graph(symbol)
+                file = discord.File(graph, filename=f"{symbol.upper()}.png")
                 await message.channel.send(embed=embed, file=file)  # send sbonk embed
-
-
-# create a graph based on stock intraday prices and return as an image
-def create_graph(self, symbol):
-    average_list, label_list = list(), list()
-    buffer = BytesIO()
-
-    print(symbol)
-    print(self.iexcloud_key)
-
-    response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
-    content = json.loads((response.content.decode("utf-8")))
-
-    for x in content:
-        average_list.append(x['average'])
-        label_list.append(x['label'])
-
-    plt.plot(label_list, average_list)
-    plt.savefig(buffer, dpi=72, transparent=True, format='png')
-
-    return buffer
 
 
 def setup(bot):
