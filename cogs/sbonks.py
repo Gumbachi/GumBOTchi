@@ -76,6 +76,14 @@ class SbonkCommands(commands.Cog):
             label_list.append(x['label'])
 
         plt.plot(label_list, average_list)
+        plt.xticks([])
+
+        ax = plt.axes()
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         buffer = buffer.getvalue()
