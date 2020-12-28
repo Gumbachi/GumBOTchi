@@ -71,8 +71,15 @@ class SbonkCommands(commands.Cog):
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
 
-        for x in content:
-            average_list.append(x['average'])
+        for i, x in enumerate(content):
+            if (x['average']):
+                average_list.append(x['average'])
+            elif (average_list[:-1]) and content[i+1]['average']:
+                prev = content[i+1]['average']
+                next = average_list[-1]
+                average_list.append((next + prev)/2)
+            else:
+                average_list.append(x['average'])
             label_list.append(x['label'])
 
         plt.clf()
@@ -89,8 +96,6 @@ class SbonkCommands(commands.Cog):
         plt.savefig(buffer, format='png')
         buffer = buffer.getvalue()
         buffer = BytesIO(buffer)
-
-        print("how long does this really take")
 
         return buffer
 
