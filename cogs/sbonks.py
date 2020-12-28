@@ -66,6 +66,12 @@ class SbonkCommands(commands.Cog):
 
     def create_graph(self, symbol):
         """Create a graph based on stock intraday prices and return as an image."""
+
+        def get_previous_close(self, symbol):
+            response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
+            content = json.loads((response.content.decode("utf-8")))
+            return content["previousClose"]
+
         average_list, label_list = list(), list()
 
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
@@ -88,9 +94,16 @@ class SbonkCommands(commands.Cog):
                 average_list.append((next + prev)/2)
             label_list.append(x['label'])
 
+        color = 'red'
+        if average_list[0] - average_list[-1] < 0:
+            color = 'green'
+
         plt.clf()
-        plt.plot(label_list, average_list)
+        plt.style.use('dark_background')
+        plt.hlines(get_previous_close(), 0, len(label_list), colors='grey', linestyles="dotted")
+        plt.plot(label_list, average_list, color=color)
         plt.xticks([])
+        plt.yticks([])
 
         ax = plt.axes()
         ax.spines["right"].set_visible(False)
@@ -99,7 +112,7 @@ class SbonkCommands(commands.Cog):
         ax.spines["left"].set_visible(False)
 
         buffer = BytesIO()
-        plt.savefig(buffer, format='png')
+        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=50)
         buffer = buffer.getvalue()
         buffer = BytesIO(buffer)
 
