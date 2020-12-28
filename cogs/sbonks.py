@@ -74,13 +74,18 @@ class SbonkCommands(commands.Cog):
         for i, x in enumerate(content):
             if (x['average']):
                 average_list.append(x['average'])
-            elif (average_list[:-1]) and content[i+1]['average']:
-                prev = content[i+1]['average']
-                next = average_list[-1]
+            elif (average_list[-1]) and content[i+1]['average']:
+                next = content[i+1]['average']
+                prev = average_list[-1]
                 average_list.append((next + prev)/2)
             else:
-                average_list.append(x['average'])
-            label_list.append(x['label'])
+                j = i + 1
+                prev = average_list[-1]
+                while not content[j]['average']:
+                    j += 1
+                m = (content[j]['average'] - prev) / j
+                next = m * j + prev
+                average_list.append((next + prev)/2)
 
         plt.clf()
         plt.plot(label_list, average_list)
@@ -123,7 +128,6 @@ class SbonkCommands(commands.Cog):
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
             else:
-                print("psalm")
                 graph = self.create_graph(symbol)
                 file = discord.File(graph, filename=f"{symbol.upper()}.png")
                 await message.channel.send(embed=embed)  # send sbonk embed
