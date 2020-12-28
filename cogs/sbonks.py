@@ -75,6 +75,7 @@ class SbonkCommands(commands.Cog):
             average_list.append(x['average'])
             label_list.append(x['label'])
 
+        plt.clf()
         plt.plot(label_list, average_list)
         plt.xticks([])
 
@@ -87,11 +88,11 @@ class SbonkCommands(commands.Cog):
         buffer = BytesIO()
         plt.savefig(buffer, format='png')
         buffer = buffer.getvalue()
-        im = BytesIO(buffer)
+        buffer = BytesIO(buffer)
 
         print("how long does this really take")
 
-        return im
+        return buffer
 
     @commands.Cog.listener()
     async def on_message(self, message):
