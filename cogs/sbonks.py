@@ -100,6 +100,7 @@ class SbonkCommands(commands.Cog):
 
         plt.clf()
         plt.style.use('dark_background')
+        plt.xlim([0, 390])
         plt.hlines(get_previous_close(self, symbol), 0, len(label_list), colors='grey', linestyles="dotted")
         plt.plot(label_list, average_list, color=color)
         plt.xticks([])
