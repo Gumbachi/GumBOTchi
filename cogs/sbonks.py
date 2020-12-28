@@ -86,6 +86,7 @@ class SbonkCommands(commands.Cog):
                 m = (content[j]['average'] - prev) / j
                 next = m * j + prev
                 average_list.append((next + prev)/2)
+        label_list.append(x['label'])
 
         plt.clf()
         plt.plot(label_list, average_list)
