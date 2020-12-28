@@ -71,6 +71,8 @@ class SbonkCommands(commands.Cog):
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
 
+        average_list, label_list = list(), list()
+
         for i, x in enumerate(content):
             if (x['average']):
                 average_list.append(x['average'])
