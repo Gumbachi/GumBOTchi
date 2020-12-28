@@ -21,7 +21,6 @@ class SbonkCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.alpha_vantage_key = os.getenv("ALPHA_VANTAGE_KEY")
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
 
     def fetch_stock_data(self, symbol):
@@ -65,13 +64,9 @@ class SbonkCommands(commands.Cog):
 
         return sbonk_embed
 
-    # create a graph based on stock intraday prices and return as an image
     def create_graph(self, symbol):
+        """Create a graph based on stock intraday prices and return as an image."""
         average_list, label_list = list(), list()
-        buffer = BytesIO()
-
-        print(symbol)
-        print(self.iexcloud_key)
 
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
@@ -81,9 +76,14 @@ class SbonkCommands(commands.Cog):
             label_list.append(x['label'])
 
         plt.plot(label_list, average_list)
+        buffer = BytesIO()
         plt.savefig(buffer, dpi=72, transparent=True, format='png')
+        buffer = buffer.getvalue()
+        im = BytesIO(buffer)
 
-        return buffer
+        print("how long does this really take")
+
+        return im
 
     @commands.Cog.listener()
     async def on_message(self, message):
