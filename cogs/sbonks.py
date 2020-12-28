@@ -106,11 +106,8 @@ class SbonkCommands(commands.Cog):
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
             else:
-                await message.channel.send(embed=embed)  # send sbonk embed
-
-                # send stock graph
-                file = discord.File(self.create_graph(self, symbol), filename=f"{symbol}.png")
-                await message.channel.send(file=file)
+                # file = discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png")
+                await message.channel.send(embed=embed, file=discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png"))  # send sbonk embed
 
 
 def setup(bot):
