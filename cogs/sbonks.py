@@ -70,6 +70,9 @@ class SbonkCommands(commands.Cog):
         average_list, label_list = list(), list()
         buffer = BytesIO()
 
+        print(symbol)
+        print(self.iexcloud_key)
+
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
 
@@ -106,8 +109,8 @@ class SbonkCommands(commands.Cog):
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
             else:
-                # file = discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png")
-                await message.channel.send(embed=embed, file=discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png"))  # send sbonk embed
+                file = discord.File(self.create_graph(symbol), filename=f"{symbol.upper()}.png")
+                await message.channel.send(embed=embed, file=file)  # send sbonk embed
 
 
 def setup(bot):
