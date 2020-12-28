@@ -77,7 +77,7 @@ class SbonkCommands(commands.Cog):
 
         plt.plot(label_list, average_list)
         buffer = BytesIO()
-        plt.savefig(buffer, dpi=72, transparent=True, format='png')
+        plt.savefig(buffer, format='png')
         buffer = buffer.getvalue()
         im = BytesIO(buffer)
 
@@ -112,7 +112,8 @@ class SbonkCommands(commands.Cog):
                 print("psalm")
                 graph = self.create_graph(symbol)
                 file = discord.File(graph, filename=f"{symbol.upper()}.png")
-                await message.channel.send(embed=embed, file=file)  # send sbonk embed
+                await message.channel.send(embed=embed)  # send sbonk embed
+                await message.channel.send(file=file)
 
 
 def setup(bot):
