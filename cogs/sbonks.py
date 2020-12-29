@@ -73,7 +73,7 @@ class SbonkCommands(commands.Cog):
             return content["previousClose"]
 
         average_list, label_list = list(), list()
-        previous_close = get_previous_close()
+        previous_close = get_previous_close(self, symbol)
 
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
