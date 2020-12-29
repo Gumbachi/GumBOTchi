@@ -102,8 +102,8 @@ class SbonkCommands(commands.Cog):
         plt.clf()
         plt.style.use('dark_background')
         plt.xlim([0, 390])
-        plt.hlines(previous_close, 0, 390, colors='grey', linestyles="dotted")
         plt.plot(label_list, average_list, color=color)
+        plt.hlines(previous_close, 0, 390, colors='grey', linestyles="dotted")
         plt.xticks([])
         plt.yticks([])
 
