@@ -73,6 +73,7 @@ class SbonkCommands(commands.Cog):
             return content["previousClose"]
 
         average_list, label_list = list(), list()
+        previous_close = get_previous_close()
 
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
@@ -95,13 +96,13 @@ class SbonkCommands(commands.Cog):
             label_list.append(x['label'])
 
         color = 'red'
-        if average_list[0] - average_list[-1] < 0:
+        if previous_close - average_list[-1] < 0:
             color = 'green'
 
         plt.clf()
         plt.style.use('dark_background')
         plt.xlim([0, 390])
-        plt.hlines(get_previous_close(self, symbol), 0, len(label_list), colors='grey', linestyles="dotted")
+        plt.hlines(previous_close, 0, 390, colors='grey', linestyles="dotted")
         plt.plot(label_list, average_list, color=color)
         plt.xticks([])
         plt.yticks([])
