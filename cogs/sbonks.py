@@ -67,6 +67,7 @@ class SbonkCommands(commands.Cog):
     def create_graph(self, symbol):
         """Create a graph based on stock intraday prices and return as an image."""
 
+        # Get previous day's closing price
         def get_previous_close(self, symbol):
             response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
             content = json.loads((response.content.decode("utf-8")))
@@ -75,30 +76,42 @@ class SbonkCommands(commands.Cog):
         average_list, label_list = list(), list()
         previous_close = get_previous_close(self, symbol)
 
+        # get list of intraday prices from iex cloud
         response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
 
+        # Iterate through iex cloud data, populate lists for prices and times
         for i, x in enumerate(content):
-            if x['average']:
-                average_list.append(x['average'])
-            elif average_list[-1] and content[i+1]['average']:
-                next = content[i+1]['average']
-                prev = average_list[-1]
-                average_list.append((next + prev)/2)
-            else:
-                j = i + 1
-                prev = average_list[-1]
-                while not content[j]['average']:
-                    j += 1
-                m = (content[j]['average'] - prev) / j
-                next = m * j + prev
-                average_list.append((next + prev)/2)
-            label_list.append(x['label'])
+            try:
+                if x['average']:
+                    average_list.append(x['average'])
+                # If there is no average for a time, average the previous and next
+                # averages
+                elif average_list[-1] and content[i+1]['average']:
+                    next = content[i+1]['average']
+                    prev = average_list[-1]
+                    average_list.append((next + prev)/2)
+                # if, the next point also does not have an average, keep looking
+                # until a plot point is found, then do a regression to find the
+                # current average
+                else:
+                    j = i + 1
+                    prev = average_list[-1]
+                    while not content[j]['average']:
+                        j += 1
+                    m = (content[j]['average'] - prev) / j
+                    next = m * j + prev
+                    average_list.append((next + prev)/2)
+                label_list.append(x['label'])
+            except IndexError():
+                pass
 
+        # color the line red if the stock is down, green if it's up
         color = 'red'
         if previous_close - average_list[-1] < 0:
             color = 'green'
 
+        # draw the chart
         plt.clf()
         plt.style.use('dark_background')
         plt.xlim([0, 390])
@@ -113,6 +126,7 @@ class SbonkCommands(commands.Cog):
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
+        # convert the chart to a bytes object Discord can read
         buffer = BytesIO()
         plt.savefig(buffer, format='png', bbox_inches='tight', dpi=50)
         buffer = buffer.getvalue()
@@ -147,7 +161,7 @@ class SbonkCommands(commands.Cog):
                 graph = self.create_graph(symbol)
                 file = discord.File(graph, filename=f"{symbol.upper()}.png")
                 await message.channel.send(embed=embed)  # send sbonk embed
-                await message.channel.send(file=file)
+                await message.channel.send(file=file)  # send stock chart
 
 
 def setup(bot):
