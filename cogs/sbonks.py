@@ -128,7 +128,7 @@ class SbonkCommands(commands.Cog):
 
         # convert the chart to a bytes object Discord can read
         buffer = BytesIO()
-        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=75)
+        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=72)
         buffer = buffer.getvalue()
         buffer = BytesIO(buffer)
 
