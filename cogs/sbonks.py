@@ -103,7 +103,7 @@ class SbonkCommands(commands.Cog):
                     next = m * j + prev
                     average_list.append((next + prev)/2)
                 label_list.append(x['label'])
-            except IndexError():
+            except IndexError:
                 pass
 
         # color the line red if the stock is down, green if it's up
