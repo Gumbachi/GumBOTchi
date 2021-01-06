@@ -7,6 +7,8 @@ from discord.ext import commands
 from discord.ext.commands.errors import CommandError
 import requests
 from common.cfg import bot
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
 class UnknownSymbolError(CommandError):
@@ -19,7 +21,6 @@ class SbonkCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.alpha_vantage_key = os.getenv("ALPHA_VANTAGE_KEY")
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
 
     def fetch_stock_data(self, symbol):
@@ -63,6 +64,76 @@ class SbonkCommands(commands.Cog):
 
         return sbonk_embed
 
+    def create_graph(self, symbol):
+        """Create a graph based on stock intraday prices and return as an image."""
+
+        # Get previous day's closing price
+        def get_previous_close(self, symbol):
+            response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
+            content = json.loads((response.content.decode("utf-8")))
+            return content["previousClose"]
+
+        average_list, label_list = list(), list()
+        previous_close = get_previous_close(self, symbol)
+
+        # get list of intraday prices from iex cloud
+        response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
+        content = json.loads((response.content.decode("utf-8")))
+
+        # Iterate through iex cloud data, populate lists for prices and times
+        for i, x in enumerate(content):
+            try:
+                if x['average']:
+                    average_list.append(x['average'])
+                # If there is no average for a time, average the previous and next
+                # averages
+                elif average_list[-1] and content[i+1]['average']:
+                    next = content[i+1]['average']
+                    prev = average_list[-1]
+                    average_list.append((next + prev)/2)
+                # if, the next point also does not have an average, keep looking
+                # until a plot point is found, then do a regression to find the
+                # current average
+                else:
+                    j = i + 1
+                    prev = average_list[-1]
+                    while not content[j]['average']:
+                        j += 1
+                    m = (content[j]['average'] - prev) / j
+                    next = m * j + prev
+                    average_list.append((next + prev)/2)
+                label_list.append(x['label'])
+            except IndexError:
+                pass
+
+        # color the line red if the stock is down, green if it's up
+        color = 'red'
+        if previous_close - average_list[-1] < 0:
+            color = 'green'
+
+        # draw the chart
+        plt.clf()
+        plt.style.use('dark_background')
+        plt.xlim([0, 390])
+        plt.plot(label_list, average_list, color=color)
+        plt.hlines(previous_close, 0, 390, colors='grey', linestyles="dotted")
+        plt.xticks([])
+        plt.yticks([])
+
+        ax = plt.axes()
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
+        # convert the chart to a bytes object Discord can read
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=72)
+        buffer = buffer.getvalue()
+        buffer = BytesIO(buffer)
+
+        return buffer
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listens for sbonks"""
@@ -87,7 +158,10 @@ class SbonkCommands(commands.Cog):
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
             else:
+                graph = self.create_graph(symbol)
+                file = discord.File(graph, filename=f"{symbol.upper()}.png")
                 await message.channel.send(embed=embed)  # send sbonk embed
+                await message.channel.send(file=file)  # send stock chart
 
 
 def setup(bot):

@@ -2,3 +2,5 @@
 .env
 .vscode
 __pycache__/
+test.py
+graph.png
