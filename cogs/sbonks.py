@@ -76,7 +76,7 @@ class SbonkCommands(commands.Cog):
         # add Symbol and price text
         price = quote["extendedPrice"] if quote["extendedPrice"] else quote["latestPrice"]
         text = f"{quote['symbol']} ${price:.2f}"
-        plt.text(0, 1.1, text, alpha=0.7, va="bottom", ha="left",
+        plt.text(0, 1.1, text, va="bottom", ha="left",
                  size=30, c="white", transform=ax.transAxes)
 
         # add change text
