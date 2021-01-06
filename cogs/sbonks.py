@@ -10,6 +10,7 @@ import requests
 from common.cfg import bot
 import matplotlib.pyplot as plt
 from io import BytesIO
+import numpy as np
 
 
 class SbonkError(CommandError):
@@ -49,11 +50,11 @@ class SbonkCommands(commands.Cog):
         """
         quote = symbol_data["quote"]
 
-        # remove null datapoints from averages for continuous graph
+        # pull average price for each minute
         average_list = [x["average"] if x["average"] else 0
                         for x in symbol_data["intraday-prices"]]
-        graph_x = 390 - average_list.count(0)  # dont include null data points
-        average_list = list(filter((0).__ne__, average_list))
+        average_list = list(filter((0).__ne__, average_list))  # remove 0s
+        average_list += [np.nan] * (390 - len(average_list))  # extend list
 
         color = "lime" if quote["latestPrice"] >= quote["previousClose"] else "red"
 
@@ -64,9 +65,9 @@ class SbonkCommands(commands.Cog):
         if not quote["isUSMarketOpen"]:
             plt.style.use('dark_background')
 
-        plt.xlim((0, graph_x))
-        plt.plot(list(range(graph_x)), average_list, color=color)
-        plt.hlines(quote["previousClose"], 0, graph_x,
+        plt.xlim((0, 390))
+        plt.plot(list(range(390)), average_list, color=color)
+        plt.hlines(quote["previousClose"], 0, 390,
                    colors="grey", linestyles="dotted")
 
         # remove extraneous lines
