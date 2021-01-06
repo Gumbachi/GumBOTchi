@@ -1,3 +1,4 @@
+from json.decoder import JSONDecodeError
 import os
 import re
 import json
@@ -8,11 +9,17 @@ from discord.ext.commands.errors import CommandError
 import requests
 from common.cfg import bot
 import matplotlib.pyplot as plt
+import numpy as np
 from io import BytesIO
 
 
-class UnknownSymbolError(CommandError):
+class SbonkError(CommandError):
     """Raise for unknown symbol."""
+    pass
+
+
+class RequestError(CommandError):
+    """Error for handling api request errors"""
     pass
 
 
@@ -23,53 +30,82 @@ class SbonkCommands(commands.Cog):
         self.bot = bot
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
 
-    def fetch_stock_data(self, symbol):
-        """Fetch stock data from iexcloud based on a symbol given"""
-        symbol = symbol.upper()
+    def get_stock_data(self, symbols):
+        """A more refined stock quote function."""
 
-        # Request quote from iex cloud
-        response = requests.get(
-            f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
-        content = response.content.decode("utf-8")
+        print(','.join(symbols))
+        # Request stock quotes from iex cloud
+        request = f"https://cloud.iexapis.com/stable/stock/market/batch?types=quote,intraday-prices&symbols={','.join(symbols)}&displayPercent=true&token={self.iexcloud_key}"
+        response = requests.get(request)
 
-        # process unknown symbol
-        if content == "Unknown symbol":
-            return None
+        try:
+            return json.loads(response.content)
+        except JSONDecodeError:
+            return {}
 
-        data = json.loads(content)  # api response in dict form
+    @ staticmethod
+    def draw_symbol_chart(symbol_data):
+        """
+        Draw image for ONE symbol and return image
+        Args:
+            symbol_data(dict): dict must contain "intraday-prices" and "quote"
+        """
+        quote = symbol_data["quote"]
 
-        # Make change data presentable
-        change = round(data["change"], 2)
-        change_symbol = "⬆️ " if change >= 0 else "⬇️ "
-        change_symbol += f"{change:.2f}"
-        change_percent = round(data["changePercent"]*100, 2)
-        is_guh = change_percent <= -5
-        is_moon = not is_guh and change_percent >= 5
+        # remove null datapoints from averages for continuous graph
+        average_list = [x["average"] if x["average"] else 0
+                        for x in symbol_data["intraday-prices"]]
+        graph_x = 390 - average_list.count(0)  # dont include null data points
+        average_list = list(filter((0).__ne__, average_list))
 
-        # generate and send sbonk embed
-        sbonk_embed = discord.Embed(
-            title=f"{symbol}: ${data['latestPrice']}",
-            description=f"{change_symbol} ({change_percent}%)",
-            color=discord.Color.green() if change >= 0 else discord.Color.red()
-        )
-        sbonk_embed.set_footer(text=data["latestTime"])
+        color = "lime" if quote["latestPrice"] >= quote["previousClose"] else "red"
 
-        # check if guh or moonS
-        if is_guh:
-            sbonk_embed.set_thumbnail(
-                url="https://cdn.discordapp.com/emojis/755546594446671963.png?v=1")
-        elif is_moon:
-            sbonk_embed.set_thumbnail(
-                url="https://melmagazine.com/wp-content/uploads/2019/07/Screen-Shot-2019-07-31-at-5.47.12-PM.png")
+        # plot graph
+        plt.clf()
 
-        return sbonk_embed
+        # market hours
+        if not quote["isUSMarketOpen"]:
+            plt.style.use('dark_background')
+
+        plt.xlim((0, graph_x))
+        plt.plot(list(range(graph_x)), average_list, color=color)
+        plt.hlines(quote["previousClose"], 0, graph_x,
+                   colors="grey", linestyles="dotted")
+
+        # remove extraneous lines
+        plt.xticks([])
+        plt.yticks([])
+        ax = plt.axes()
+        for side in ("left", "right", "top", "bottom"):
+            ax.spines[side].set_visible(False)
+
+        # add Symbol and price text
+        color = "black" if quote["isUSMarketOpen"] else "white"
+        price = quote["extendedPrice"] if quote["extendedPrice"] else quote["latestPrice"]
+        text = f"{quote['symbol']} ${price:.2f}"
+        plt.text(0, 1.1, text, alpha=0.7, va="bottom", ha="left",
+                 size=30, c=color, transform=ax.transAxes)
+
+        # add change text
+        change_emoji = "⬆️" if quote["change"] >= 0 else "⬇️"
+        change_text = f"{change_emoji}{abs(quote['change']):.2f} ({quote['changePercent']:.2f}%)"
+        color = "lime" if quote["change"] >= 0 else "red"
+        plt.text(0, 1, change_text, va="bottom", ha="left",
+                 size=20, c=color, transform=ax.transAxes)
+
+        # convert the chart to a bytes object Discord can read
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=300)
+        buffer = buffer.getvalue()
+        return BytesIO(buffer)
 
     def create_graph(self, symbol):
         """Create a graph based on stock intraday prices and return as an image."""
 
         # Get previous day's closing price
         def get_previous_close(self, symbol):
-            response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
+            response = requests.get(
+                f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={self.iexcloud_key}")
             content = json.loads((response.content.decode("utf-8")))
             return content["previousClose"]
 
@@ -77,7 +113,8 @@ class SbonkCommands(commands.Cog):
         previous_close = get_previous_close(self, symbol)
 
         # get list of intraday prices from iex cloud
-        response = requests.get(f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
+        response = requests.get(
+            f"https://cloud.iexapis.com/stable/stock/{symbol}/intraday-prices/quote?token={self.iexcloud_key}")
         content = json.loads((response.content.decode("utf-8")))
 
         # Iterate through iex cloud data, populate lists for prices and times
@@ -107,9 +144,7 @@ class SbonkCommands(commands.Cog):
                 pass
 
         # color the line red if the stock is down, green if it's up
-        color = 'red'
-        if previous_close - average_list[-1] < 0:
-            color = 'green'
+        color = "green" if previous_close - average_list[-1] < 0 else "red"
 
         # draw the chart
         plt.clf()
@@ -150,18 +185,20 @@ class SbonkCommands(commands.Cog):
         # strip $ and 1 character off the strings
         symbols = [s[1:-1] for s in prefixed_symbols]
 
+        data = self.get_stock_data(symbols)
+        pprint(data.keys())
         for symbol in symbols:
-            embed = self.fetch_stock_data(symbol)
-
-            # Send weirdchamp if unrecognized symbol
-            if not embed:
+            symbol = symbol.upper()
+            # weirdchamp for unknown symbol
+            if symbol not in data.keys():
                 weirdchamp = bot.get_emoji(746570904032772238)
                 await message.channel.send(str(weirdchamp))
-            else:
-                graph = self.create_graph(symbol)
-                file = discord.File(graph, filename=f"{symbol.upper()}.png")
-                await message.channel.send(embed=embed)  # send sbonk embed
-                await message.channel.send(file=file)  # send stock chart
+                continue
+
+            # Send chart
+            chart = SbonkCommands.draw_symbol_chart(data[symbol])
+            file = discord.File(chart, filename=f"{symbol}.png")
+            await message.channel.send(file=file)  # send stock chart
 
 
 def setup(bot):

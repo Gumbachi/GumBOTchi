@@ -23,28 +23,17 @@ admin_ids = {
     244574519027564544  # SoloMan98#3426
 }
 
+poggers_prefixes = {"pog", "pong", "pawg", "cog"}
+
 poggers_activation_phrases = {
-    "pog",
-    "poggers",
-    "poggies",
-    "pogchamp",
-    "pongas",
-    "pogchampius",
-    "poggas",
-    "pongies",
-    "pogeroni",
-    "pogu",
-    "pogey",
-    "poggaroo",
-    "pogger",
-    "pogchampo",
-    "poggiewoggies",
-    "pogchampion",
-    "coggers",
-    "poggie",
-    "pongerino",
-    "pogerino",
-    "pogging"
+    "pog", "poggers", "poggies",
+    "pogchamp", "pongas", "pogchampius",
+    "poggas", "pongies", "pogeroni",
+    "pogu", "pogey", "poggaroo",
+    "pogger", "pogchampo", "poggiewoggies",
+    "pogchampion", "coggers", "poggie",
+    "pongerino", "pogerino", "pogging",
+    "poggeurs", "pawg"
 }
 
 poggers_links = [
