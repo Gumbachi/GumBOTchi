@@ -60,11 +60,7 @@ class SbonkCommands(commands.Cog):
 
         # plot graph
         plt.clf()
-
-        # market hours
-        if not quote["isUSMarketOpen"]:
-            plt.style.use('dark_background')
-
+        plt.style.use('dark_background')
         plt.xlim((0, 390))
         plt.plot(list(range(390)), average_list, color=color)
         plt.hlines(quote["previousClose"], 0, 390,
@@ -78,11 +74,10 @@ class SbonkCommands(commands.Cog):
             ax.spines[side].set_visible(False)
 
         # add Symbol and price text
-        color = "black" if quote["isUSMarketOpen"] else "white"
         price = quote["extendedPrice"] if quote["extendedPrice"] else quote["latestPrice"]
         text = f"{quote['symbol']} ${price:.2f}"
         plt.text(0, 1.1, text, alpha=0.7, va="bottom", ha="left",
-                 size=30, c=color, transform=ax.transAxes)
+                 size=30, c="white", transform=ax.transAxes)
 
         # add change text
         change_emoji = "⬆️" if quote["change"] >= 0 else "⬇️"
