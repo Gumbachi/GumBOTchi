@@ -30,18 +30,19 @@ class SbonkCommands(commands.Cog):
         self.bot = bot
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
 
-    def get_stock_data(self, symbols):
+    def get_stock_data(self, symbols, *endpoints):
         """A more refined stock quote function."""
         # Request stock quotes from iex cloud
-        request = f"https://cloud.iexapis.com/stable/stock/market/batch?types=quote,intraday-prices&symbols={','.join(symbols)}&displayPercent=true&token={self.iexcloud_key}"
+        request = ("https://cloud.iexapis.com/stable/stock/market/batch"
+                   f"?types={','.join(endpoints)}&symbols={','.join(symbols)}"
+                   f"&displayPercent=true&token={self.iexcloud_key}")
         response = requests.get(request)
-
         try:
             return json.loads(response.content)
         except JSONDecodeError:
             return {}
 
-    @ staticmethod
+    @staticmethod
     def draw_symbol_chart(symbol_data):
         """
         Draw image for ONE symbol and return image
@@ -108,7 +109,7 @@ class SbonkCommands(commands.Cog):
         # strip $ and 1 character off the strings
         symbols = [s[1:-1] for s in prefixed_symbols]
 
-        data = self.get_stock_data(symbols)
+        data = self.get_stock_data(symbols, "quote", "intraday-prices")
         for symbol in symbols:
             symbol = symbol.upper()
             # weirdchamp for unknown symbol
