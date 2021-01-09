@@ -1,26 +1,16 @@
-from json.decoder import JSONDecodeError
+import json
 import os
 import re
-import json
-from pprint import pprint
+import io
+
+import common.cfg as cfg
+import common.database as db
 import discord
-from discord.ext import commands
-from discord.ext.commands.errors import CommandError
+import matplotlib.pyplot as plt
+import numpy as np
 import requests
 from common.cfg import bot
-import matplotlib.pyplot as plt
-from io import BytesIO
-import numpy as np
-
-
-class SbonkError(CommandError):
-    """Raise for unknown symbol."""
-    pass
-
-
-class RequestError(CommandError):
-    """Error for handling api request errors"""
-    pass
+from discord.ext import commands
 
 
 class SbonkCommands(commands.Cog):
@@ -39,7 +29,7 @@ class SbonkCommands(commands.Cog):
         response = requests.get(request)
         try:
             return json.loads(response.content)
-        except JSONDecodeError:
+        except json.JSONDecodeError:
             return {}
 
     @staticmethod
@@ -70,7 +60,7 @@ class SbonkCommands(commands.Cog):
         # remove extraneous lines
         plt.xticks([])
         plt.yticks([])
-        ax = plt.axes()
+        ax = plt.gca()
         for side in ("left", "right", "top", "bottom"):
             ax.spines[side].set_visible(False)
 
@@ -88,27 +78,93 @@ class SbonkCommands(commands.Cog):
                  size=20, c=color, transform=ax.transAxes)
 
         # convert the chart to a bytes object Discord can read
-        buffer = BytesIO()
+        buffer = io.BytesIO()
         plt.savefig(buffer, format='png', bbox_inches='tight', dpi=300)
         buffer = buffer.getvalue()
-        return BytesIO(buffer)
+        return io.BytesIO(buffer)
+
+    @staticmethod
+    def extract_symbols(string, sbonk_notation=True):
+        """Extract valid symbols from a string."""
+        string += " "
+        pattern = r"[a-zA-Z]{1,4}[^a-zA-Z]"
+        if sbonk_notation:
+            pattern = "[$]" + pattern
+        prefixed_symbols = re.findall(pattern, string)
+
+        # strip $ and 1 character off the strings
+        if not sbonk_notation:
+            return [s[:-1] for s in prefixed_symbols]
+        return [s[1:-1] for s in prefixed_symbols]
+
+    # @commands.command(name="add_to_watchlist")
+    # async def add_to_watchlist(self, ctx, *, symbol_str):
+    #     """add a symbol to the watch list"""
+    #     symbols = SbonkCommands.extract_symbols(
+    #         symbol_str, sbonk_notation=False)
+    #     symbols = [s.upper() for s in symbols]
+
+    #     # check for user
+    #     data = db.usercoll.find_one({"_id": ctx.author.id})
+    #     if not data:
+    #         # check for watchlimit
+    #         if len(symbols) > cfg.watchlimit:
+    #             symbols = symbols[:50]
+
+    #         db.usercoll.insert_one({"_id": ctx.author.id,
+    #                                 "watchlist": symbols})
+    #     else:
+    #         watchlist_length = len(data["watchlist"])
+    #         if len(symbols) + watchlist_length > cfg.watchlimit:
+    #             symbols = symbols[:50-watchlist_length]
+
+    #         db.usercoll.update_one(
+    #             {"_id": ctx.author.id},
+    #             {"$addToSet": {"watchlist": {"$each": symbols}}}
+    #         )
+
+    #     embed = discord.Embed(
+    #         title=f"Added {len(symbols)} symbols to your watchlist",
+    #         description="",
+    #         color=discord.Color.green()
+    #     )
+    #     await ctx.send(embed=embed)
+
+    # @commands.command(name="watchlist", aliases=["wl"])
+    # async def show_watchlist(self, ctx):
+    #     """add a symbol to the watch list"""
+
+    #     # check for user
+    #     data = db.usercoll.find_one({"_id": ctx.author.id})
+    #     if not data:
+    #         data = {"_id": ctx.author.id, "watchlist": []}
+    #         db.usercoll.insert_one(data)
+
+    #     wl = data["watchlist"]
+    #     sbonk_data = self.get_stock_data(wl, "quote")
+    #     embed = discord.Embed(
+    #         title=f"{ctx.author.name}'s watchlist ({len(wl)}/{cfg.watchlimit})"
+    #     )
+
+    #     for symbol in wl:
+    #         if symbol not in sbonk_data.keys():
+    #             continue
+
+    #         quote = sbonk_data[symbol]["quote"]
+    #         embed.add_field(
+    #             name=quote["symbol"],
+    #             value=quote["latestPrice"]
+    #         )
+    #     await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listens for sbonks"""
-
-        # ignore the bot user
+        # ignore bot
         if message.author.id == bot.user.id:
             return
 
-        # sort out symbols from message
-        text = message.content + " "
-        pattern = r"[$][a-zA-Z]{1,4}[^a-zA-Z]"
-        prefixed_symbols = re.findall(pattern, text)
-
-        # strip $ and 1 character off the strings
-        symbols = [s[1:-1] for s in prefixed_symbols]
-
+        symbols = SbonkCommands.extract_symbols(message.content)
         data = self.get_stock_data(symbols, "quote", "intraday-prices")
         for symbol in symbols:
             symbol = symbol.upper()
@@ -119,9 +175,10 @@ class SbonkCommands(commands.Cog):
                 continue
 
             # Send chart
-            chart = SbonkCommands.draw_symbol_chart(data[symbol])
-            file = discord.File(chart, filename=f"{symbol}.png")
-            await message.channel.send(file=file)  # send stock chart
+            async with message.channel.typing():
+                chart = SbonkCommands.draw_symbol_chart(data[symbol])
+                file = discord.File(chart, filename=f"{symbol}.png")
+                await message.channel.send(file=file)  # send stock chart
 
 
 def setup(bot):

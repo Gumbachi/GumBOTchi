@@ -2,6 +2,7 @@ import random
 
 import common.cfg as cfg
 from common.cfg import bot
+import common.database as db
 from discord.ext import commands
 
 
@@ -40,6 +41,16 @@ class GeneralCommands(commands.Cog):
             guh = bot.get_emoji(755546594446671963)
             if guh:
                 await message.channel.send(str(guh))
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        """When bot joins a guild"""
+        db.add_blank_guild(guild.id)
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        """When bot joins a guild"""
+        db.guildcoll.delete_one({"_id": guild.id})
 
 
 def setup(bot):

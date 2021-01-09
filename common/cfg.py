@@ -23,6 +23,8 @@ admin_ids = {
     244574519027564544  # SoloMan98#3426
 }
 
+watchlimit = 50
+
 poggers_prefixes = {"pog", "pong", "pawg", "cog"}
 
 poggers_activation_phrases = {
