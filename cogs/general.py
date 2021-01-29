@@ -2,7 +2,6 @@ import random
 
 import common.cfg as cfg
 from common.cfg import bot
-import common.database as db
 from discord.ext import commands
 
 
