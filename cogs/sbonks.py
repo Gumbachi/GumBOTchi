@@ -4,7 +4,6 @@ import re
 import io
 
 import common.cfg as cfg
-import common.database as db
 import discord
 import matplotlib.pyplot as plt
 import numpy as np
@@ -97,65 +96,10 @@ class SbonkCommands(commands.Cog):
             return [s[:-1] for s in prefixed_symbols]
         return [s[1:-1] for s in prefixed_symbols]
 
-    # @commands.command(name="add_to_watchlist")
-    # async def add_to_watchlist(self, ctx, *, symbol_str):
-    #     """add a symbol to the watch list"""
-    #     symbols = SbonkCommands.extract_symbols(
-    #         symbol_str, sbonk_notation=False)
-    #     symbols = [s.upper() for s in symbols]
-
-    #     # check for user
-    #     data = db.usercoll.find_one({"_id": ctx.author.id})
-    #     if not data:
-    #         # check for watchlimit
-    #         if len(symbols) > cfg.watchlimit:
-    #             symbols = symbols[:50]
-
-    #         db.usercoll.insert_one({"_id": ctx.author.id,
-    #                                 "watchlist": symbols})
-    #     else:
-    #         watchlist_length = len(data["watchlist"])
-    #         if len(symbols) + watchlist_length > cfg.watchlimit:
-    #             symbols = symbols[:50-watchlist_length]
-
-    #         db.usercoll.update_one(
-    #             {"_id": ctx.author.id},
-    #             {"$addToSet": {"watchlist": {"$each": symbols}}}
-    #         )
-
-    #     embed = discord.Embed(
-    #         title=f"Added {len(symbols)} symbols to your watchlist",
-    #         description="",
-    #         color=discord.Color.green()
-    #     )
-    #     await ctx.send(embed=embed)
-
-    # @commands.command(name="watchlist", aliases=["wl"])
-    # async def show_watchlist(self, ctx):
-    #     """add a symbol to the watch list"""
-
-    #     # check for user
-    #     data = db.usercoll.find_one({"_id": ctx.author.id})
-    #     if not data:
-    #         data = {"_id": ctx.author.id, "watchlist": []}
-    #         db.usercoll.insert_one(data)
-
-    #     wl = data["watchlist"]
-    #     sbonk_data = self.get_stock_data(wl, "quote")
-    #     embed = discord.Embed(
-    #         title=f"{ctx.author.name}'s watchlist ({len(wl)}/{cfg.watchlimit})"
-    #     )
-
-    #     for symbol in wl:
-    #         if symbol not in sbonk_data.keys():
-    #             continue
-
-    #         quote = sbonk_data[symbol]["quote"]
-    #         embed.add_field(
-    #             name=quote["symbol"],
-    #             value=quote["latestPrice"]
-    #         )
-    #     await ctx.send(embed=embed)
+    @commands.command(name='hebought')
+    async def howdy(self, ctx):
+        """Says howdy!"""
+        await ctx.send(f"Howdy, {ctx.message.author.mention}!")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -163,6 +107,11 @@ class SbonkCommands(commands.Cog):
         # ignore bot
         if message.author.id == bot.user.id:
             return
+
+        if message.content.lower() in ("he bought", "he bought?"):
+            return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
+        elif message.content.lower() in ("he sold", "he sold?"):
+            return await message.channel.send("https://www.youtube.com/watch?v=TRXdxiot5JM")
 
         symbols = SbonkCommands.extract_symbols(message.content)
         data = self.get_stock_data(symbols, "quote", "intraday-prices")

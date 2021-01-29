@@ -2,4 +2,4 @@ discord.py>=1.5.1
 requests>=2.25.1
 numpy>=1.15
 matplotlib>=3.1.0
-pymongo[srv]==3.11.2
+Pillow>=8.1.0
