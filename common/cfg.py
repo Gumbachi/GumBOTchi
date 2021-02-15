@@ -25,8 +25,6 @@ admin_ids = {
 
 watchlimit = 50
 
-poggers_prefixes = {"pog", "pong", "pawg", "cog"}
-
 poggers_activation_phrases = {
     "pog", "poggers", "poggies",
     "pogchamp", "pongas", "pogchampius",
@@ -35,7 +33,7 @@ poggers_activation_phrases = {
     "pogger", "pogchampo", "poggiewoggies",
     "pogchampion", "coggers", "poggie",
     "pongerino", "pogerino", "pogging",
-    "poggeurs", "pawg"
+    "poggeurs", "pawg", "pognut",
 }
 
 poggers_links = [

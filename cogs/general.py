@@ -41,16 +41,6 @@ class GeneralCommands(commands.Cog):
             if guh:
                 await message.channel.send(str(guh))
 
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        """When bot joins a guild"""
-        db.add_blank_guild(guild.id)
-
-    @commands.Cog.listener()
-    async def on_guild_remove(self, guild):
-        """When bot joins a guild"""
-        db.guildcoll.delete_one({"_id": guild.id})
-
 
 def setup(bot):
     bot.add_cog(GeneralCommands(bot))
