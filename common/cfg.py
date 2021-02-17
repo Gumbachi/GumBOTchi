@@ -51,5 +51,9 @@ poggers_links = [
     "https://tenor.com/view/anime-poggers-anime-poggers-anime-gif-18290513",
     "https://tenor.com/view/poggers-anime-anime-poggers-poggers-anime-gif-18386348",
     "https://tenor.com/view/poggers-anime-kiss-girl-gif-18969493",
-    "https://tenor.com/view/anime-poggers-anime-poggers-anime-gif-18290523"
+    "https://tenor.com/view/anime-poggers-anime-poggers-anime-gif-18290523",
+    "https://tenor.com/view/pog-poggers-pogchamp-pogchamps-pogger-gif-18414191",
+    "https://tenor.com/view/poggers-anime-gif-19842013",
+    "https://tenor.com/view/marnie-pokemon-anime-pog-pogchamp-gif-19642089",
+    "https://tenor.com/view/poggers-gif-19466277"
 ]
