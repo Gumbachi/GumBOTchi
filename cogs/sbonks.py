@@ -109,7 +109,7 @@ class SbonkCommands(commands.Cog):
             return
 
         # Salm aint gonna hurt my feelings anymore
-        if message.author.id == 244574519027564544 and message.content.lower() == "$xpev":
+        if message.author.id == 244574519027564544 and "$xpev" in message.content.lower():
             return await message.channel.send("Yeah, I think the fuck not")
 
         if message.content.lower() in ("he bought", "he bought?"):
