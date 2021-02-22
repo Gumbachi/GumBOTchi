@@ -110,7 +110,7 @@ class SbonkCommands(commands.Cog):
 
         # Salm aint gonna hurt my feelings anymore
         if message.author.id == 244574519027564544 and message.content.lower() == "$xpev":
-            await message.channel.send("Yeah, I think the fuck not")
+            return await message.channel.send("Yeah, I think the fuck not")
 
         if message.content.lower() in ("he bought", "he bought?"):
             return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
