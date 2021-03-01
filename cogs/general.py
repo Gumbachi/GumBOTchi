@@ -57,15 +57,17 @@ class GeneralCommands(commands.Cog):
         if not new_activities:
             return
 
+        print(new_activities)
+
         # Salmon cant play genshin unnoticed
         for activity in new_activities:
             print(activity.name, type(activity))
 
-            if not isinstance(activity, discord.Game):
+            if not isinstance(activity, discord.Activity):
                 continue
 
             # ignore non-genshin games/activities
-            if activity.application_id == genshin_app_id:
+            if activity.name == "Genshin Impact":
                 channel = before.guild.get_channel(672919881208954932)
                 embed = discord.Embed(
                     title=f"🚨Salmon started playing Genshin Impact🚨",
