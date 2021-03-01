@@ -1,5 +1,6 @@
 import random
 
+import discord
 import common.cfg as cfg
 from common.cfg import bot
 from discord.ext import commands
@@ -40,6 +41,25 @@ class GeneralCommands(commands.Cog):
             guh = bot.get_emoji(755546594446671963)
             if guh:
                 await message.channel.send(str(guh))
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        """🚨Gotta track when salmon plays Genshin instead of deleting it.🚨"""
+        # only salm and activity tracked
+        if before.id != 244574519027564544 or before.activities == after.activities:
+            return
+
+        # Salmon cant play genshin unnoticed
+        for activity in after.activities:
+            # ignore non-genshin games/activities
+            if "Genshin Impact" in activity.name and activity not in before.activities:
+                channel = before.guild.get_channel(672919881208954932)
+                embed = discord.Embed(
+                    title=f"🚨Salmon started playing Genshin Impact at {activity.start}🚨",
+                    color=discord.Color.blurple()
+                )
+                embed.set_footer(text=str(activity.application_id))
+                await channel.send(embed=embed)
 
 
 def setup(bot):
