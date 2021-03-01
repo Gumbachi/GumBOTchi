@@ -4,7 +4,6 @@ from discord.ext import commands
 extensions = [
     "cogs.general",
     "cogs.sbonks",
-    "cogs.errors",
     "cogs.admin"
 ]
 
@@ -14,11 +13,12 @@ def get_prefix(bot, message):
     # fill in logic for prefix changing if you want
     return '!'
 
+
 bot = commands.Bot(
     command_prefix=get_prefix,
     help_command=None,
     intents=discord.Intents.all()
-    )  # creates bot object
+)  # creates bot object
 
 admin_ids = {
     128595549975871488,  # Gumbachi#0506

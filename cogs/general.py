@@ -52,17 +52,20 @@ class GeneralCommands(commands.Cog):
         genshin_app_id = 762434991303950386
 
         # isolate new app id
-        before_ids = [a.application_id for a in before.activities]
-        after_ids = [a.application_id for a in after.activities]
-        new_activity_ids = set(after_ids) - set(before_ids)
+        new_activities = set(after.activities) - set(before.activities)
 
-        if not new_activity_ids:
+        if not new_activities:
             return
 
         # Salmon cant play genshin unnoticed
-        for activity_id in new_activity_ids:
+        for activity in new_activities:
+            print(activity.name, type(activity))
+
+            if not isinstance(activity, discord.Game):
+                continue
+
             # ignore non-genshin games/activities
-            if activity_id == genshin_app_id:
+            if activity.application_id == genshin_app_id:
                 channel = before.guild.get_channel(672919881208954932)
                 embed = discord.Embed(
                     title=f"🚨Salmon started playing Genshin Impact🚨",
