@@ -46,20 +46,30 @@ class GeneralCommands(commands.Cog):
     async def on_member_update(self, before, after):
         """🚨Gotta track when salmon plays Genshin instead of deleting it.🚨"""
         # only salm and activity tracked
-        if before.id != 244574519027564544 or before.activities == after.activities:
+        if before.id != 244574519027564544:
+            return
+
+        genshin_app_id = 762434991303950386
+
+        # isolate new app id
+        before_ids = [a.application_id for a in before.activities]
+        after_ids = [a.application_id for a in after.activities]
+        new_activity_ids = set(after_ids) - set(before_ids)
+
+        if not new_activity_ids:
             return
 
         # Salmon cant play genshin unnoticed
-        for activity in after.activities:
+        for activity_id in new_activity_ids:
             # ignore non-genshin games/activities
-            if "Genshin Impact" in activity.name and activity not in before.activities:
+            if activity_id == genshin_app_id:
                 channel = before.guild.get_channel(672919881208954932)
                 embed = discord.Embed(
-                    title=f"🚨Salmon started playing Genshin Impact at {activity.start}🚨",
+                    title=f"🚨Salmon started playing Genshin Impact🚨",
                     color=discord.Color.blurple()
                 )
-                embed.set_footer(text=str(activity.application_id))
                 await channel.send(embed=embed)
+                break
 
 
 def setup(bot):
