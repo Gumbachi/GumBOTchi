@@ -69,12 +69,13 @@ class GeneralCommands(commands.Cog):
             # ignore non-genshin games/activities
             if activity.name == "Genshin Impact":
                 channel = before.guild.get_channel(672919881208954932)
+                if not channel:
+                    return
                 embed = discord.Embed(
-                    title=f"🚨Salmon started playing Genshin Impact🚨",
+                    title=f"🚨 Salmon started playing Genshin Impact 🚨",
                     color=discord.Color.blurple()
                 )
-                await channel.send(embed=embed)
-                break
+                return await channel.send(embed=embed)
 
 
 def setup(bot):
