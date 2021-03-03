@@ -27,7 +27,6 @@ class GeneralCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listen to messages."""
-
         # ignore the bot user
         if message.author.id == bot.user.id:
             return
@@ -57,12 +56,8 @@ class GeneralCommands(commands.Cog):
         if not new_activities:
             return
 
-        print(new_activities)
-
         # Salmon cant play genshin unnoticed
         for activity in new_activities:
-            print(activity.name, type(activity))
-
             if not isinstance(activity, discord.Activity):
                 continue
 
@@ -72,7 +67,7 @@ class GeneralCommands(commands.Cog):
                 if not channel:
                     return
                 embed = discord.Embed(
-                    title=f"🚨{before.mention} started playing Genshin Impact at {activity.start}🚨",
+                    title=f"🚨Salmon started playing Genshin Impact at {activity.start}🚨",
                     color=discord.Color.blurple()
                 )
                 return await channel.send(embed=embed)

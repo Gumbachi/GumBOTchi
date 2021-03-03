@@ -1,6 +1,6 @@
 import asyncio
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, UserInputError
 from common.cfg import bot, admin_ids
 import datetime
@@ -26,28 +26,31 @@ class AdminCommands(commands.Cog):
             await ctx.send(f"purged {amount} messages", delete_after=2)
 
     @commands.command(name="mute", aliases=["silence"])
-    async def silence_member(self, ctx, member: discord.Member, mute_time=None):
+    async def silence_member(self, ctx, member: discord.Member):
         """Mutes a selected member for a certain amount of time"""
         self.muted.add(member.id)
-        try:
-            # send message and sleep
-            time = int(mute_time)
-            await ctx.send(f"{member.name} muted for {datetime.timedelta(seconds=time)}")
-            asyncio.sleep(time)
-        except ValueError:
-            raise commands.UserInputError("Needs to be a number. dumbass")
-        self.muted.discard(member.id)
+        await ctx.send(embed=discord.Embed(title=f"Muted {member.name}"))
 
     @commands.command(name="unmute", aliases=["unsilence"])
     async def unsilence_member(self, ctx, member: discord.Member):
         """Unmutes a member."""
         self.muted.discard(member.id)
-        await ctx.send(f"Unmuted {member.name}")
+        await ctx.send(embed=discord.Embed(f"Unmuted {member.name}"))
 
     @commands.command(name="mute_info", aliases=["minfo"])
     async def unsilence_member(self, ctx, member: discord.Member):
         """Shows muted members."""
         await ctx.send(f"{self.muted}")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Listen to messages."""
+        # ignore the bot user
+        if message.author.id == bot.user.id:
+            return
+
+        if message.author.id in self.muted():
+            await message.delete()
 
 
 def setup(bot):
