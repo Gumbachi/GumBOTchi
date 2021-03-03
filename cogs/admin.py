@@ -35,7 +35,7 @@ class AdminCommands(commands.Cog):
     async def unsilence_member(self, ctx, member: discord.Member):
         """Unmutes a member."""
         self.muted.discard(member.id)
-        await ctx.send(embed=discord.Embed(f"Unmuted {member.name}"))
+        await ctx.send(embed=discord.Embed(title=f"Unmuted {member.name}"))
 
     @commands.command(name="mute_info", aliases=["minfo"])
     async def show_muted_members(self, ctx):
