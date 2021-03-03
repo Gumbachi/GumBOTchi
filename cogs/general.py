@@ -55,7 +55,7 @@ class GeneralCommands(commands.Cog):
             if "Genshin Impact" in activity.name and activity not in before.activities:
                 channel = before.guild.get_channel(672919881208954932)
                 embed = discord.Embed(
-                    title=f"🚨Salmon started playing Genshin Impact at {activity.start}🚨",
+                    title=f"🚨{before.mention} started playing Genshin Impact at {activity.start}🚨",
                     color=discord.Color.blurple()
                 )
                 embed.set_footer(text=str(activity.application_id))
