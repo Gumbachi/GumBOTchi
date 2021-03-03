@@ -38,7 +38,7 @@ class AdminCommands(commands.Cog):
         await ctx.send(embed=discord.Embed(f"Unmuted {member.name}"))
 
     @commands.command(name="mute_info", aliases=["minfo"])
-    async def unsilence_member(self, ctx, member: discord.Member):
+    async def show_muted_members(self, ctx):
         """Shows muted members."""
         await ctx.send(f"{self.muted}")
 
@@ -49,7 +49,7 @@ class AdminCommands(commands.Cog):
         if message.author.id == bot.user.id:
             return
 
-        if message.author.id in self.muted():
+        if message.author.id in self.muted:
             await message.delete()
 
 
