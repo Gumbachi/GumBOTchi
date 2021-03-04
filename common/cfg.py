@@ -4,7 +4,8 @@ from discord.ext import commands
 extensions = [
     "cogs.general",
     "cogs.sbonks",
-    "cogs.admin"
+    "cogs.admin",
+    "cogs.errors"
 ]
 
 emojis = {

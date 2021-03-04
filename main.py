@@ -3,7 +3,7 @@ import os
 
 import discord
 
-from common.cfg import bot, extensions
+from common.cfg import bot, extensions, get_prefix
 
 
 @bot.event
@@ -23,7 +23,7 @@ async def on_message(message):
 
     # shows prefix if bot is mentioned
     if message.mentions and message.mentions[0].id == bot.user.id:
-        await message.channel.send(f"Type `{bot.command_prefix}`help for help.")
+        await message.channel.send(f"Type `{get_prefix(bot, message)}`help for help.")
 
     await bot.process_commands(message)
 
