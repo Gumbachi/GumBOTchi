@@ -8,7 +8,7 @@ extensions = [
 ]
 
 emojis = {
-    "wierdchamp": 746570904032772238
+    "weirdchamp": 746570904032772238
 }
 
 
