@@ -67,7 +67,7 @@ class GeneralCommands(commands.Cog):
                 if not channel:
                     return
                 embed = discord.Embed(
-                    title=f"🚨Salmon started playing Genshin Impact at {activity.start}🚨",
+                    title=f"🚨 Salmon started playing Genshin Impact 🚨",
                     color=discord.Color.blurple()
                 )
                 return await channel.send(embed=embed)

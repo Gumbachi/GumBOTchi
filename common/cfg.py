@@ -7,6 +7,10 @@ extensions = [
     "cogs.admin"
 ]
 
+emojis = {
+    "wierdchamp": 746570904032772238
+}
+
 
 def get_prefix(bot, message):
     """Gets the prefix per server"""

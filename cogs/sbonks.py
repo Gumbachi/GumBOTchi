@@ -1,14 +1,14 @@
+import io
 import json
 import os
 import re
-import io
 
 import common.cfg as cfg
+import common.utils as utils
 import discord
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
-from common.cfg import bot
 from discord.ext import commands
 
 
@@ -18,6 +18,11 @@ class SbonkCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
+        self.xpev_victims = [
+            235902262168256515,
+            128595549975871488,
+            224506294801793025
+        ]
 
     def get_stock_data(self, symbols, *endpoints):
         """A more refined stock quote function."""
@@ -96,21 +101,16 @@ class SbonkCommands(commands.Cog):
             return [s[:-1] for s in prefixed_symbols]
         return [s[1:-1] for s in prefixed_symbols]
 
-    @commands.command(name='hebought')
-    async def howdy(self, ctx):
-        """Says howdy!"""
-        await ctx.send(f"Howdy, {ctx.message.author.mention}!")
-
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listens for sbonks"""
         # ignore bot
-        if message.author.id == bot.user.id:
+        if message.author.id == self.bot.user.id:
             return
 
-        # Salm aint gonna hurt my feelings anymore
-        if message.author.id == 244574519027564544 and "$xpev" in message.content.lower():
-            return await message.channel.send("Yeah, I think the fuck not")
+        # Salm and others aint gonna hurt my feelings anymore
+        if message.author.id not in self.xpev_victims and "$xpev" in message.content.lower():
+            return await message.channel.send(f"{utils.emojify(cfg.emojis['weirdchamp'])} You aint even holding I think the fuck not")
 
         if message.content.lower() in ("he bought", "he bought?"):
             return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
@@ -123,8 +123,7 @@ class SbonkCommands(commands.Cog):
             symbol = symbol.upper()
             # weirdchamp for unknown symbol
             if symbol not in data.keys():
-                weirdchamp = bot.get_emoji(746570904032772238)
-                await message.channel.send(str(weirdchamp))
+                await message.channel(utils.emojify(cfg.emojis["weirdchamp"]))
                 continue
 
             # Send chart
