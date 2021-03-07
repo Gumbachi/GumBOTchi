@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands
+import common.database as db
 
 extensions = [
     "cogs.general",
     "cogs.sbonks",
     "cogs.admin",
-    "cogs.errors"
+    "cogs.errors",
+    "cogs.groups"
 ]
 
 emojis = {
@@ -15,8 +17,7 @@ emojis = {
 
 def get_prefix(bot, message):
     """Gets the prefix per server"""
-    # fill in logic for prefix changing if you want
-    return '!'
+    return db.get(message.guild.id, "prefix")
 
 
 bot = commands.Bot(

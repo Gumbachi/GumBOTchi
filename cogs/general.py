@@ -2,6 +2,7 @@ import random
 
 import discord
 import common.cfg as cfg
+import common.database as db
 from common.cfg import bot
 from discord.ext import commands
 
@@ -17,12 +18,22 @@ class GeneralCommands(commands.Cog):
     @commands.command(name="help")
     async def help(self, ctx):
         """The standard help command."""
-        await ctx.send("Help dont exist yet")
+        await ctx.send("Ask salmon or something")
 
     @commands.command(name='howdy')
     async def howdy(self, ctx):
         """Says howdy!"""
         await ctx.send(f"Howdy, {ctx.message.author.mention}!")
+
+    @commands.command(name="prefix", aliases=["gumbotchiprefix"])
+    @commands.has_guild_permissions(manage_guild=True)
+    async def change_server_prefix(self, ctx, *, new_prefix):
+        """Change the bots prefix for the guild."""
+        db.guilds.update_one(
+            {"_id": ctx.guild.id},
+            {"$set": {"prefix": new_prefix}}
+        )
+        await ctx.send(f"Prefix changed to `{new_prefix}`")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -56,13 +67,9 @@ class GeneralCommands(commands.Cog):
         if not new_activities:
             return
 
-        # Salmon cant play genshin unnoticed
-        for activity in new_activities:
-            if not isinstance(activity, discord.Activity):
-                continue
-
-            # ignore non-genshin games/activities
-            if activity.name == "Genshin Impact":
+        try:
+            # Check if genshin impact
+            if new_activities[0].application_id == genshin_app_id:
                 channel = before.guild.get_channel(672919881208954932)
                 if not channel:
                     return
@@ -71,6 +78,24 @@ class GeneralCommands(commands.Cog):
                     color=discord.Color.blurple()
                 )
                 return await channel.send(embed=embed)
+        except:
+            pass
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        """Add new guild to database."""
+        db.guilds.insert_one(
+            {
+                "_id": guild.id,
+                "prefix": "!",
+                "groups": []
+            }
+        )
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        """Delete guild from database if bot is kicked/removed"""
+        db.guilds.delete_one({"_id": guild.id})
 
 
 def setup(bot):
