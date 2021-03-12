@@ -22,8 +22,9 @@ class CommandErrors(commands.Cog):
 
         if isinstance(error, commands.CommandNotFound):
             return
-
-        await ctx.send(embed=discord.Embed(title=str(error), color=discord.Color.red()))
+        
+        if isinstance(error, commands.CommandError):
+            return await ctx.send(embed=discord.Embed(title=str(error), color=discord.Color.red()))
 
         ################ CUSTOM ERROR HANDLING ################
 
