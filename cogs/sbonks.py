@@ -105,7 +105,7 @@ class SbonkCommands(commands.Cog):
     async def on_message(self, message):
         """Listens for sbonks"""
         # ignore bot
-        if message.author.id in cfg.supermuted_users.add(self.bot.user.id):
+        if message.author.id == self.bot.user.id or message.author.id in cfg.supermuted_users:
             return
 
         # Salm and others aint gonna hurt my feelings anymore
