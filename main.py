@@ -3,7 +3,7 @@ import os
 
 import discord
 
-from common.cfg import bot, extensions, get_prefix
+from common.cfg import bot, extensions, get_prefix, supermuted_users
 
 
 @bot.event
@@ -24,6 +24,9 @@ async def on_message(message):
     # shows prefix if bot is mentioned
     if message.mentions and message.mentions[0].id == bot.user.id:
         await message.channel.send(f"Type `{get_prefix(bot, message)}`help for help.")
+
+    if message.author.id in supermuted_users:
+        return await message.delete()
 
     await bot.process_commands(message)
 

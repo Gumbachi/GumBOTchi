@@ -32,6 +32,8 @@ admin_ids = {
     244574519027564544  # SoloMan98#3426
 }
 
+supermuted_users = set()
+
 watchlimit = 50
 
 poggers_activation_phrases = {
