@@ -27,6 +27,11 @@ class AdminCommands(commands.Cog):
     @commands.command(name="mute", aliases=["softmute"])
     async def silence_member(self, ctx, member: discord.Member):
         """Mutes a selected member for a certain amount of time"""
+        # Normies Cant mute admins. But i can
+        if member.guild_permissions.administrator and ctx.author.id != 128595549975871488:
+            return await ctx.send("You wish")
+
+        # mute member
         self.muted.add(member.id)
         await ctx.send(embed=discord.Embed(title=f"Muted {member.name}"))
 
@@ -45,6 +50,11 @@ class AdminCommands(commands.Cog):
     @commands.command(name="supermute", aliases=["hardmute"])
     async def supermute_member(self, ctx, member: discord.Member):
         """Prevents command use and message from muted members."""
+        # Normies Cant mute admins. But i can
+        if member.guild_permissions.administrator and ctx.author.id != 128595549975871488:
+            return await ctx.send("You wish")
+
+        # supermute users
         supermuted_users.add(member.id)
         await ctx.send(embed=discord.Embed(title=f"Supermuted {member.name}"))
 

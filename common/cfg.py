@@ -28,7 +28,6 @@ bot = commands.Bot(
 
 admin_ids = {
     128595549975871488,  # Gumbachi#0506
-    187273639874396160,  # BraidedAxe#1818
     244574519027564544  # SoloMan98#3426
 }
 
