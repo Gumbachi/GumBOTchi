@@ -19,8 +19,9 @@ class SbonkCommands(commands.Cog):
         self.bot = bot
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
         self.xpev_victims = [
-            128595549975871488,  # Goomba
-            224506294801793025  # Sweet
+            128595549975871488,
+            224506294801793025,
+            235902262168256515 
         ]
 
     def get_stock_data(self, symbols, *endpoints):
