@@ -21,7 +21,7 @@ class SbonkCommands(commands.Cog):
         self.xpev_victims = [
             128595549975871488,
             224506294801793025,
-            235902262168256515 
+            235902262168256515
         ]
 
     def get_stock_data(self, symbols, *endpoints):
