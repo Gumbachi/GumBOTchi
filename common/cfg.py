@@ -7,7 +7,8 @@ extensions = [
     "cogs.sbonks",
     "cogs.admin",
     "cogs.errors",
-    "cogs.groups"
+    "cogs.groups",
+    "cogs.craigslister"
 ]
 
 emojis = {
@@ -17,7 +18,7 @@ emojis = {
 
 def get_prefix(bot, message):
     """Gets the prefix per server"""
-    return db.get(message.guild.id, "prefix")
+    return db.guildget(message.guild.id, "prefix")
 
 
 bot = commands.Bot(

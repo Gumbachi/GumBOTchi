@@ -13,7 +13,7 @@ class CommandErrors(commands.Cog):
     async def on_command_error(self, ctx, error):
         """The event triggered when an error is raised while invoking a command."""
 
-        print("error caught")
+        print("error caught", type(error))
 
         if hasattr(ctx.command, 'on_error'):
             return

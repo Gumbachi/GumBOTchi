@@ -1,10 +1,9 @@
 """Runs the discord bot"""
 import os
-
 import discord
 
 from common.cfg import bot, extensions, get_prefix, supermuted_users
-
+from cogs.craigslister import Craigslister
 
 @bot.event
 async def on_ready():
@@ -12,6 +11,8 @@ async def on_ready():
     activity = discord.Game(name=f"with your feelings")
     await bot.change_presence(activity=activity)
     print("Ready to go")
+    cler = Craigslister(bot)
+    await cler.loop()
 
 
 @bot.event

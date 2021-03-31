@@ -8,26 +8,7 @@ db = pymongo.MongoClient(mongo_string).GumbotchiDB
 guilds = db.Guilds
 users = db.Users
 
-print("Connected to Database.")
-
-user = {
-    "_id": 123,
-    "zipcode": 21758,
-    "site": "washingtondc",
-    "clqueries": [
-        {
-            "max_price": 123.23,
-            "distance": 50,
-            "has_image": True,
-            "keyword": ["abc", "cde"],
-            "sent_listings": [123, 124],
-            "channel": 123
-        }
-    ]
-}
-
-
-#  site, max_price, zip_code, distance, has_image, keywords, sent_listings)
+print("Connected to Database. In theory.")
 
 def guildget(gid, field):
     """Fetches and unpacks one field from the database."""
