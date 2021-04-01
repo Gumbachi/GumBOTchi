@@ -1,9 +1,11 @@
 """Runs the discord bot"""
 import os
+
 import discord
 
-from common.cfg import bot, extensions, get_prefix, supermuted_users
 from cogs.craigslister import Craigslister
+from common.cfg import bot, extensions, get_prefix, supermuted_users
+
 
 @bot.event
 async def on_ready():
