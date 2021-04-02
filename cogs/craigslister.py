@@ -33,7 +33,7 @@ class Craigslister(commands.Cog):
     async def cl_halp(self, ctx):
         """Help command. Shows users how to use the CL functions"""
         prefix = get_prefix(self.bot, ctx.message)
-        body = f"""\n\nFirst you're going to want to set your zip and site using the setup commands.\n\n1.    {prefix}setzip 12345\n\n2. {prefix}setsize nameofsite. \n\nTo get the right site, visit https://www.craigslist.org/about/sites, click on the best location, and copy the site in the URL for example for Washington DC the URL is https://**washingtondc**.craigslist.org/ so the site would be washingtondc, for NYC it would be newyork.\n\nAfter you set your zip and site, you're ready to add queries.\n\nTo add a query simply use the {prefix}clmedaddy command with the proper syntax. Eg. {prefix}clmedaddy "Apple TV, Apple, TV" 200 30 No Pingme.\n\nThe order of the arguments is as follows: keywords surrounded by parenthesis and separated by a comma and a space ("Apple TV, Apple, TV"), then the max price you're willing to pay, no dollar signs or anything like that. Followed by the distance you're willing to travel. Whether the craigslist post should include pictures of the item, and whether you want to be pinged every time one or more new items match your parameters. In the example, I am looking for listings that match Apple TV, Apple, or TV, are no more than $200 are less than 30 miles away they do not need to include a picture, but may, and I want to be pinged.\n\nTo see your queries use {prefix}clinfo, and to remove a query use {prefix}unclmedaddy and the number of the query (this can be seen by using {prefix}clinfo) eg. {prefix}unclmedaddy 2.\n\nThe bot will automatically check for new listings every 5 minutes and you may not have more than 3 queries active at a time.""" 
+        body = f"""\n\nFirst you're going to want to set your zip and site using the setup commands.\n\n1.    {prefix}setzip 12345\n\n2. {prefix}setsize nameofsite. \n\nTo get the right site, visit https://www.craigslist.org/about/sites, click on the best location, and copy the site in the URL for example for Washington DC the URL is https://**washingtondc**.craigslist.org/ so the site would be washingtondc, for NYC it would be newyork.\n\nAfter you set your zip and site, you're ready to add queries.\n\nTo add a query simply use the {prefix}clmedaddy command with the proper syntax. Eg. {prefix}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme.\n\nThe order of the arguments is as follows: keywords in brackets and separated by a comma and a space like this: [Apple TV, Apple, TV], then the max price you're willing to pay, no currency symbols. Followed by the distance you're willing to travel. Whether the craigslist post should include pictures of the item, and whether you want to be pinged every time one or more new items match your parameters. In the example, I am looking for listings that match Apple TV, Apple, or TV, are no more than $200 are less than 30 miles away they do not need to include a picture, but may, and I want to be pinged.\n\nTo see your queries use {prefix}clinfo, and to remove a query use {prefix}unclmedaddy and the number of the query (this can be seen by using {prefix}clinfo) eg. {prefix}unclmedaddy 2.\n\nThe bot will automatically check for new listings every 5 minutes and you may not have more than 3 queries active at a time.""" 
         embed=discord.Embed(title=f"Welcome to Craigslister!",
                             description=body,
                             color=discord.Color.blue())
@@ -61,7 +61,7 @@ class Craigslister(commands.Cog):
 
     @commands.command(name='craigslistme', aliases=["clme", "addquery", "addq", "clmedaddy"])
     async def craigslist_me_daddy(self, ctx, *, query):
-        """It craigslists. Input syntax: !clme "Apple TV, Apple, TV" 200 30 yeet pingme"""
+        """It craigslists. Input syntax: !clme [Apple TV, Apple, TV] 200 30 yeet pingme"""
 
         # Check if the user has more than the max number of queries allowed
         max_queries = 3
@@ -73,18 +73,16 @@ class Craigslister(commands.Cog):
         # modifies the maximum number of keywords allowed ber query
         max_keywords = 5
         try:
-            query = query.split('"')
-            keywords = query[1].split(", ")
+        
+            query = query.split(']')
+            keywords = query[0][1:].split(", ")
             if len(keywords) > max_keywords:
                 return await ctx.channel.send(f"Queries can only have up to {max_keywords} key words.")
-            rest = query[2][1:].split(" ")
+            rest = query[1][1:].split(" ")
             max_price = rest[0]
             distance = rest[1]
         except:
-            return await ctx.channel.send(
-                f'Invalid query, please format the query exacty as shown here: \
-                    {get_prefix(self.bot, ctx.message)}clme "Key words 1, Key word 2, keyword 3, etc" max_price max_distance only_show_posts_with_pictures(Yes/No) pingme. \
-                    Eg. !clme "Apple TV, Apple, TV" 200 30 yes pingme or !clme "Apple TV, Apple, TV" 200 30')
+            raise commands.CommandError(f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}clhelp for syntax")
 
         # Checks if has_image and pingme were provided as args and sets them accordingly
         try:
@@ -98,6 +96,11 @@ class Craigslister(commands.Cog):
         except:
             pingme = False
 
+        try:
+            category = rest[4]
+        except:
+            category = "sss"
+
         # Generates query ID
         query_id = self.id_maker()
 
@@ -110,7 +113,8 @@ class Craigslister(commands.Cog):
             "keywords": keywords,
             "sent_listings": [],
             "channel": ctx.channel.id,
-            "ping": pingme
+            "ping": pingme,
+            "category": category
         }
 
         # Updates DB
@@ -201,13 +205,13 @@ class Craigslister(commands.Cog):
         Returns a list of ALL matching posts"""
 
         listings = []
-        query_id = query['_id']
 
         # Iterate through keywords and search CL
         for keyword in query['keywords']:
             # Searches CL with the parameters
             generator = CraigslistForSale(
                 site=site,
+                category=query['category'],
                 filters={
                     'query': keyword,
                     'max_price': int(query['max_price']),
