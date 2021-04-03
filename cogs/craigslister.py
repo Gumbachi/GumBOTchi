@@ -75,7 +75,10 @@ class Craigslister(commands.Cog):
         try:
         
             query = query.split(']')
-            keywords = query[0][1:].split(", ")
+            try:
+                keywords = query[0][1:].split(", ")
+            except:
+                keywords = query[0][1:]
             if len(keywords) > max_keywords:
                 return await ctx.channel.send(f"Queries can only have up to {max_keywords} key words.")
             rest = query[1][1:].split(" ")
