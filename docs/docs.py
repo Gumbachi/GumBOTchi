@@ -18,7 +18,7 @@ def help_book(p):
             "title": "Craigslist Me Daddy",
             "description": "",
             "Setup": [
-                f"Set your site and zipcode using `{p}setzip` and `{p}setsite`",
+                f"Set your site and zipcode using `{p}setzip <zip>` and `{p}setsite <site>`",
                 "Find your site [here](https://www.craigslist.org/about/sites) and copy the tag in the URL",
                 "For Washington DC the URL is `https://washingtondc.craigslist.org/` so the site would be `washingtondc`"
             ],
