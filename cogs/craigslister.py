@@ -156,7 +156,8 @@ class Craigslister(commands.Cog):
         for i, query in enumerate(queries, 1):
             query_embed.add_field(
                 name=f"{i}. {', '.join(query['keywords'])}",
-                value=f"Max Price: ${query['max_price']}\nPing: {bool(query['ping'])}"
+                value=f"Max Price: ${query['max_price']}\nPing: {bool(query['ping'])}",
+                inline=False
             )
 
         # Send response
