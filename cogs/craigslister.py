@@ -30,17 +30,6 @@ class Craigslister(commands.Cog):
             db.users.insert_one(data)
         return True
 
-    @commands.command(name="clhelp", aliases=["clhalp"])
-    async def cl_halp(self, ctx):
-        """Help command. Shows users how to use the CL functions"""
-        prefix = get_prefix(self.bot, ctx.message)
-        body = f"""\n\nFirst you're going to want to set your zip and site using the setup commands.\n\n1.    {prefix}setzip 12345\n\n2. {prefix}setsite nameofsite. \n\nTo get the right site, visit https://www.craigslist.org/about/sites, click on the best location, and copy the site in the URL for example for Washington DC the URL is https://**washingtondc**.craigslist.org/ so the site would be washingtondc, for NYC it would be newyork.\n\nAfter you set your zip and site, you're ready to add queries.\n\nTo add a query simply use the {prefix}clmedaddy command with the proper syntax. Eg. {prefix}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme.\n\nThe order of the arguments is as follows: keywords in brackets and separated by a comma and a space like this: [Apple TV, Apple, TV], then the max price you're willing to pay, no currency symbols. Followed by the distance you're willing to travel. Whether the craigslist post should include pictures of the item, and whether you want to be pinged every time one or more new items match your parameters. In the example, I am looking for listings that match Apple TV, Apple, or TV, are no more than $200 are less than 30 miles away they do not need to include a picture, but may, and I want to be pinged.\n\nTo see your queries use {prefix}clinfo, and to remove a query use {prefix}unclmedaddy and the number of the query (this can be seen by using {prefix}clinfo) eg. {prefix}unclmedaddy 2.\n\nThe bot will automatically check for new listings every 5 minutes and you may not have more than 3 queries active at a time."""
-        embed = discord.Embed(title=f"Welcome to Craigslister!",
-                              description=body,
-                              color=discord.Color.blue())
-        embed.set_footer(text="Godspeed")
-        return await ctx.channel.send(embed=embed)
-
     # Setup Commands
     @commands.command(name="setzip", aliases=["zip", "zipcode", "setzipcode"])
     async def set_user_zip(self, ctx, zipcode: int):

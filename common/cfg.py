@@ -8,12 +8,9 @@ extensions = [
     "cogs.admin",
     "cogs.errors",
     "cogs.groups",
+    "cogs.catalog",
     "cogs.craigslister"
 ]
-
-emojis = {
-    "weirdchamp": 746570904032772238
-}
 
 
 def get_prefix(bot, message):
@@ -27,10 +24,25 @@ bot = commands.Bot(
     intents=discord.Intents.all()
 )  # creates bot object
 
+# GLOBAL DATA
+
 admin_ids = {
     128595549975871488,  # Gumbachi#0506
     244574519027564544  # SoloMan98#3426
 }
+
+emojis = {
+    "weirdchamp": 746570904032772238,
+    "checkmark": "✅",
+    "crossmark": "❌",
+    "left_arrow": "⬅️",
+    "right_arrow": "➡️",
+    "home_arrow": "↩️",
+    "double_down": "⏬",
+    "updown_arrow": "↕️"
+}
+
+catalogs = {}
 
 supermuted_users = set()
 

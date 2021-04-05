@@ -5,6 +5,8 @@ import common.cfg as cfg
 import common.database as db
 from common.cfg import bot
 from discord.ext import commands
+from .catalog import Catalog
+import docs.docs as docs
 
 
 class GeneralCommands(commands.Cog):
@@ -15,10 +17,11 @@ class GeneralCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="help")
+    @commands.command(name="help", aliases=["halp"])
     async def help(self, ctx):
         """The standard help command."""
-        await ctx.send("Ask salmon or something")
+        catalog = Catalog(docs.help_book(ctx.prefix))
+        await catalog.send(ctx.channel)
 
     @commands.command(name='howdy')
     async def howdy(self, ctx):
