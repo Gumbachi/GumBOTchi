@@ -7,7 +7,7 @@ import discord
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
 from discord.ext import commands
-from discord.ext.command import CommandError
+from discord.ext.commands import CommandError
 
 
 class Craigslister(commands.Cog):
