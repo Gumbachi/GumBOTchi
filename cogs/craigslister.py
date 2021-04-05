@@ -76,7 +76,7 @@ class Craigslister(commands.Cog):
             distance = rest[1]
         except:
             raise commands.CommandError(
-                f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}clhelp for syntax")
+                f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}help for syntax")
 
         # Checks if has_image and pingme were provided as args and sets them accordingly
         try:
