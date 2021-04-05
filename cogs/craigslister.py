@@ -118,7 +118,7 @@ class Craigslister(commands.Cog):
         )
         return await ctx.channel.send("SUCCessfully added.")
 
-    @commands.command(name='uncraigslistme', aliases=["unclemedaddy", "deletequery", "delq"])
+    @commands.command(name='uncraigslistme', aliases=["unclmedaddy", "deletequery", "delq"])
     async def uncraigslist_me_daddy(self, ctx, number: int):
         """Deletes specified craigslist query"""
 
