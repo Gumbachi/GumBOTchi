@@ -7,13 +7,14 @@ import discord
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
 from discord.ext import commands
+from discord.ext.command import CommandError
 
 
 class Craigslister(commands.Cog):
     """Hold and executes all craigslisting commands."""
 
     def __init__(self, bot):
-        self.bot = bot 
+        self.bot = bot
 
         # Internal counter for generating IDs
         self.count = 1
@@ -33,10 +34,10 @@ class Craigslister(commands.Cog):
     async def cl_halp(self, ctx):
         """Help command. Shows users how to use the CL functions"""
         prefix = get_prefix(self.bot, ctx.message)
-        body = f"""\n\nFirst you're going to want to set your zip and site using the setup commands.\n\n1.    {prefix}setzip 12345\n\n2. {prefix}setsite nameofsite. \n\nTo get the right site, visit https://www.craigslist.org/about/sites, click on the best location, and copy the site in the URL for example for Washington DC the URL is https://**washingtondc**.craigslist.org/ so the site would be washingtondc, for NYC it would be newyork.\n\nAfter you set your zip and site, you're ready to add queries.\n\nTo add a query simply use the {prefix}clmedaddy command with the proper syntax. Eg. {prefix}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme.\n\nThe order of the arguments is as follows: keywords in brackets and separated by a comma and a space like this: [Apple TV, Apple, TV], then the max price you're willing to pay, no currency symbols. Followed by the distance you're willing to travel. Whether the craigslist post should include pictures of the item, and whether you want to be pinged every time one or more new items match your parameters. In the example, I am looking for listings that match Apple TV, Apple, or TV, are no more than $200 are less than 30 miles away they do not need to include a picture, but may, and I want to be pinged.\n\nTo see your queries use {prefix}clinfo, and to remove a query use {prefix}unclmedaddy and the number of the query (this can be seen by using {prefix}clinfo) eg. {prefix}unclmedaddy 2.\n\nThe bot will automatically check for new listings every 5 minutes and you may not have more than 3 queries active at a time.""" 
-        embed=discord.Embed(title=f"Welcome to Craigslister!",
-                            description=body,
-                            color=discord.Color.blue())
+        body = f"""\n\nFirst you're going to want to set your zip and site using the setup commands.\n\n1.    {prefix}setzip 12345\n\n2. {prefix}setsite nameofsite. \n\nTo get the right site, visit https://www.craigslist.org/about/sites, click on the best location, and copy the site in the URL for example for Washington DC the URL is https://**washingtondc**.craigslist.org/ so the site would be washingtondc, for NYC it would be newyork.\n\nAfter you set your zip and site, you're ready to add queries.\n\nTo add a query simply use the {prefix}clmedaddy command with the proper syntax. Eg. {prefix}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme.\n\nThe order of the arguments is as follows: keywords in brackets and separated by a comma and a space like this: [Apple TV, Apple, TV], then the max price you're willing to pay, no currency symbols. Followed by the distance you're willing to travel. Whether the craigslist post should include pictures of the item, and whether you want to be pinged every time one or more new items match your parameters. In the example, I am looking for listings that match Apple TV, Apple, or TV, are no more than $200 are less than 30 miles away they do not need to include a picture, but may, and I want to be pinged.\n\nTo see your queries use {prefix}clinfo, and to remove a query use {prefix}unclmedaddy and the number of the query (this can be seen by using {prefix}clinfo) eg. {prefix}unclmedaddy 2.\n\nThe bot will automatically check for new listings every 5 minutes and you may not have more than 3 queries active at a time."""
+        embed = discord.Embed(title=f"Welcome to Craigslister!",
+                              description=body,
+                              color=discord.Color.blue())
         embed.set_footer(text="Godspeed")
         return await ctx.channel.send(embed=embed)
 
@@ -69,11 +70,11 @@ class Craigslister(commands.Cog):
         if len(queries) >= max_queries:
             return await ctx.channel.send("You can only have 3 active queries at one time.")
 
-        # Processes the input into usable variables, max keywords 
+        # Processes the input into usable variables, max keywords
         # modifies the maximum number of keywords allowed ber query
         max_keywords = 5
         try:
-        
+
             query = query.split(']')
             try:
                 keywords = query[0][1:].split(", ")
@@ -85,7 +86,8 @@ class Craigslister(commands.Cog):
             max_price = rest[0]
             distance = rest[1]
         except:
-            raise commands.CommandError(f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}clhelp for syntax")
+            raise commands.CommandError(
+                f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}clhelp for syntax")
 
         # Checks if has_image and pingme were provided as args and sets them accordingly
         try:
@@ -142,22 +144,25 @@ class Craigslister(commands.Cog):
             return await ctx.channel.send("There was a problem.")
 
     @commands.command(name='clinfo')
-    async def my_queries(self, ctx):
-        """Displays active queries for user"""
-
+    async def show_queries(self, ctx):
+        """Displays active queries for user."""
         queries = db.userget(ctx.author.id, 'clqueries')
-        if not queries:
-            return await ctx.channel.send("You don't have any queries")
-        
-        # Formats and sends the active queries as an embed
-        current_queries = ""
-        for i, query in enumerate(queries):
-            current_queries = f"""{current_queries}{i+1}. "{', '.join(query['keywords'])}" | Max Price: ${query['max_price']} | Ping: {bool(query['ping'])}\n"""
+        query_embed = discord.Embed(
+            title=f"Craigslistings for {ctx.author.name}",
+            color=discord.Color.blue()
+        )
 
-        embed=discord.Embed(title=f"Craigslisting for {ctx.author.nick}",
-                            description=f"{ctx.author.mention}\n\n{current_queries}",
-                            color=discord.Color.blue())
-        return await ctx.channel.send(embed=embed)
+        # populate the embed with data
+        for i, query in enumerate(queries, 1):
+            query_embed.add_field(
+                name=f"{i}. {', '.join(query['keywords'])}",
+                value=f"Max Price: ${query['max_price']}\nPing: {bool(query['ping'])}"
+            )
+
+        # Send response
+        if not queries:
+            raise commands.CommandError("You don't have any queries")
+        await ctx.send(embed=query_embed)
 
     async def loop(self):
         """Searches CL every X amount of minutes (determined by check_time) for every query that every user has"""
@@ -175,7 +180,7 @@ class Craigslister(commands.Cog):
                 # If the user has not set their site or zip, skip them
                 if not site or not zip_code:
                     continue
-                
+
                 # Iterate through the users queries
                 queries = user['clqueries']
                 for query in queries:
@@ -183,7 +188,8 @@ class Craigslister(commands.Cog):
 
                     # Search, then clean, then update
                     listings = self.search(site, zip_code, query)
-                    listings, updated_list = self.clean_list(query['sent_listings'], listings)
+                    listings, updated_list = self.clean_list(
+                        query['sent_listings'], listings)
                     self.update_sent_listings(_id, query['_id'], updated_list)
 
                     # If there are no new listings skip this query otherwise ping and send them
@@ -194,14 +200,14 @@ class Craigslister(commands.Cog):
                     if query['ping']:
                         user = self.bot.get_user(query['ping'])
                         await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
-                    
+
                     # Send it
                     for listing in listings:
                         await self.send_listing(listing, channel)
 
             print("Done searching")
             # Sleeps for 60 seconds * the specified number of minutes
-            await asyncio.sleep(60*check_time)
+            await asyncio.sleep(check_time * 60)
 
     def search(self, site, zip_code, query):
         """Uses the query to search CL. 
@@ -236,7 +242,7 @@ class Craigslister(commands.Cog):
                     listings.append(listing)
 
         return listings
-    
+
     def clean_list(self, sent_listings, new_listings):
         """Verifies that the listings provided have not been sent already. 
         Returns list of postings and an updated list of ids that have already been processed"""
@@ -247,8 +253,8 @@ class Craigslister(commands.Cog):
         clean_listings = []
         updated_list = sent_listings
 
-        # Check that the listings have not been sent already, 
-        # if they haven't, add them to clean listings and add 
+        # Check that the listings have not been sent already,
+        # if they haven't, add them to clean listings and add
         # the id to the list of IDs to be updated later
         for listing in new_listings:
             if listing['id'] not in sent_listings:
@@ -260,13 +266,13 @@ class Craigslister(commands.Cog):
     def update_sent_listings(self, user_id, query_id, updated_list):
         """Updates the sent listings for a query"""
         db.users.update_one(
-                    {"_id": user_id, "clqueries._id": query_id},
-                    {"$set": {"clqueries.$.sent_listings": updated_list}}
-                )
+            {"_id": user_id, "clqueries._id": query_id},
+            {"$set": {"clqueries.$.sent_listings": updated_list}}
+        )
 
     async def send_listing(self, listing, channel):
         """Takes a listing object and sends it to the specified channel"""
-        
+
         display_limit = 350
 
         # Check if the listing has a body, no body usually means the post no longer exists
@@ -278,11 +284,11 @@ class Craigslister(commands.Cog):
                 body = '\n'.join(body)
             except:
                 body = listing['body']
-            
+
             # If the body is longer than the display limit, only show the max amount of characters
             if len(body) > display_limit:
                 body = f"{body[0:display_limit]}..."
-            
+
             # Green because the post probably still exists
             color = discord.Color.green()
         else:
@@ -291,11 +297,11 @@ class Craigslister(commands.Cog):
             color = discord.Color.red()
 
         # Formats and sends the embed
-        embed=discord.Embed(title=f"{listing['price']}, {listing['name']}",
-                            description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
-                            color=color)
+        embed = discord.Embed(title=f"{listing['price']}, {listing['name']}",
+                              description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
+                              color=color)
         return await channel.send(embed=embed)
-    
+
     def id_maker(self):
         """Generates an ID based on the date and an internal counter.
         Heroku's etheral filesystem make it so there could be duplicate 
@@ -309,15 +315,16 @@ class Craigslister(commands.Cog):
             query_id = int(f"{date.day}{date.month}{date.year}{self.count}")
             self.count += 1
 
-            # Tries to find a matching ID in the DB, 
+            # Tries to find a matching ID in the DB,
             # if it finds a match there won't be a key error,
             # if there's a match the key error will break the loop
             try:
                 db.users.find_one({"clqueries._id": query_id})['clqueries']
             except:
                 break
-        
+
         return query_id
+
 
 def setup(bot):
     bot.add_cog(Craigslister(bot))
