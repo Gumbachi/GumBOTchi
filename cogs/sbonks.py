@@ -46,14 +46,22 @@ class SbonkCommands(commands.Cog):
         quote = symbol_data["quote"]
 
         # pull average price for each minute
-        average_list = [x["average"] if x["average"] else 0
-                        for x in symbol_data["intraday-prices"]]
-        average_list = list(filter((0).__ne__, average_list))  # remove 0s
-        average_list += [np.nan] * (390 - len(average_list))  # extend list
+        prices = [x["average"] if x["average"] else 0
+                  for x in symbol_data["intraday-prices"]]
+
+        def find_last(i):
+            for i in range(i, 0, -1):
+                if prices[i]:
+                    return prices[i]
+            return prices[i] if prices[i] else quote["previousClose"]
+        prices = [find_last(i) for i in range(len(prices))]
+
+        average_list = prices + [np.nan] * (390 - len(prices))  # extend list
 
         color = "lime" if quote["latestPrice"] >= quote["previousClose"] else "red"
 
         # plot graph
+        plt.ioff()  # ignore exception
         plt.clf()
         plt.style.use('dark_background')
         plt.xlim((0, 390))
