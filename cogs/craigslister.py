@@ -4,6 +4,7 @@ import re
 
 import common.database as db
 import discord
+import common.cfg as cfg
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
 from discord.ext import commands
@@ -18,6 +19,7 @@ class Craigslister(commands.Cog):
 
         # Internal counter for generating IDs
         self.count = 1
+        self.max_queries = 3
 
     def cog_check(self, ctx):
         if not db.users.find_one({"_id": ctx.author.id}):
@@ -52,12 +54,10 @@ class Craigslister(commands.Cog):
     @commands.command(name='craigslistme', aliases=["clme", "addquery", "addq", "clmedaddy"])
     async def craigslist_me_daddy(self, ctx, *, query):
         """It craigslists. Input syntax: !clme [Apple TV, Apple, TV] 200 30 yeet pingme"""
-
-        # Check if the user has more than the max number of queries allowed
-        max_queries = 3
         queries = db.userget(ctx.author.id, 'clqueries')
-        if len(queries) >= max_queries:
-            return await ctx.channel.send("You can only have 3 active queries at one time.")
+        if len(queries) >= cfg.max_queries:
+            raise CommandError(
+                f"You can only have {cfg.max_queries} queries at once.")
 
         # Processes the input into usable variables, max keywords
         # modifies the maximum number of keywords allowed ber query
@@ -118,19 +118,18 @@ class Craigslister(commands.Cog):
         )
         return await ctx.channel.send("SUCCessfully added.")
 
-    @commands.command(name='uncraigslistme', aliases=["unclmedaddy", "deletequery", "delq", "unclme"])
+    @commands.command(name='uncraigslistme', aliases=["unclmedaddy", "delq", "unclme"])
     async def uncraigslist_me_daddy(self, ctx, number: int):
         """Deletes specified craigslist query"""
-
-        try:
-            queries = db.userget(ctx.author.id, 'clqueries')
-            db.users.update_one(
-                {"_id": ctx.author.id},
-                {"$pull": {"clqueries": queries[number-1]}}
-            )
-            return await ctx.channel.send("Query removed.")
-        except:
-            return await ctx.channel.send("There was a problem.")
+        db.users.update_one(
+            {"_id": ctx.author.id},
+            {"$unset": f"clqueries.{number-1}"}
+        )
+        db.users.update_one(
+            {"_id": ctx.author.id},
+            {"$pull": {"clqueries": None}}
+        )
+        return await ctx.channel.send("Query removed.")
 
     @commands.command(name='clinfo')
     async def show_queries(self, ctx):

@@ -43,10 +43,9 @@ emojis = {
 }
 
 catalogs = {}
-
 supermuted_users = set()
-
 watchlimit = 50
+max_queries = 3
 
 poggers_activation_phrases = {
     "pog", "poggers", "poggies",
