@@ -7,7 +7,7 @@ import discord
 import common.cfg as cfg
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
 
 
@@ -241,6 +241,8 @@ class Craigslister(commands.Cog):
         # if they haven't, add them to clean listings and add
         # the id to the list of IDs to be updated later
         for listing in new_listings:
+            if not listing:
+                continue
             if listing['id'] not in sent_listings:
                 clean_listings.append(listing)
                 updated_list.append(listing['id'])
