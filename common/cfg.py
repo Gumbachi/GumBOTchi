@@ -1,6 +1,8 @@
+import itertools
 import discord
 from discord.ext import commands
 import common.database as db
+from discord import ActivityType
 
 extensions = [
     "cogs.general",
@@ -8,12 +10,9 @@ extensions = [
     "cogs.admin",
     "cogs.errors",
     "cogs.groups",
+    "cogs.catalog",
     "cogs.craigslister"
 ]
-
-emojis = {
-    "weirdchamp": 746570904032772238
-}
 
 
 def get_prefix(bot, message):
@@ -27,14 +26,45 @@ bot = commands.Bot(
     intents=discord.Intents.all()
 )  # creates bot object
 
+# GLOBAL DATA
+
 admin_ids = {
     128595549975871488,  # Gumbachi#0506
     244574519027564544  # SoloMan98#3426
 }
 
-supermuted_users = set()
+emojis = {
+    "weirdchamp": 746570904032772238,
+    "checkmark": "✅",
+    "crossmark": "❌",
+    "left_arrow": "⬅️",
+    "right_arrow": "➡️",
+    "home_arrow": "↩️",
+    "double_down": "⏬",
+    "updown_arrow": "↕️"
+}
 
+catalogs = {}
+supermuted_users = set()
 watchlimit = 50
+max_queries = 3
+
+
+# Activities/status include (watching, playing, listening)
+activities = itertools.cycle([
+    discord.Activity(name="with your feelings", type=ActivityType.playing),
+    discord.Activity(name="your cries for help", type=ActivityType.listening),
+    discord.Activity(name="Salm's color change",
+                     type=ActivityType.watching),
+    discord.Activity(name="18 poggers gifs at once",
+                     type=ActivityType.watching),
+    discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
+    discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
+    discord.Activity(name="Derk struggle with craigslisting",
+                     type=ActivityType.watching),
+    discord.Activity(name="Salmon kill the economy",
+                     type=ActivityType.watching)
+])
 
 poggers_activation_phrases = {
     "pog", "poggers", "poggies",

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, UserInputError
-from common.cfg import bot, admin_ids, supermuted_users
+from common.cfg import admin_ids, supermuted_users, activities
 import datetime
 
 
@@ -58,11 +58,19 @@ class AdminCommands(commands.Cog):
         supermuted_users.add(member.id)
         await ctx.send(embed=discord.Embed(title=f"Supermuted {member.name}"))
 
+    @commands.command(name="cycle")
+    async def cycle_presence(self, ctx):
+        """Force changes the bots status"""
+        new_activity = next(activities)
+        print(f"Cycling Presence to {new_activity}")
+        if ctx.author.id in admin_ids:
+            await self.bot.change_presence(activity=new_activity)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Listen to messages."""
         # ignore the bot user
-        if message.author.id == bot.user.id:
+        if message.author.id == self.bot.user.id:
             return
 
         if message.author.id in self.muted:
