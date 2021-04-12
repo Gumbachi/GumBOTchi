@@ -61,8 +61,8 @@ class AdminCommands(commands.Cog):
     @commands.command(name="cycle")
     async def cycle_presence(self, ctx):
         """Force changes the bots status"""
-        # Normies Cant mute admins. But i can
-        if ctx.author.id not in admin_ids:
+        print("Cycling Presence")
+        if ctx.author.id in admin_ids:
             await bot.change_presence(activity=next(activities))
 
     @commands.Cog.listener()
