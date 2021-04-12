@@ -13,9 +13,6 @@ async def on_ready():
     activity = discord.Game(name=f"with your feelings")
     await bot.change_presence(activity=activity)
     print("Ready to go")
-    cler = Craigslister(bot)
-    await cler.loop()
-
 
 @bot.event
 async def on_message(message):
