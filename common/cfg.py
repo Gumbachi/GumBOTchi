@@ -50,8 +50,7 @@ watchlimit = 50
 max_queries = 3
 
 
-# activity = discord.Game(name=f"with your feelings")
-# await bot.change_presence(activity=activity)
+# Activities/status include (watching, playing, listening)
 activities = itertools.cycle([
     discord.Activity(name="with your feelings", type=ActivityType.playing),
     discord.Activity(name="your cries for help", type=ActivityType.listening),
@@ -59,7 +58,7 @@ activities = itertools.cycle([
                      type=ActivityType.watching),
     discord.Activity(name="18 poggers gifs at once",
                      type=ActivityType.watching),
-    discord.Activity(name="XPEV's Downfall", type=ActivityType.streaming),
+    discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
     discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
     discord.Activity(name="Derk struggle with craigslisting",
                      type=ActivityType.watching),
