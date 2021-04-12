@@ -54,7 +54,7 @@ class GeneralCommands(commands.Cog):
             if guh:
                 await message.channel.send(str(guh))
 
-    @tasks.loop(seconds=15)
+    @tasks.loop(seconds=300)
     async def activity_switcher(self):
         await self.bot.change_presence(activity=next(cfg.activities))
 
