@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, UserInputError
-from common.cfg import bot, admin_ids, supermuted_users
+from common.cfg import bot, admin_ids, supermuted_users, activities
 import datetime
 
 
@@ -57,6 +57,13 @@ class AdminCommands(commands.Cog):
         # supermute users
         supermuted_users.add(member.id)
         await ctx.send(embed=discord.Embed(title=f"Supermuted {member.name}"))
+
+    @commands.command(name="cycle")
+    async def cycle_presence(self, ctx):
+        """Force changes the bots status"""
+        # Normies Cant mute admins. But i can
+        if ctx.author.id not in admin_ids:
+            await bot.change_presence(activity=next(activities))
 
     @commands.Cog.listener()
     async def on_message(self, message):

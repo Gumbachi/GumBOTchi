@@ -4,7 +4,7 @@ import discord
 import common.cfg as cfg
 import common.database as db
 from common.cfg import bot
-from discord.ext import commands
+from discord.ext import commands, tasks
 from .catalog import Catalog
 import docs.docs as docs
 
@@ -55,34 +55,9 @@ class GeneralCommands(commands.Cog):
             if guh:
                 await message.channel.send(str(guh))
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        """🚨Gotta track when salmon plays Genshin instead of deleting it.🚨"""
-        # only salm and activity tracked
-        if before.id != 244574519027564544:
-            return
-
-        genshin_app_id = 762434991303950386
-
-        # isolate new app id
-        new_activities = set(after.activities) - set(before.activities)
-
-        if not new_activities:
-            return
-
-        try:
-            # Check if genshin impact
-            if new_activities[0].application_id == genshin_app_id:
-                channel = before.guild.get_channel(672919881208954932)
-                if not channel:
-                    return
-                embed = discord.Embed(
-                    title=f"🚨 Salmon started playing Genshin Impact 🚨",
-                    color=discord.Color.blurple()
-                )
-                return await channel.send(embed=embed)
-        except:
-            pass
+    @tasks.loop(seconds=300)
+    async def activity_switcher(self):
+        await bot.change_presence(activity=next(cfg.activities))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
