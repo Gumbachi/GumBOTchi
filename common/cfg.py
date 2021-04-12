@@ -53,14 +53,17 @@ max_queries = 3
 # activity = discord.Game(name=f"with your feelings")
 # await bot.change_presence(activity=activity)
 activities = itertools.cycle([
-    discord.Game(name="with your feelings"),
+    discord.Activity(name="with your feelings", type=ActivityType.playing),
     discord.Activity(name="your cries for help", type=ActivityType.listening),
-    discord.CustomActivity("Changing Salmon's color"),
+    discord.Activity(name="Salm's color change",
+                     type=ActivityType.watching),
     discord.Activity(name="18 poggers gifs at once",
                      type=ActivityType.watching),
-    discord.Activity(name="XPEV crash and burn 😎", type=ActivityType.watching),
+    discord.Activity(name="XPEV's Downfall", type=ActivityType.streaming),
     discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
     discord.Activity(name="Derk struggle with craigslisting",
+                     type=ActivityType.watching),
+    discord.Activity(name="Salmon kill the economy",
                      type=ActivityType.watching)
 ])
 

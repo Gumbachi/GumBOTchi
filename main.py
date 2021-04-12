@@ -5,13 +5,13 @@ import discord
 
 from cogs.craigslister import Craigslister
 from common.cfg import bot, extensions, get_prefix, supermuted_users
+import common.cfg as cfg
 
 
 @bot.event
 async def on_ready():
     """Change presence and report ready."""
-    activity = discord.Game(name=f"with your feelings")
-    await bot.change_presence(activity=activity)
+    await bot.change_presence(activity=next(cfg.activities))
     print("Ready to go")
     cler = Craigslister(bot)
     await cler.loop()

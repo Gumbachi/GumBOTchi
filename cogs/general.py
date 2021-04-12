@@ -3,7 +3,6 @@ import random
 import discord
 import common.cfg as cfg
 import common.database as db
-from common.cfg import bot
 from discord.ext import commands, tasks
 from .catalog import Catalog
 import docs.docs as docs
@@ -42,7 +41,7 @@ class GeneralCommands(commands.Cog):
     async def on_message(self, message):
         """Listen to messages."""
         # ignore the bot user
-        if message.author.id == bot.user.id:
+        if message.author.id == self.bot.user.id:
             return
 
         # poggers listener
@@ -51,13 +50,13 @@ class GeneralCommands(commands.Cog):
 
         # guh listener
         if message.content.lower() == "guh":
-            guh = bot.get_emoji(755546594446671963)
+            guh = self.bot.get_emoji(755546594446671963)
             if guh:
                 await message.channel.send(str(guh))
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=15)
     async def activity_switcher(self):
-        await bot.change_presence(activity=next(cfg.activities))
+        await self.bot.change_presence(activity=next(cfg.activities))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
