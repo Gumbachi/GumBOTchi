@@ -69,7 +69,7 @@ activities = itertools.cycle([
     discord.Activity(name="hard to get", type=ActivityType.playing),
     discord.Activity(name="my weight", type=ActivityType.watching),
     discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
-    discord.Activity(name="for LGMA Esports", type=ActivityType.competing)
+    discord.Activity(name="for LGMA Esports", type=ActivityType.playing)
 ])
 
 poggers_activation_phrases = {
