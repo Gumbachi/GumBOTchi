@@ -64,7 +64,7 @@ activities = itertools.cycle([
                      type=ActivityType.watching),
     discord.Activity(name="Salmon kill the economy",
                      type=ActivityType.watching), 
-    discord.Activity(name="to Roses 50 times in one day",
+    discord.Activity(name="Roses 50 times in one day",
                      type=ActivityType.listening), 
     discord.Activity(name="hard to get", type=ActivityType.playing),
     discord.Activity(name="my weight", type=ActivityType.watching),
