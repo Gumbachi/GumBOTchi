@@ -7,7 +7,7 @@ import discord
 import common.cfg as cfg
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
 
 
@@ -63,7 +63,6 @@ class Craigslister(commands.Cog):
         # modifies the maximum number of keywords allowed ber query
         max_keywords = 5
         try:
-
             query = query.split(']')
             try:
                 keywords = query[0][1:].split(", ")
@@ -153,50 +152,46 @@ class Craigslister(commands.Cog):
             raise commands.CommandError("You don't have any queries")
         await ctx.send(embed=query_embed)
 
+    @tasks.loop(seconds=300)
     async def loop(self):
         """Searches CL every X amount of minutes (determined by check_time) for every query that every user has"""
 
-        check_time = 5
-        while True:
-            users = db.users.find({})
+        users = db.users.find({})
 
-            # Iterate through every user with queries
-            for user in users:
-                _id = user['_id']
-                zip_code = user['zipcode']
-                site = user['site']
+        # Iterate through every user with queries
+        for user in users:
+            _id = user['_id']
+            zip_code = user['zipcode']
+            site = user['site']
 
-                # If the user has not set their site or zip, skip them
-                if not site or not zip_code:
+            # If the user has not set their site or zip, skip them
+            if not site or not zip_code:
+                continue
+            
+            # Iterate through the users queries
+            queries = user['clqueries']
+            for query in queries:
+                channel = self.bot.get_channel(query['channel'])
+
+                # Search, then clean, then update
+                listings = self.search(site, zip_code, query)
+                listings, updated_list = self.clean_list(query['sent_listings'], listings)
+                self.update_sent_listings(_id, query['_id'], updated_list)
+
+                # If there are no new listings skip this query otherwise ping and send them
+                if not listings:
                     continue
 
-                # Iterate through the users queries
-                queries = user['clqueries']
-                for query in queries:
-                    channel = self.bot.get_channel(query['channel'])
-
-                    # Search, then clean, then update
-                    listings = self.search(site, zip_code, query)
-                    listings, updated_list = self.clean_list(
-                        query['sent_listings'], listings)
-                    self.update_sent_listings(_id, query['_id'], updated_list)
-
-                    # If there are no new listings skip this query otherwise ping and send them
-                    if not listings:
-                        continue
-
-                    # Ping if user requested ping
-                    if query['ping']:
-                        user = self.bot.get_user(query['ping'])
-                        await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
-
-                    # Send it
-                    for listing in listings:
-                        await self.send_listing(listing, channel)
+                # Ping if user requested ping
+                if query['ping']:
+                    user = self.bot.get_user(query['ping'])
+                    await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
+                
+                # Send it
+                for listing in listings:
+                    await self.send_listing(listing, channel)
 
             print("Done searching")
-            # Sleeps for 60 seconds * the specified number of minutes
-            await asyncio.sleep(check_time * 60)
 
     def search(self, site, zip_code, query):
         """Uses the query to search CL. 
@@ -236,7 +231,7 @@ class Craigslister(commands.Cog):
         """Verifies that the listings provided have not been sent already. 
         Returns list of postings and an updated list of ids that have already been processed"""
 
-        if not new_listings:
+        if not any(new_listings):
             return (None, None)
 
         clean_listings = []
@@ -246,6 +241,8 @@ class Craigslister(commands.Cog):
         # if they haven't, add them to clean listings and add
         # the id to the list of IDs to be updated later
         for listing in new_listings:
+            if not listing:
+                continue
             if listing['id'] not in sent_listings:
                 clean_listings.append(listing)
                 updated_list.append(listing['id'])

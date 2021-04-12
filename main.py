@@ -13,9 +13,6 @@ async def on_ready():
     """Change presence and report ready."""
     await bot.change_presence(activity=next(cfg.activities))
     print("Ready to go")
-    cler = Craigslister(bot)
-    await cler.loop()
-
 
 @bot.event
 async def on_message(message):
