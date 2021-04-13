@@ -4,6 +4,7 @@ import re
 
 import common.database as db
 import discord
+import pymongo
 import common.cfg as cfg
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
@@ -16,10 +17,10 @@ class Craigslister(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.loop.start()
 
         # Internal counter for generating IDs
         self.count = 1
-        self.max_queries = 3
 
     def cog_check(self, ctx):
         if not db.users.find_one({"_id": ctx.author.id}):
@@ -120,13 +121,10 @@ class Craigslister(commands.Cog):
     @commands.command(name='uncraigslistme', aliases=["unclmedaddy", "delq", "unclme"])
     async def uncraigslist_me_daddy(self, ctx, number: int):
         """Deletes specified craigslist query"""
+        queries = db.userget(ctx.author.id, 'clqueries')
         db.users.update_one(
             {"_id": ctx.author.id},
-            {"$unset": f"clqueries.{number-1}"}
-        )
-        db.users.update_one(
-            {"_id": ctx.author.id},
-            {"$pull": {"clqueries": None}}
+            {"$pull": {"clqueries": queries[number-1]}}
         )
         return await ctx.channel.send("Query removed.")
 
@@ -175,6 +173,7 @@ class Craigslister(commands.Cog):
 
                 # Search, then clean, then update
                 listings = self.search(site, zip_code, query)
+                print(query['sent_listings'])
                 listings, updated_list = self.clean_list(query['sent_listings'], listings)
                 self.update_sent_listings(_id, query['_id'], updated_list)
 
@@ -241,8 +240,6 @@ class Craigslister(commands.Cog):
         # if they haven't, add them to clean listings and add
         # the id to the list of IDs to be updated later
         for listing in new_listings:
-            if not listing:
-                continue
             if listing['id'] not in sent_listings:
                 clean_listings.append(listing)
                 updated_list.append(listing['id'])
@@ -257,6 +254,7 @@ class Craigslister(commands.Cog):
         )
 
     async def send_listing(self, listing, channel):
+        print(channel)
         """Takes a listing object and sends it to the specified channel"""
 
         display_limit = 350
