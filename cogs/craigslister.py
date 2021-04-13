@@ -173,7 +173,6 @@ class Craigslister(commands.Cog):
 
                 # Search, then clean, then update
                 listings = self.search(site, zip_code, query)
-                print(query['sent_listings'])
                 listings, updated_list = self.clean_list(query['sent_listings'], listings)
                 self.update_sent_listings(_id, query['_id'], updated_list)
 
@@ -254,7 +253,6 @@ class Craigslister(commands.Cog):
         )
 
     async def send_listing(self, listing, channel):
-        print(channel)
         """Takes a listing object and sends it to the specified channel"""
 
         display_limit = 350
