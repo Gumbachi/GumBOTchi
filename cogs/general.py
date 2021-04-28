@@ -15,6 +15,7 @@ class GeneralCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.activity_switcher.start()
 
     @commands.command(name="help", aliases=["halp"])
     async def help(self, ctx):

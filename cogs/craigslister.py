@@ -122,10 +122,13 @@ class Craigslister(commands.Cog):
     async def uncraigslist_me_daddy(self, ctx, number: int):
         """Deletes specified craigslist query"""
         queries = db.userget(ctx.author.id, 'clqueries')
-        db.users.update_one(
-            {"_id": ctx.author.id},
-            {"$pull": {"clqueries": queries[number-1]}}
-        )
+        try:
+            db.users.update_one(
+                {"_id": ctx.author.id},
+                {"$pull": {"clqueries": queries[number-1]}}
+            )
+        except IndexError:
+            raise CommandError("You fucked it")
         return await ctx.channel.send("Query removed.")
 
     @commands.command(name='clinfo')
@@ -153,7 +156,7 @@ class Craigslister(commands.Cog):
     @tasks.loop(seconds=300)
     async def loop(self):
         """Searches CL every X amount of minutes (determined by check_time) for every query that every user has"""
-
+        print("looping")
         users = db.users.find({})
 
         # Iterate through every user with queries
@@ -174,7 +177,6 @@ class Craigslister(commands.Cog):
                 # Search, then clean, then update
                 listings = self.search(site, zip_code, query)
                 listings, updated_list = self.clean_list(query['sent_listings'], listings)
-                self.update_sent_listings(_id, query['_id'], updated_list)
 
                 # If there are no new listings skip this query otherwise ping and send them
                 if not listings:
@@ -188,8 +190,13 @@ class Craigslister(commands.Cog):
                 # Send it
                 for listing in listings:
                     await self.send_listing(listing, channel)
+                    self.update_sent_listings(_id, query['_id'], updated_list)
 
-            print("Done searching")
+        print("Loop complete")
+
+    @loop.before_loop
+    async def before_loop(self):
+        await self.bot.wait_until_ready()
 
     def search(self, site, zip_code, query):
         """Uses the query to search CL. 
