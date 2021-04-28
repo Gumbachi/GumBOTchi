@@ -63,6 +63,10 @@ class GeneralCommands(commands.Cog):
     async def activity_switcher(self):
         await self.bot.change_presence(activity=next(cfg.activities))
 
+    @activity_switcher.before_loop
+    async def before_activity_switcher(self):
+        await self.bot.wait_until_ready()
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         """Add new guild to database."""
