@@ -118,8 +118,9 @@ class SbonkCommands(commands.Cog):
 
         # Salm and others aint gonna hurt my feelings anymore
         if message.author.id not in self.xpev_victims and "$xpev" in message.content.lower():
-            return await message.channel.send(f"{utils.emojify(cfg.emojis['weirdchamp'])} You aint even holding I think the fuck not")
+            return await message.channel.send(f"{utils.weirdchamp()} You aint even holding I think the fuck not")
 
+        # He Bought and He Sold
         if message.content.lower() in ("he bought", "he bought?"):
             return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
         elif message.content.lower() in ("he sold", "he sold?"):

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, UserInputError
 from common.cfg import admin_ids, supermuted_users, activities
+import common.utils as utils
 
 from .query_builder import QueryBuilder
 
@@ -12,6 +13,13 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.muted = set()
+        self.banned_gif_keywords = {
+            "showtime",  # eat a dick
+            "dog-crying",
+            "bruh",
+            "eyebrow-raise",
+            "incredibles"
+        }
 
     def cog_check(self, ctx):
         if not ctx.author.guild_permissions.administrator:
@@ -95,6 +103,13 @@ class AdminCommands(commands.Cog):
 
         if message.author.id in self.muted:
             await message.delete()
+
+        # ignore banned gifs
+        if message.content.startswith("https://tenor.com"):
+            for kw in self.banned_gif_keywords:
+                if kw in message.content:
+                    await message.delete()
+                    return await message.channel.send(utils.weirdchamp())
 
 
 def setup(bot):
