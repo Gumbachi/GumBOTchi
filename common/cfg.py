@@ -11,13 +11,17 @@ extensions = [
     "cogs.errors",
     "cogs.groups",
     "cogs.catalog",
-    "cogs.craigslister"
+    "cogs.craigslister",
+    "cogs.query_builder"
 ]
 
 
 def get_prefix(bot, message):
     """Gets the prefix per server"""
-    return db.guildget(message.guild.id, "prefix")
+    try:
+        return db.guildget(message.guild.id, "prefix")
+    except AttributeError:
+        return "!"  # default
 
 
 bot = commands.Bot(
@@ -45,6 +49,7 @@ emojis = {
 }
 
 catalogs = {}
+builders = {}
 supermuted_users = set()
 watchlimit = 50
 max_queries = 3
@@ -63,9 +68,9 @@ activities = itertools.cycle([
     discord.Activity(name="Derk struggle with craigslisting",
                      type=ActivityType.watching),
     discord.Activity(name="Salmon kill the economy",
-                     type=ActivityType.watching), 
+                     type=ActivityType.watching),
     discord.Activity(name="Roses 50 times in one day",
-                     type=ActivityType.listening), 
+                     type=ActivityType.listening),
     discord.Activity(name="hard to get", type=ActivityType.playing),
     discord.Activity(name="my weight", type=ActivityType.watching),
     discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
@@ -106,6 +111,4 @@ poggers_links = [
     "https://tenor.com/view/genshin-poggers-ningguang-cringe-anime-gif-18890744",
     "https://tenor.com/view/genshin-lumine-poggers-gif-18795348",
     "https://tenor.com/view/amber-poggers-genshin-impact-gif-18732929"
-
-
 ]
