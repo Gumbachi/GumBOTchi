@@ -82,7 +82,7 @@ poggers_activation_phrases = {
     "pogger", "pogchampo", "poggiewoggies",
     "pogchampion", "coggers", "poggie",
     "pongerino", "pogerino", "pogging",
-    "poggeurs", "pawg", "pognut", "ponginos"
+    "poggeurs", "pawg", "pognut", "ponginos", "piggas"
 }
 
 poggers_links = [
