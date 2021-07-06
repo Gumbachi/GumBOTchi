@@ -11,8 +11,7 @@ extensions = [
     "cogs.errors",
     "cogs.groups",
     "cogs.catalog",
-    "cogs.craigslister",
-    "cogs.query_builder"
+    "cogs.craigslister"
 ]
 
 
@@ -38,7 +37,6 @@ admin_ids = {
 }
 
 emojis = {
-    "weirdchamp": 746570904032772238,
     "checkmark": "✅",
     "crossmark": "❌",
     "left_arrow": "⬅️",
@@ -52,7 +50,6 @@ catalogs = {}
 builders = {}
 supermuted_users = set()
 watchlimit = 50
-max_queries = 3
 
 
 # Activities/status include (watching, playing, listening)

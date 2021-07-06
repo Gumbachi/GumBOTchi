@@ -1,10 +1,7 @@
-import asyncio
 import datetime
-import re
 
 import common.database as db
 import discord
-import pymongo
 import common.cfg as cfg
 from common.cfg import get_prefix
 from craigslist import CraigslistForSale
@@ -14,13 +11,12 @@ from discord.ext.commands import CommandError
 
 class Craigslister(commands.Cog):
     """Hold and executes all craigslisting commands."""
+    MAX_QUERIES = 3
+    MAX_KEYWORDS = 5
 
     def __init__(self, bot):
         self.bot = bot
-        self.loop.start()
-
-        # Internal counter for generating IDs
-        self.count = 1
+        self.lookup_queries.start()
 
     def cog_check(self, ctx):
         if not db.users.find_one({"_id": ctx.author.id}):
@@ -28,7 +24,6 @@ class Craigslister(commands.Cog):
                 "_id": ctx.author.id,
                 "zipcode": None,
                 "site": None,
-                "clqueries": []
             }
             db.users.insert_one(data)
         return True
@@ -41,7 +36,7 @@ class Craigslister(commands.Cog):
             {"_id": ctx.author.id},
             {"$set": {"zipcode": zipcode}}
         )
-        return await ctx.channel.send(f"Zip updated to: {zipcode}")
+        return await ctx.channel.send(f"Zip updated to: `{zipcode}`")
 
     @commands.command(name="setsite", aliases=["site"])
     async def set_user_site(self, ctx, site):
@@ -50,125 +45,107 @@ class Craigslister(commands.Cog):
             {"_id": ctx.author.id},
             {"$set": {"site": site}}
         )
-        return await ctx.channel.send(f"Site updated to: {site}")
+        return await ctx.channel.send(f"Site updated to: `{site}`")
 
     @commands.command(name='craigslistme', aliases=["clme", "addquery", "addq", "clmedaddy"])
     async def craigslist_me_daddy(self, ctx, *, query):
-        """It craigslists. Input syntax: !clme [Apple TV, Apple, TV] 200 30 yeet pingme"""
-        queries = db.userget(ctx.author.id, 'clqueries')
-        if len(queries) >= cfg.max_queries:
+        """Adds a craigslist query"""
+        udata = db.userget_many(ctx.author.id, "site", "zipcode")
+
+        if not udata[0] or not udata[1]:
             raise CommandError(
-                f"You can only have {cfg.max_queries} queries at once.")
+                "Please set your site and zipcode using the `setzip` and `setsite` commands")
 
-        # Processes the input into usable variables, max keywords
-        # modifies the maximum number of keywords allowed ber query
-        max_keywords = 5
+        if db.queries.count({"owner": ctx.author.id}) >= self.MAX_QUERIES:
+            raise CommandError(
+                f"You can only have {self.MAX_QUERIES} queries at once.")
+
+        args = query.split("\n")
+
+        # clean values and convert to proper types
         try:
-            query = query.split(']')
-            try:
-                keywords = query[0][1:].split(", ")
-            except:
-                keywords = query[0][1:]
-            if len(keywords) > max_keywords:
-                return await ctx.channel.send(f"Queries can only have up to {max_keywords} key words.")
-            rest = query[1][1:].split(" ")
-            max_price = rest[0]
-            distance = rest[1]
-        except:
-            raise commands.CommandError(
-                f"Invalid query, please refer to {get_prefix(self.bot, ctx.message)}help for syntax")
+            keywords, budget, dist = args[:3]
+            args += ["", "", ""]  # ensure list includes all fields
+        except ValueError:
+            raise CommandError("Must include at least 3 values")
 
-        # Checks if has_image and pingme were provided as args and sets them accordingly
-        try:
-            has_image = rest[2]
-        except:
-            has_image = "no"
-        try:
-            pingme = rest[3]
-            if pingme.lower() in ("pingme", "ping"):
-                pingme = ctx.message.author.id
-        except:
-            pingme = False
+        keywords = keywords.replace(", ", ",").split(",")
+        if len(keywords) > self.MAX_KEYWORDS:
+            raise CommandError(f"Max Keywords is {self.MAX_KEYWORDS}")
 
-        try:
-            category = rest[4]
-        except:
-            category = "sss"
-
-        # Generates query ID
-        query_id = self.id_maker()
-
-        # Formats the new query for the DB
-        new_query = {
-            "_id": query_id,
-            "max_price": abs(float(max_price)),
-            "distance": abs(float(distance)),
-            "has_image": has_image.lower() in ("yes", "true", "yeet", "yaya"),
+        # The document that will represent a complete query
+        final_query = {
+            "owner": ctx.author.id,
+            "channel": ctx.channel,
             "keywords": keywords,
-            "sent_listings": [],
-            "channel": ctx.channel.id,
-            "ping": pingme,
-            "category": category
+            "listings": []
         }
 
+        try:
+            final_query["budget"] = abs(int(budget))
+            final_query["distance"] = abs(int(dist))
+        except ValueError:
+            raise CommandError("Budget/Distance must be a number")
+
+        final_query["has_image"] = bool(args[3])
+        final_query["ping_user"] = bool(args[4])
+        final_query["category"] = args[5] if args[5] else "sss"
+
         # Updates DB
+        response = db.queries.insert_one(final_query)
         db.users.update_one(
             {"_id": ctx.author.id},
-            {"$push": {"clqueries": new_query}}
+            {"$push": {"queries": response.inserted_id}}
         )
+
         return await ctx.channel.send("SUCCessfully added.")
 
     @commands.command(name='uncraigslistme', aliases=["unclmedaddy", "delq", "unclme"])
-    async def uncraigslist_me_daddy(self, ctx, number: int):
+    async def uncraigslist_me_daddy(self, ctx, index: int):
         """Deletes specified craigslist query"""
-        queries = db.userget(ctx.author.id, 'clqueries')
+        queries = db.queries.find({"owner": ctx.author.id})
         try:
-            db.users.update_one(
-                {"_id": ctx.author.id},
-                {"$pull": {"clqueries": queries[number-1]}}
-            )
+            db.queries.delete_one(queries[index-1])
         except IndexError:
-            raise CommandError("You fucked it")
-        return await ctx.channel.send("Query removed.")
+            raise CommandError("You fucked it, try again")
+        await ctx.channel.send("Query removed.")
 
-    @commands.command(name='clinfo')
+    @commands.command(name='queries', aliases=["clinfo", "craigslistings"])
     async def show_queries(self, ctx):
         """Displays active queries for user."""
-        queries = db.userget(ctx.author.id, 'clqueries')
+        queries = db.queries.find({"owner": ctx.author.id})
+
         query_embed = discord.Embed(
             title=f"Craigslistings for {ctx.author.name}",
             color=discord.Color.blue()
         )
+        query_embed.set_footer(
+            "If this looks empty its because you aint craigslisting")
 
         # populate the embed with data
         for i, query in enumerate(queries, 1):
             query_embed.add_field(
                 name=f"{i}. {', '.join(query['keywords'])}",
-                value=f"Max Price: ${query['max_price']}\nPing: {bool(query['ping'])}",
+                value=f"Budget: ${query['budget']}\nPing: {bool(query['ping_user'])}",
                 inline=False
             )
 
-        # Send response
-        if not queries:
-            raise commands.CommandError("You don't have any queries")
         await ctx.send(embed=query_embed)
 
     @tasks.loop(seconds=300)
-    async def loop(self):
-        """Searches CL every X amount of minutes (determined by check_time) for every query that every user has"""
-        print("looping")
-        users = db.users.find({})
+    async def lookup_queries(self):
+        """Searches CL every 5 minutes for every query that every user has"""
+        queries = db.queries.find({})
+        users = db.queries.find({})
 
-        # Iterate through every user with queries
+        for query in queries:
+
+            # Iterate through every user with queries
         for user in users:
             _id = user['_id']
             zip_code = user['zipcode']
             site = user['site']
 
-            # If the user has not set their site or zip, skip them
-            if not site or not zip_code:
-                continue
-            
             # Iterate through the users queries
             queries = user['clqueries']
             for query in queries:
@@ -176,7 +153,8 @@ class Craigslister(commands.Cog):
 
                 # Search, then clean, then update
                 listings = self.search(site, zip_code, query)
-                listings, updated_list = self.clean_list(query['sent_listings'], listings)
+                listings, updated_list = self.clean_list(
+                    query['sent_listings'], listings)
 
                 # If there are no new listings skip this query otherwise ping and send them
                 if not listings:
@@ -186,19 +164,18 @@ class Craigslister(commands.Cog):
                 if query['ping']:
                     user = self.bot.get_user(query['ping'])
                     await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
-                
+
                 # Send it
                 for listing in listings:
                     await self.send_listing(listing, channel)
                     self.update_sent_listings(_id, query['_id'], updated_list)
 
-        print("Loop complete")
-
-    @loop.before_loop
+    @lookup_queries.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
 
-    def search(self, site, zip_code, query):
+    @staticmethod
+    def search(site, zipcode, query):
         """Uses the query to search CL. 
         Returns a list of ALL matching posts"""
 
@@ -212,13 +189,13 @@ class Craigslister(commands.Cog):
                 category=query['category'],
                 filters={
                     'query': keyword,
-                    'max_price': int(query['max_price']),
+                    'max_price': query['budget'],
                     'posted_today': True,
                     'bundle_duplicates': True,
                     'has_image': query['has_image'],
                     'search_titles': False,
-                    'zip_code': zip_code,
-                    'search_distance': int(query['distance']),
+                    'zip_code': zipcode,
+                    'search_distance': query['distance'],
                 }
             )
 
@@ -290,29 +267,6 @@ class Craigslister(commands.Cog):
                               description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
                               color=color)
         return await channel.send(embed=embed)
-
-    def id_maker(self):
-        """Generates an ID based on the date and an internal counter.
-        Heroku's etheral filesystem make it so there could be duplicate 
-        IDs and that is why a while loop is needed."""
-
-        date = datetime.datetime.now()
-
-        # Loop until it finds an ID that does not exist
-        while True:
-            # Generates an ID and adds one to the internal counter for future IDs
-            query_id = int(f"{date.day}{date.month}{date.year}{self.count}")
-            self.count += 1
-
-            # Tries to find a matching ID in the DB,
-            # if it finds a match there won't be a key error,
-            # if there's a match the key error will break the loop
-            try:
-                db.users.find_one({"clqueries._id": query_id})['clqueries']
-            except:
-                break
-
-        return query_id
 
 
 def setup(bot):

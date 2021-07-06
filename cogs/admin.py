@@ -4,8 +4,6 @@ from discord.ext.commands import CommandError, UserInputError
 from common.cfg import admin_ids, supermuted_users, activities
 import common.utils as utils
 
-from .query_builder import QueryBuilder
-
 
 class AdminCommands(commands.Cog):
     """Handles all of the powerful commands."""
@@ -69,23 +67,9 @@ class AdminCommands(commands.Cog):
             await self.bot.change_presence(activity=new_activity)
 
     @commands.command(name="test")
-    async def test_command(self, ctx):
+    async def test_command(self, ctx, *, inp):
         """Just a test command."""
-
-        instructions = {
-            "Keywords": {"text": "Enter all of your keywords 1 by 1 and click the check to finish", "type": list},
-            "Distance": {"text": "Enter the max distance", "type": int},
-            "Max Price": {"text": "Enter your max price", "type": int},
-            "HasImage?": {"text": "DO it need an image", "type": bool},
-            "Ping?": {"text": "Should you get pinged?", "type": bool},
-        }
-
-        def fn(form):
-            form.update({"type": "sss"})
-            print(form)
-
-        builder = QueryBuilder(ctx.author, instructions, fn)
-        await builder.start()
+        print(inp.split("\n"))
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -96,6 +80,7 @@ class AdminCommands(commands.Cog):
 
         if message.author.id in self.muted:
             await message.delete()
+
 
 def setup(bot):
     bot.add_cog(AdminCommands(bot))

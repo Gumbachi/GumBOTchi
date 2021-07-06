@@ -8,7 +8,7 @@ def help_book(p):
             "title": "Table of Contents",
             "description": f"Ask salmon for help",
             "1. How Use Craiglister": ["Learn how use cl"],
-            "2. Commands": ["Da commans"],
+            "2. Commands": ["Da commands"],
             "3. Listeners": ["Sbonks and Poggers for the slow"],
             "-----------------------------": ["[Github](https://github.com/Gumbachi/GumBOTchi)"]
         },
@@ -23,7 +23,7 @@ def help_book(p):
                 "For Washington DC the URL is `https://washingtondc.craigslist.org/` so the site would be `washingtondc`"
             ],
             "Add Queries": [
-                f"1. Add a query with `{p}clmedaddy [keyword1, keyword2, ...] <maxprice> <distance> <images?(yes/no)> <Pingme>`",
+                f"1. Add a query like thsi `{p}clme\nkeyword1, keyword2, ...\n <maxprice> <distance> <images?(yes/no)> <Pingme>`",
                 f"Ex: `{p}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme`",
                 f"2. View your queries with `{p}clinfo`"
             ],
@@ -59,6 +59,6 @@ def help_book(p):
             "title": "Listeners",
             "description": f"Extra functionality",
             "Sbonks": [f"prefix a ticker with `$` like $AAL"],
-            "Poggers": [f"Hit em with a poggers in the chat"]
+            "Poggers": [f"Hit em with a `poggers` in the chat"]
         }
     ]
