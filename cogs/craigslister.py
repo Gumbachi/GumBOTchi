@@ -143,7 +143,7 @@ class Craigslister(commands.Cog):
 
         await ctx.send(embed=query_embed)
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=300)
     async def lookup_queries(self):
         """Searches CL every 5 minutes for every query that every user has"""
         queries = db.queries.find({})
