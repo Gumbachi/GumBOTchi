@@ -1,9 +1,12 @@
-import datetime
+"""CRAIGSLISTER"""
+
+# TODO Make it so channel is set per guild and not wherever user calls clme
+
+
+from pprint import pprint
 
 import common.database as db
 import discord
-import common.cfg as cfg
-from common.cfg import get_prefix
 from craigslist import CraigslistForSale
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
@@ -28,7 +31,13 @@ class Craigslister(commands.Cog):
             db.users.insert_one(data)
         return True
 
+    @commands.command(name="clqr")
+    async def cl_quick_reference(self, ctx):
+        """Shows query format"""
+        return await ctx.send("!clme\nyour, keywords\nprice\ndistance\nimage?\nping?\ncategory?")
+
     # Setup Commands
+
     @commands.command(name="setzip", aliases=["zip", "zipcode", "setzipcode"])
     async def set_user_zip(self, ctx, zipcode: int):
         """Updates a user's zip code"""
@@ -36,7 +45,7 @@ class Craigslister(commands.Cog):
             {"_id": ctx.author.id},
             {"$set": {"zipcode": zipcode}}
         )
-        return await ctx.channel.send(f"Zip updated to: `{zipcode}`")
+        return await ctx.send(f"Zip updated to: `{zipcode}`")
 
     @commands.command(name="setsite", aliases=["site"])
     async def set_user_site(self, ctx, site):
@@ -45,14 +54,14 @@ class Craigslister(commands.Cog):
             {"_id": ctx.author.id},
             {"$set": {"site": site}}
         )
-        return await ctx.channel.send(f"Site updated to: `{site}`")
+        return await ctx.send(f"Site updated to: `{site}`")
 
     @commands.command(name='craigslistme', aliases=["clme", "addquery", "addq", "clmedaddy"])
     async def craigslist_me_daddy(self, ctx, *, query):
         """Adds a craigslist query"""
-        udata = db.userget_many(ctx.author.id, "site", "zipcode")
+        zipcode, site = db.userget_many(ctx.author.id, "site", "zipcode")
 
-        if not udata[0] or not udata[1]:
+        if not site or not zipcode:
             raise CommandError(
                 "Please set your site and zipcode using the `setzip` and `setsite` commands")
 
@@ -76,7 +85,9 @@ class Craigslister(commands.Cog):
         # The document that will represent a complete query
         final_query = {
             "owner": ctx.author.id,
-            "channel": ctx.channel,
+            "channel": ctx.channel.id,
+            "site": site,
+            "zipcode": zipcode,
             "keywords": keywords,
             "listings": []
         }
@@ -88,7 +99,7 @@ class Craigslister(commands.Cog):
             raise CommandError("Budget/Distance must be a number")
 
         final_query["has_image"] = bool(args[3])
-        final_query["ping_user"] = bool(args[4])
+        final_query["ping"] = bool(args[4])
         final_query["category"] = args[5] if args[5] else "sss"
 
         # Updates DB
@@ -120,62 +131,56 @@ class Craigslister(commands.Cog):
             color=discord.Color.blue()
         )
         query_embed.set_footer(
-            "If this looks empty its because you aint craigslisting")
+            text="If this looks empty its because you aint craigslisting")
 
         # populate the embed with data
         for i, query in enumerate(queries, 1):
             query_embed.add_field(
                 name=f"{i}. {', '.join(query['keywords'])}",
-                value=f"Budget: ${query['budget']}\nPing: {bool(query['ping_user'])}",
+                value=f"Budget: ${query['budget']}\nPing: {bool(query['ping'])}",
                 inline=False
             )
 
         await ctx.send(embed=query_embed)
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=30)
     async def lookup_queries(self):
         """Searches CL every 5 minutes for every query that every user has"""
         queries = db.queries.find({})
-        users = db.queries.find({})
 
         for query in queries:
+            listings = self.search(query)  # fetch all listings
 
-            # Iterate through every user with queries
-        for user in users:
-            _id = user['_id']
-            zip_code = user['zipcode']
-            site = user['site']
+            # update database with last listing result
+            listing_ids = [listing["id"] for listing in listings]
+            db.queries.update_one(
+                {"_id": query["_id"]},
+                {"$set": {"listings": listing_ids}}
+            )
 
-            # Iterate through the users queries
-            queries = user['clqueries']
-            for query in queries:
-                channel = self.bot.get_channel(query['channel'])
+            # send only new listings
+            new_listings = [l for l in listings if l["id"]
+                            not in query["listings"]]
+            if not new_listings:
+                continue
 
-                # Search, then clean, then update
-                listings = self.search(site, zip_code, query)
-                listings, updated_list = self.clean_list(
-                    query['sent_listings'], listings)
+            channel = self.bot.get_channel(query["channel"])
 
-                # If there are no new listings skip this query otherwise ping and send them
-                if not listings:
-                    continue
+            # Ping if user requested ping
+            if query['ping']:
+                user = self.bot.get_user(query['owner'])
+                await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
 
-                # Ping if user requested ping
-                if query['ping']:
-                    user = self.bot.get_user(query['ping'])
-                    await channel.send(f"{user.mention}, here are some new listings for {', '.join(query['keywords'])}.")
-
-                # Send it
-                for listing in listings:
-                    await self.send_listing(listing, channel)
-                    self.update_sent_listings(_id, query['_id'], updated_list)
+            # Send it
+            for listing in new_listings:
+                await self.send_listing(listing, channel)
 
     @lookup_queries.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
 
     @staticmethod
-    def search(site, zipcode, query):
+    def search(query):
         """Uses the query to search CL. 
         Returns a list of ALL matching posts"""
 
@@ -185,7 +190,7 @@ class Craigslister(commands.Cog):
         for keyword in query['keywords']:
             # Searches CL with the parameters
             generator = CraigslistForSale(
-                site=site,
+                site=query["site"],
                 category=query['category'],
                 filters={
                     'query': keyword,
@@ -194,7 +199,7 @@ class Craigslister(commands.Cog):
                     'bundle_duplicates': True,
                     'has_image': query['has_image'],
                     'search_titles': False,
-                    'zip_code': zipcode,
+                    'zip_code': query["zipcode"],
                     'search_distance': query['distance'],
                 }
             )
@@ -203,38 +208,12 @@ class Craigslister(commands.Cog):
             try:
                 for listing in generator.get_results(sort_by='newest', include_details=True):
                     listings.append(listing)
-            except:
+            except Exception as e:
+                print(f"Name of error is {type(e)}")
                 for listing in generator.get_results(sort_by='newest'):
                     listings.append(listing)
 
         return listings
-
-    def clean_list(self, sent_listings, new_listings):
-        """Verifies that the listings provided have not been sent already. 
-        Returns list of postings and an updated list of ids that have already been processed"""
-
-        if not any(new_listings):
-            return (None, None)
-
-        clean_listings = []
-        updated_list = sent_listings
-
-        # Check that the listings have not been sent already,
-        # if they haven't, add them to clean listings and add
-        # the id to the list of IDs to be updated later
-        for listing in new_listings:
-            if listing['id'] not in sent_listings:
-                clean_listings.append(listing)
-                updated_list.append(listing['id'])
-
-        return (clean_listings, updated_list)
-
-    def update_sent_listings(self, user_id, query_id, updated_list):
-        """Updates the sent listings for a query"""
-        db.users.update_one(
-            {"_id": user_id, "clqueries._id": query_id},
-            {"$set": {"clqueries.$.sent_listings": updated_list}}
-        )
 
     async def send_listing(self, listing, channel):
         """Takes a listing object and sends it to the specified channel"""

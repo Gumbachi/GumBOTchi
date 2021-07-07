@@ -11,7 +11,8 @@ extensions = [
     "cogs.errors",
     "cogs.groups",
     "cogs.catalog",
-    "cogs.craigslister"
+    "cogs.craigslister",
+    "cogs.mafia"
 ]
 
 
@@ -49,8 +50,6 @@ emojis = {
 catalogs = {}
 builders = {}
 supermuted_users = set()
-watchlimit = 50
-
 
 # Activities/status include (watching, playing, listening)
 activities = itertools.cycle([
