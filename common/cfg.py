@@ -12,7 +12,9 @@ extensions = [
     "cogs.groups",
     "cogs.catalog",
     "cogs.craigslister",
-    "cogs.query_builder"
+    "cogs.query_builder",
+    "cogs.mafia",
+    "cogs.roast"
 ]
 
 
