@@ -3,25 +3,26 @@ import discord
 import random
 from discord.ext import commands
 
+
 class Roasts(commands.Cog):
-    
+
     def __init__(self, bot):
         self.bot = bot
         self.roasts = [
-            "My phone battery lasts longer than your relationships. ",
+            "My phone battery lasts longer than your relationships.",
             "Judging from your remarks, I can tell that inbreeding is prominent in your family.",
             "If I wanted a bitch, I would have bought a dog.",
             "It’s a shame you can’t Photoshop your personality.",
             "Acting like a prick doesn’t make yours grow bigger.",
-            "The smartest thing that ever came out of your mouth was a penis. ",
+            "The smartest thing that ever came out of your mouth was a penis.",
             "Calm down. Take a deep breath and then hold it for about twenty minutes.",
             "When karma comes back to punch you in the face, I want to be there in case it needs help.",
             "Sorry, sarcasm falls out of my mouth like bullshit falls out of yours.",
-            "Don’t mistake my silence for weakness. No one plans a murder out loud. ",
-            "You should wear a condom on your head. If you’re going to be a dick, you might as well dress like one. ",
-            "Maybe you should eat make-up so you’ll be pretty on the inside too. ",
-            "Being a bitch is a tough job but someone has to do it. ",
-            "My middle finger gets a boner every time I see you. ",
+            "Don’t mistake my silence for weakness. No one plans a murder out loud.",
+            "You should wear a condom on your head. If you’re going to be a dick, you might as well dress like one.",
+            "Maybe you should eat make-up so you’ll be pretty on the inside too.",
+            "Being a bitch is a tough job but someone has to do it.",
+            "My middle finger gets a boner every time I see you.",
             "Whoever told you to be yourself gave you really bad advice.",
             "If I had a face like yours I’d sue my parents.",
             "I thought I had the flu, but then I realized your face makes me sick to my stomach.",
@@ -33,7 +34,7 @@ class Roasts(commands.Cog):
             "Why is it acceptable for you to be an dumbass but not for me to point it out?",
             "If you’re going to be a smart ass, first you have to be smart, otherwise you’re just an ass.",
             "Your face is fine but you will have to put a bag over that personality.",
-            "It’s scary to think people like you are allowed to vote. ",
+            "It’s scary to think people like you are allowed to vote.",
             "No, no. I am listening. It just takes me a moment to process so much stupid information all at once.",
             "I’m sorry, what language are you speaking? It sounds like bullshit. ",
             "Everyone brings happiness to a room. I do when I enter, you do when you leave.",
@@ -77,10 +78,16 @@ class Roasts(commands.Cog):
             "You're a walking mental disability",
             "You're shittier than FinalMouse"
         ]
-    
-    @commands.command(name="roast", aliases=['roats'])
+
+    @commands.command(name="roast", aliases=["roats"])
     async def roast_member(self, ctx, victim: discord.Member):
-        await ctx.send("Hey " + victim.mention + ", " + random.choice(self.roasts))
+        """Roasts the living shit out of somebody. These roasts are absolutely devastating."""
+        roast_embed = discord.Embed(
+            title=f"Hey {victim.name}, {random.choice(self.roasts)}",
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=roast_embed)
+
 
 def setup(bot):
     bot.add_cog(Roasts(bot))

@@ -67,9 +67,9 @@ class AdminCommands(commands.Cog):
             await self.bot.change_presence(activity=new_activity)
 
     @commands.command(name="test")
-    async def test_command(self, ctx, *, inp):
+    async def test_command(self, ctx):
         """Just a test command."""
-        print(inp.split("\n"))
+        await ctx.send(embed=discord.Embed(title=ctx.author.mention))
 
     @commands.Cog.listener()
     async def on_message(self, message):

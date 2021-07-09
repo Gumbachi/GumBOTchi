@@ -23,12 +23,12 @@ def help_book(p):
                 "For Washington DC the URL is `https://washingtondc.craigslist.org/` so the site would be `washingtondc`"
             ],
             "Add Queries": [
-                f"1. Add a query like thsi `{p}clme\nkeyword1, keyword2, ...\n <maxprice> <distance> <images?(yes/no)> <Pingme>`",
-                f"Ex: `{p}clmedaddy [Apple TV, Apple, TV] 200 30 No Pingme`",
-                f"2. View your queries with `{p}clinfo`"
+                f"1. Add a query like this `{p}clme\nkeyword1, keyword2, ...\nBudget\nDistance\nImages?(empty for no)\nPing?(empty for no)`",
+                f"2. View an example query with `{p}clqr`"
+                f"3. View your queries with `{p}queries`"
             ],
-            "Remove Queries": [
-                f"1. Use `{p}unclmedaddy <query num>`",
+            "Delete Query": [
+                f"1. Use `{p}delq <query num>`",
             ],
             "Extra Notes": [
                 "The bot will automatically check for new listings every 5 minutes",
