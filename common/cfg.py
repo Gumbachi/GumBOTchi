@@ -12,9 +12,13 @@ extensions = [
     "cogs.groups",
     "cogs.catalog",
     "cogs.craigslister",
+<<<<<<< HEAD
     "cogs.query_builder",
     "cogs.mafia",
     "cogs.roast"
+=======
+    "cogs.mafia"
+>>>>>>> deecaf70d47812be667dfa984b5b9996e879be98
 ]
 
 
@@ -40,7 +44,6 @@ admin_ids = {
 }
 
 emojis = {
-    "weirdchamp": 746570904032772238,
     "checkmark": "✅",
     "crossmark": "❌",
     "left_arrow": "⬅️",
@@ -53,9 +56,6 @@ emojis = {
 catalogs = {}
 builders = {}
 supermuted_users = set()
-watchlimit = 50
-max_queries = 3
-
 
 # Activities/status include (watching, playing, listening)
 activities = itertools.cycle([
@@ -87,7 +87,7 @@ poggers_activation_phrases = {
     "pogger", "pogchampo", "poggiewoggies",
     "pogchampion", "coggers", "poggie",
     "pongerino", "pogerino", "pogging",
-    "poggeurs", "pawg", "pognut", "ponginos"
+    "poggeurs", "pawg", "pognut", "ponginos", "piggas"
 }
 
 poggers_links = [

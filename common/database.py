@@ -7,8 +7,10 @@ db = pymongo.MongoClient(mongo_string).GumbotchiDB
 
 guilds = db.Guilds
 users = db.Users
+queries = db.Queries
 
 print("Connected to Database. In theory.")
+
 
 def guildget(gid, field):
     """Fetches and unpacks one field from the database."""
@@ -47,7 +49,6 @@ def userget(uid, field):
             "_id": uid,
             "zipcode": None,
             "site": None,
-            "clqueries": []
         }
         users.insert_one(data)
     return data[field]
@@ -64,7 +65,6 @@ def userget_many(uid, *fields):
             "_id": uid,
             "zipcode": None,
             "site": None,
-            "clqueries": []
         }
         users.insert_one(data)
-    return data.values()
+    return list(data.values())

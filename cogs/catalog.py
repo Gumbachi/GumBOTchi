@@ -1,7 +1,7 @@
+import io
 import discord
 from discord.ext import commands
 import common.cfg as cfg
-from common.utils import image_to_file
 
 
 class CatalogListeners(commands.Cog):
@@ -72,6 +72,16 @@ class Catalog:
     def __len__(self):
         return len(self.content)
 
+    @staticmethod
+    def image_to_file(img, name="image"):
+        """Convert PIL Image to discord File."""
+        img = img.copy()
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer = buffer.getvalue()
+        img = io.BytesIO(buffer)
+        return discord.File(img, filename=f"{name}.png")
+
     @property
     def channel(self):
         """Get the channel message is sent in."""
@@ -83,13 +93,13 @@ class Catalog:
         if self.type == "Image":
             # only one image to send
             if len(self.content) == 1:
-                imagefile = image_to_file(self.content[0])
+                imagefile = self.image_to_file(self.content[0])
                 return await channel.send(file=imagefile)
 
             await self.delete_message()  # delete current message
 
             # Send and add reactions to new image
-            imagefile = image_to_file(self.content[self.page])
+            imagefile = self.image_to_file(self.content[self.page])
             self.message = await channel.send(file=imagefile)
             await self.add_reactions(self.image_reactions)
 
@@ -127,7 +137,7 @@ class Catalog:
         await self.delete_message()  # Delete current message
 
         # send all images
-        for imfile in [image_to_file(img) for img in self.content]:
+        for imfile in [self.image_to_file(img) for img in self.content]:
             await self.channel.send(file=imfile)
 
         cfg.catalogs.pop(self.channel.id, None)  # remove from instances
