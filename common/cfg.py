@@ -12,13 +12,8 @@ extensions = [
     "cogs.groups",
     "cogs.catalog",
     "cogs.craigslister",
-<<<<<<< HEAD
-    "cogs.query_builder",
     "cogs.mafia",
     "cogs.roast"
-=======
-    "cogs.mafia"
->>>>>>> deecaf70d47812be667dfa984b5b9996e879be98
 ]
 
 
