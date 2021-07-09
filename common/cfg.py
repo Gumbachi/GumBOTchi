@@ -9,7 +9,6 @@ extensions = [
     "cogs.sbonks",
     "cogs.admin",
     "cogs.errors",
-    "cogs.groups",
     "cogs.catalog",
     "cogs.craigslister",
     "cogs.mafia",
