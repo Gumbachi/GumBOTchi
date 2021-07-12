@@ -12,7 +12,8 @@ extensions = [
     "cogs.catalog",
     "cogs.craigslister",
     "cogs.mafia",
-    "cogs.roast"
+    "cogs.roast",
+    "cogs.games.hangman",
 ]
 
 
@@ -25,17 +26,12 @@ def get_prefix(bot, message):
 
 
 bot = commands.Bot(
-    command_prefix=get_prefix,
-    help_command=None,
-    intents=discord.Intents.all()
+    command_prefix=get_prefix, help_command=None, intents=discord.Intents.all()
 )  # creates bot object
 
 # GLOBAL DATA
 
-admin_ids = {
-    128595549975871488,  # Gumbachi#0506
-    244574519027564544  # SoloMan98#3426
-}
+admin_ids = {128595549975871488, 244574519027564544}  # Gumbachi#0506  # SoloMan98#3426
 
 emojis = {
     "checkmark": "✅",
@@ -44,7 +40,7 @@ emojis = {
     "right_arrow": "➡️",
     "home_arrow": "↩️",
     "double_down": "⏬",
-    "updown_arrow": "↕️"
+    "updown_arrow": "↕️",
 }
 
 catalogs = {}
@@ -52,36 +48,53 @@ builders = {}
 supermuted_users = set()
 
 # Activities/status include (watching, playing, listening)
-activities = itertools.cycle([
-    discord.Activity(name="with your feelings", type=ActivityType.playing),
-    discord.Activity(name="your cries for help", type=ActivityType.listening),
-    discord.Activity(name="Salm's color change",
-                     type=ActivityType.watching),
-    discord.Activity(name="18 poggers gifs at once",
-                     type=ActivityType.watching),
-    discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
-    discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
-    discord.Activity(name="Derk struggle with craigslisting",
-                     type=ActivityType.watching),
-    discord.Activity(name="Salmon kill the economy",
-                     type=ActivityType.watching),
-    discord.Activity(name="Roses 50 times in one day",
-                     type=ActivityType.listening),
-    discord.Activity(name="hard to get", type=ActivityType.playing),
-    discord.Activity(name="my weight", type=ActivityType.watching),
-    discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
-    discord.Activity(name="for LGMA Esports", type=ActivityType.playing)
-])
+activities = itertools.cycle(
+    [
+        discord.Activity(name="with your feelings", type=ActivityType.playing),
+        discord.Activity(name="your cries for help", type=ActivityType.listening),
+        discord.Activity(name="Salm's color change", type=ActivityType.watching),
+        discord.Activity(name="18 poggers gifs at once", type=ActivityType.watching),
+        discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
+        discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
+        discord.Activity(
+            name="Derk struggle with craigslisting", type=ActivityType.watching
+        ),
+        discord.Activity(name="Salmon kill the economy", type=ActivityType.watching),
+        discord.Activity(name="Roses 50 times in one day", type=ActivityType.listening),
+        discord.Activity(name="hard to get", type=ActivityType.playing),
+        discord.Activity(name="my weight", type=ActivityType.watching),
+        discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
+        discord.Activity(name="for LGMA Esports", type=ActivityType.playing),
+    ]
+)
 
 poggers_activation_phrases = {
-    "pog", "poggers", "poggies",
-    "pogchamp", "pongas", "pogchampius",
-    "poggas", "pongies", "pogeroni",
-    "pogu", "pogey", "poggaroo",
-    "pogger", "pogchampo", "poggiewoggies",
-    "pogchampion", "coggers", "poggie",
-    "pongerino", "pogerino", "pogging",
-    "poggeurs", "pawg", "pognut", "ponginos", "piggas"
+    "pog",
+    "poggers",
+    "poggies",
+    "pogchamp",
+    "pongas",
+    "pogchampius",
+    "poggas",
+    "pongies",
+    "pogeroni",
+    "pogu",
+    "pogey",
+    "poggaroo",
+    "pogger",
+    "pogchampo",
+    "poggiewoggies",
+    "pogchampion",
+    "coggers",
+    "poggie",
+    "pongerino",
+    "pogerino",
+    "pogging",
+    "poggeurs",
+    "pawg",
+    "pognut",
+    "ponginos",
+    "piggas",
 }
 
 poggers_links = [
@@ -106,5 +119,5 @@ poggers_links = [
     "https://tenor.com/view/poggers-gif-19466277",
     "https://tenor.com/view/genshin-poggers-ningguang-cringe-anime-gif-18890744",
     "https://tenor.com/view/genshin-lumine-poggers-gif-18795348",
-    "https://tenor.com/view/amber-poggers-genshin-impact-gif-18732929"
+    "https://tenor.com/view/amber-poggers-genshin-impact-gif-18732929",
 ]

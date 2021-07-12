@@ -3,6 +3,7 @@ import traceback
 
 import discord
 from discord.ext import commands
+from pymongo.errors import DuplicateKeyError
 
 
 class CommandErrors(commands.Cog):
@@ -15,22 +16,33 @@ class CommandErrors(commands.Cog):
 
         print("error caught", type(error))
 
-        if hasattr(ctx.command, 'on_error'):
+        if hasattr(ctx.command, "on_error"):
             return
 
-        error = getattr(error, 'original', error)
+        error = getattr(error, "original", error)
 
         if isinstance(error, commands.CommandNotFound):
             return
-        
+
         if isinstance(error, commands.CommandError):
-            return await ctx.send(embed=discord.Embed(title=str(error), color=discord.Color.red()))
+            return await ctx.send(
+                embed=discord.Embed(title=str(error), color=discord.Color.red())
+            )
 
         ################ CUSTOM ERROR HANDLING ################
 
-        print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
+        if isinstance(error, DuplicateKeyError):
+            return await ctx.send(
+                embed=discord.Embed(
+                    title="You have already have an active game",
+                    description=f"Use `{ctx.prefix}endhangman` to end your current game",
+                )
+            )
+
+        print(f"Ignoring exception in command {ctx.command}:", file=sys.stderr)
         traceback.print_exception(
-            type(error), error, error.__traceback__, file=sys.stderr)
+            type(error), error, error.__traceback__, file=sys.stderr
+        )
 
 
 def setup(bot):
