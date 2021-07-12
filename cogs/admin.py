@@ -1,8 +1,7 @@
 import discord
-from discord.ext import commands, tasks
-from discord.ext.commands import CommandError, UserInputError
+from discord.ext import commands
+from discord.ext.commands import CommandError
 from common.cfg import admin_ids, supermuted_users, activities
-import common.utils as utils
 
 
 class AdminCommands(commands.Cog):
@@ -21,14 +20,17 @@ class AdminCommands(commands.Cog):
     async def delete_messages(self, ctx, amount):
         """purge a set amount of messages!"""
         if ctx.author.id in admin_ids:
-            await ctx.channel.purge(limit=int(amount)+1)
+            await ctx.channel.purge(limit=int(amount) + 1)
             await ctx.send(f"purged {amount} messages", delete_after=2)
 
     @commands.command(name="mute", aliases=["softmute"])
     async def silence_member(self, ctx, member: discord.Member):
         """Mutes a selected member for a certain amount of time"""
         # Normies Cant mute admins. But i can
-        if member.guild_permissions.administrator and ctx.author.id != 128595549975871488:
+        if (
+            member.guild_permissions.administrator
+            and ctx.author.id != 128595549975871488
+        ):
             return await ctx.send("You wish")
 
         # mute member
@@ -50,8 +52,10 @@ class AdminCommands(commands.Cog):
     @commands.command(name="supermute", aliases=["hardmute"])
     async def supermute_member(self, ctx, member: discord.Member):
         """Prevents command use and message from muted members."""
-        # Normies Cant mute admins. But i can
-        if member.guild_permissions.administrator and ctx.author.id != 128595549975871488:
+        if (
+            member.guild_permissions.administrator
+            and ctx.author.id != 128595549975871488
+        ):
             return await ctx.send("You wish")
 
         # supermute users

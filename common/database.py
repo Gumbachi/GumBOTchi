@@ -8,6 +8,7 @@ db = pymongo.MongoClient(mongo_string).GumbotchiDB
 guilds = db.Guilds
 users = db.Users
 queries = db.Queries
+hangman = db.HangmanGames
 
 print("Connected to Database. In theory.")
 
@@ -16,11 +17,7 @@ def guildget(gid, field):
     """Fetches and unpacks one field from the database."""
     data = guilds.find_one({"_id": gid}, {field: 1, "_id": 0})
     if not data:
-        data = {
-            "_id": gid,
-            "prefix": "!",
-            "groups": []
-        }
+        data = {"_id": gid, "prefix": "!", "groups": []}
         guilds.insert_one(data)
     return data[field]
 
@@ -32,11 +29,7 @@ def guildget_many(gid, *fields):
 
     data = guilds.find_one({"_id": gid}, projection)
     if not data:
-        data = {
-            "_id": gid,
-            "prefix": "!",
-            "groups": []
-        }
+        data = {"_id": gid, "prefix": "!", "groups": []}
         guilds.insert_one(data)
     return data.values()
 
