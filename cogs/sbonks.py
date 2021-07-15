@@ -31,11 +31,13 @@ class SbonkCommands(commands.Cog):
                     f"symbols={symbol}&types=chart,quote&"
                     f"range={timeframe}&token={self.iexcloud_key}")
 
-
         response = requests.get(request)
+        
         try:
             return json.loads(response.content)
         except json.JSONDecodeError:
+            if response.status_code==402:
+                return 402
             return {}
 
     @staticmethod
@@ -74,7 +76,6 @@ class SbonkCommands(commands.Cog):
         pct_change = (quote["latestPrice"]/close) - 1
         change = quote["latestPrice"] - close
         data_len = len(average_list)
-        print(average_list)
 
         # plot graph
         plt.ioff()  # ignore exception
@@ -169,11 +170,11 @@ class SbonkCommands(commands.Cog):
         
         for ticker, args in ticker_info.items():
             data = self.get_stock_data(ticker, args['range'])
-            print(ticker, args)
-            print(data)
             ticker = ticker.upper()
             # weirdchamp for unknown symbol
             if ticker not in data.keys():
+                if data == 402:
+                    await message.channel.send("Out of juice :peepoSad:")
                 await message.channel.send(utils.weirdchamp())
                 continue
 
