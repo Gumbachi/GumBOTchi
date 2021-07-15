@@ -17,8 +17,7 @@ class SbonkCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        #self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
-        self.iexcloud_key = "sk_a9ba68ff5769433785a4740f14940045"
+        self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
         self.xpev_victims = [
             128595549975871488,
             224506294801793025,
