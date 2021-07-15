@@ -17,19 +17,22 @@ class SbonkCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
+        #self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
+        self.iexcloud_key = "sk_a9ba68ff5769433785a4740f14940045"
         self.xpev_victims = [
             128595549975871488,
             224506294801793025,
             235902262168256515
         ]
 
-    def get_stock_data(self, symbols, *endpoints):
+    def get_stock_data(self, symbol, timeframe):
         """A more refined stock quote function."""
         # Request stock quotes from iex cloud
-        request = ("https://cloud.iexapis.com/stable/stock/market/batch"
-                   f"?types={','.join(endpoints)}&symbols={','.join(symbols)}"
-                   f"&displayPercent=true&token={self.iexcloud_key}")
+        request = ("https://cloud.iexapis.com/stable/stock/market/batch?"
+                    f"symbols={symbol}&types=chart,quote&"
+                    f"range={timeframe}&token={self.iexcloud_key}")
+
+
         response = requests.get(request)
         try:
             return json.loads(response.content)
@@ -37,17 +40,21 @@ class SbonkCommands(commands.Cog):
             return {}
 
     @staticmethod
-    def draw_symbol_chart(symbol_data):
+    def draw_symbol_chart(symbol_data, timeframe):
         """
         Draw image for ONE symbol and return image
         Args:
-            symbol_data(dict): dict must contain "intraday-prices" and "quote"
+            symbol_data(dict): dict must contain "chart" and "quote"
         """
+        minutes = True if timeframe == "1d" else False
+        chart_timeframe = "Today" if minutes else f"{timeframe} chart"
+        key = "average" if minutes else "close"
         quote = symbol_data["quote"]
+        chart = symbol_data["chart"]
 
         # pull average price for each minute
-        prices = [x["average"] if x["average"] else 0
-                  for x in symbol_data["intraday-prices"]]
+        prices = [x[key] if x[key] else 0
+                  for x in symbol_data["chart"]]
 
         def find_last(i):
             for i in range(i, 0, -1):
@@ -56,17 +63,27 @@ class SbonkCommands(commands.Cog):
             return prices[i] if prices[i] else quote["previousClose"]
         prices = [find_last(i) for i in range(len(prices))]
 
-        average_list = prices + [np.nan] * (390 - len(prices))  # extend list
+        close = chart[0]["close"]
+        extend_list = []
+        if minutes:
+            ## Extends data with null values in case its the middle of the day
+            extend_list = [np.nan] * (390 - len(prices))
+            close = quote["previousClose"]
 
-        color = "lime" if quote["latestPrice"] >= quote["previousClose"] else "red"
+        average_list = prices + extend_list
+        color = "lime" if quote["latestPrice"] >= close else "red"
+        pct_change = (quote["latestPrice"]/close) - 1
+        change = quote["latestPrice"] - close
+        data_len = len(average_list)
+        print(average_list)
 
         # plot graph
         plt.ioff()  # ignore exception
         plt.clf()
         plt.style.use('dark_background')
-        plt.xlim((0, 390))
-        plt.plot(list(range(390)), average_list, color=color)
-        plt.hlines(quote["previousClose"], 0, 390,
+        plt.xlim((0, data_len))
+        plt.plot(list(range(data_len)), average_list, color=color)
+        plt.hlines(close, 0, data_len,
                    colors="grey", linestyles="dotted")
 
         # remove extraneous lines
@@ -83,11 +100,13 @@ class SbonkCommands(commands.Cog):
                  size=30, c="white", transform=ax.transAxes)
 
         # add change text
-        change_emoji = "⬆️" if quote["change"] >= 0 else "⬇️"
-        change_text = f"{change_emoji}{abs(quote['change']):.2f} ({quote['changePercent']:.2f}%)"
-        color = "lime" if quote["change"] >= 0 else "red"
+        change_emoji = "⬆️" if pct_change >= 0 else "⬇️"
+        change_text = f"{change_emoji}{abs(change):.2f} ({pct_change*100:.2f}%)"
+        color = "lime" if pct_change >= 0 else "red"
         plt.text(0, 1, change_text, va="bottom", ha="left",
                  size=20, c=color, transform=ax.transAxes)
+        plt.text(1, 1.15, f"{chart_timeframe}", va="bottom", ha="right",
+                 size=12, c="grey", transform=ax.transAxes)
 
         # convert the chart to a bytes object Discord can read
         buffer = io.BytesIO()
@@ -96,18 +115,39 @@ class SbonkCommands(commands.Cog):
         return io.BytesIO(buffer)
 
     @staticmethod
-    def extract_symbols(string, sbonk_notation=True):
+    def extract_symbols(string):
         """Extract valid symbols from a string."""
         string += " "
-        pattern = r"[a-zA-Z]{1,4}[^a-zA-Z]"
-        if sbonk_notation:
-            pattern = "[$]" + pattern
+        pattern = r"[$][a-zA-Z]{1,4}[^a-zA-Z]"
         prefixed_symbols = re.findall(pattern, string)
+        
+        ticker_list = [s[:-1] for s in prefixed_symbols]
+        ticker_dict = {}
 
-        # strip $ and 1 character off the strings
-        if not sbonk_notation:
-            return [s[:-1] for s in prefixed_symbols]
-        return [s[1:-1] for s in prefixed_symbols]
+        #Finds ticker arguments and stores them in a dict
+        for ticker in ticker_list:
+            index = string.find(ticker)
+            location= index+len(ticker)
+            if string[location] == "[":
+                start = location + 1
+                end = location + string[location:].find("]")
+                args = string[start:end].split("|") + ["", "", "", ""]
+                
+                ticker_dict[ticker[1:]] = { 
+                                            "range": args[0], 
+                                            "message": args[1],
+                                            "mock": args[2],
+                                            "delete": args[3],
+                                            }
+            else:
+                ticker_dict[ticker[1:]] = { 
+                                            "range": "1d", 
+                                            "message": None,
+                                            "mock": None,
+                                            "delete": None,
+                                            }
+
+        return ticker_dict
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -126,20 +166,30 @@ class SbonkCommands(commands.Cog):
         elif message.content.lower() in ("he sold", "he sold?"):
             return await message.channel.send("https://www.youtube.com/watch?v=TRXdxiot5JM")
 
-        symbols = SbonkCommands.extract_symbols(message.content)
-        data = self.get_stock_data(symbols, "quote", "intraday-prices")
-        for symbol in symbols:
-            symbol = symbol.upper()
+        ticker_info = SbonkCommands.extract_symbols(message.content)
+        
+        for ticker, args in ticker_info.items():
+            data = self.get_stock_data(ticker, args['range'])
+            print(ticker, args)
+            print(data)
+            ticker = ticker.upper()
             # weirdchamp for unknown symbol
-            if symbol not in data.keys():
-                await message.channel(utils.emojify(cfg.emojis["weirdchamp"]))
+            if ticker not in data.keys():
+                await message.channel.send(utils.weirdchamp())
                 continue
 
             # Send chart
             async with message.channel.typing():
-                chart = SbonkCommands.draw_symbol_chart(data[symbol])
-                file = discord.File(chart, filename=f"{symbol}.png")
+                chart = SbonkCommands.draw_symbol_chart(data[ticker], args['range'])
+                file = discord.File(chart, filename=f"{ticker}.png")
                 await message.channel.send(file=file)  # send stock chart
+                if args['message']:
+                    if args['mock']:
+                        await message.channel.send(utils.mock(args['message']))
+                    else:
+                        await message.channel.send(args['message'])
+                if args['delete']:
+                    await message.delete()
 
 
 def setup(bot):
