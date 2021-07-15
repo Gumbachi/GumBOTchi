@@ -132,7 +132,7 @@ class SbonkCommands(commands.Cog):
             symbol = symbol.upper()
             # weirdchamp for unknown symbol
             if symbol not in data.keys():
-                await message.channel(utils.emojify(cfg.emojis["weirdchamp"]))
+                await message.channel.send(utils.weirdchamp())
                 continue
 
             # Send chart
