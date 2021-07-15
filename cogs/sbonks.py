@@ -37,7 +37,7 @@ class SbonkCommands(commands.Cog):
             return json.loads(response.content)
         except json.JSONDecodeError:
             if response.status_code==402:
-                return 402
+                return {"error": 402}
             return {}
 
     @staticmethod
@@ -173,8 +173,9 @@ class SbonkCommands(commands.Cog):
             ticker = ticker.upper()
             # weirdchamp for unknown symbol
             if ticker not in data.keys():
-                if data == 402:
+                if data.get("error") == 402:
                     await message.channel.send("Out of juice :peepoSad:")
+                    continue
                 await message.channel.send(utils.weirdchamp())
                 continue
 
