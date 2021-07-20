@@ -27,8 +27,8 @@ class Hangman(commands.Cog):
     async def start_hangman(self, ctx, channel: Optional[discord.TextChannel], players: commands.Greedy[discord.Member]):
         """Begins the game of hangman and DM command author for mystery word."""
         # flag channel for deletion if channel was created by bot
-        dedicated_channel = not bool(channel)
-        everyone_in = not bool(players)  # everyone in if no members provided
+        dedicated_channel = not channel
+        everyone_in = not players  # everyone in if no members provided
 
         # Everyone can play if not specified
         if everyone_in:
@@ -163,7 +163,7 @@ class Hangman(commands.Cog):
                     # remove dedicated channel
                     if game_data["dedicated"]:
                         await message.channel.send("This channel will be deleted momentarily.")
-                        await asyncio.sleep(10)
+                        await asyncio.sleep(60)
                         await message.channel.delete()
 
 
