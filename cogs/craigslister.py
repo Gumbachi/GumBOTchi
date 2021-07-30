@@ -7,6 +7,7 @@ from pprint import pprint
 
 import common.database as db
 import discord
+from common.cfg import spam_words
 from craigslist import CraigslistForSale
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
@@ -143,7 +144,7 @@ class Craigslister(commands.Cog):
 
         await ctx.send(embed=query_embed)
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=10)
     async def lookup_queries(self):
         """Searches CL every 5 minutes for every query that every user has"""
         queries = db.queries.find({})
@@ -161,6 +162,7 @@ class Craigslister(commands.Cog):
             # send only new listings
             new_listings = [l for l in listings if l["id"]
                             not in query["listings"]]
+            new_listings = self.spam_filter(new_listings, query['keywords'])
             if not new_listings:
                 continue
 
@@ -215,36 +217,60 @@ class Craigslister(commands.Cog):
 
         return listings
 
+    @staticmethod
+    def spam_filter(listings, keywords):
+        clean_listings = []
+        for listing in listings:
+
+            # Check if body exists in listing
+            if 'body' in listing.keys():
+                try:
+                    # Removes links and short sentences from the body
+                    body = [sentence for sentence in listing['body'].split(
+                            '\n') if 'http' not in sentence and len(sentence) > 2]
+                    body = '\n'.join(body)
+                except: pass
+                finally:
+                    listing['body'] = body
+            else:
+                # No body, post was probably deleted, skip spam check
+                listing['body'] = "Couldn't get details; post was probably deleted."
+                clean_listings.append(listing)
+                continue
+
+
+            spam = 0
+            if len(body) > 500:
+                # remove keywords from spam list
+                spam_wrds = [i for i in [e.upper() for e in spam_words] if i not in [j.upper() for j in keywords]]
+                for word in spam_wrds:
+                    # -1 means the word is not found
+                    if body.find(word) != -1:
+                        spam += 1
+                    # Too spammy so break
+                    if spam > 1: 
+                        break
+
+            # If less than 2 strikes then add to list
+            if spam < 2:
+                clean_listings.append(listing)
+
+        return clean_listings
+    
     async def send_listing(self, listing, channel):
         """Takes a listing object and sends it to the specified channel"""
 
         display_limit = 350
 
-        # Check if the listing has a body, no body usually means the post no longer exists
-        if 'body' in listing.keys():
-            try:
-                # Removes links and short sentences from the body
-                body = [sentence for sentence in listing['body'].split(
-                    '\n') if 'http' not in sentence and len(sentence) > 2]
-                body = '\n'.join(body)
-            except:
-                body = listing['body']
-
-            # If the body is longer than the display limit, only show the max amount of characters
-            if len(body) > display_limit:
-                body = f"{body[0:display_limit]}..."
-
-            # Green because the post probably still exists
-            color = discord.Color.green()
-        else:
-            # No body, post was probably deleted, and so the color is red
-            body = "Couldn't get details; post was probably deleted."
-            color = discord.Color.red()
+        # If the body is longer than the display limit, only show the max amount of characters
+        body = listing['body']
+        if len(body) > display_limit:
+            body = f"{body[0:display_limit]}..."
 
         # Formats and sends the embed
         embed = discord.Embed(title=f"{listing['price']}, {listing['name']}",
                               description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
-                              color=color)
+                              color=discord.Color.blue())
         return await channel.send(embed=embed)
 
 

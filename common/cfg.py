@@ -121,3 +121,10 @@ poggers_links = [
     "https://tenor.com/view/genshin-lumine-poggers-gif-18795348",
     "https://tenor.com/view/amber-poggers-genshin-impact-gif-18732929",
 ]
+
+spam_words = [
+    'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops', 
+    'Video Games', 'Drones', 'Speakers', 'Cameras',
+    'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
+    'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile', 
+    ]
