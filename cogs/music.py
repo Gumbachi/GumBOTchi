@@ -1,8 +1,10 @@
 import os
 import asyncio
+import youtube_dl
 import discord
 from discord.ext import commands
 from discord.ext.commands import CommandError
+from pprint import pprint
 
 
 class MusicCommands(commands.Cog):
@@ -10,52 +12,68 @@ class MusicCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.soundclip_aliases = {
+            "cc": "clingclang",
+            "dtyd": "dancetillyouredead"
+        }
 
-    async def play_audio_clip(self, ctx, source):
-        """Given a source it will connect and play audio clip."""
+    @commands.command(name="soundclip", aliases=["sc", "clip"])
+    async def play_soundclip(self, ctx, *, name):
+        """Plays a sound clip given a name"""
+        # turn input into a sound clip path
+        name = name.lower()
+        name = self.soundclip_aliases.get(name, name)
+        name += ".mp3"
+        if name not in os.listdir("resources/sounds"):
+            raise CommandError("Invalid clip name")
+
+        source = f"resources/sounds/{name}"
+
+        # Get voice state
         voice = ctx.author.voice
         if not voice:
             raise CommandError("You aren't in VC")
 
         player = await voice.channel.connect()
-        player.play(discord.FFmpegPCMAudio(
+        audio_clip = discord.FFmpegPCMAudio(
             executable=os.getenv("FFMPEG_PATH"),
-            source=source)
+            source=source
         )
-        # Sleep while audio is playing.
+        player.play(audio_clip)
+
+        # Wait for clip to finish and dc
         while player.is_playing():
             await asyncio.sleep(1)
         await player.disconnect()
 
-    @commands.command(name="clingclang", aliases=["cc"])
-    async def clingclang(self, ctx):
-        """Plays 'Cling Clang'."""
-        source = "resources/sounds/clingclang.mp3"
-        await self.play_audio_clip(ctx, source)
+    @commands.command(name="play")
+    async def play_audiostream(self, ctx, *, query):
+        """Plays and audiostream from a youtube video."""
 
-    @commands.command(name="guh")
-    async def guh(self, ctx):
-        """Plays 'Guh' sound clip"""
-        source = "resources/sounds/guh.mp3"
-        await self.play_audio_clip(ctx, source)
+        ydl_opts = {
+            "format": "bestaudio",
+            "noplaylist": True
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            song_info = ydl.extract_info(f"ytsearch:{query}", download=False)
+            print(song_info["entries"][0].keys())
 
-    @commands.command(name="gottem")
-    async def gottem(self, ctx):
-        """Plays 'gottem' sound clip"""
-        source = "resources/sounds/gottem.mp3"
-        await self.play_audio_clip(ctx, source)
+            # Get voice state
+            voice = ctx.author.voice
+            if not voice:
+                raise CommandError("You aren't in VC")
 
-    @commands.command(name="dancetillyouredead", aliases=["dtyd"])
-    async def dtyd(self, ctx):
-        """Plays 'dtyd' sound clip"""
-        source = "resources/sounds/dtyd.mp3"
-        await self.play_audio_clip(ctx, source)
+            player = await voice.channel.connect()
+            audio_stream = discord.FFmpegPCMAudio(
+                song_info["entries"][0]["url"],
+                executable=os.getenv("FFMPEG_PATH")
+            )
+            player.play(audio_stream)
 
-    @commands.command(name="soundtest")
-    async def sound_clip_test(self, ctx):
-        """Plays a sound clip"""
-        source = "resources/sounds/melonpack.mp3"
-        await self.play_audio_clip(ctx, source)
+            # Wait for clip to finish and dc
+            while player.is_playing():
+                await asyncio.sleep(1)
+            await player.disconnect()
 
     @commands.command(name="disconnect", aliases=["dc"])
     async def disconnect_voice(self, ctx):
