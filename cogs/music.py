@@ -1,3 +1,4 @@
+import os
 import asyncio
 import discord
 from discord.ext import commands
@@ -18,7 +19,7 @@ class MusicCommands(commands.Cog):
 
         player = await voice.channel.connect()
         player.play(discord.FFmpegPCMAudio(
-            executable="C:/ffmpeg/bin/ffmpeg.exe",
+            executable=os.getenv("FFMPEG_PATH"),
             source=source)
         )
         # Sleep while audio is playing.
