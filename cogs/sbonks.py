@@ -18,25 +18,20 @@ class SbonkCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
-        self.xpev_victims = [
-            128595549975871488,
-            224506294801793025,
-            235902262168256515
-        ]
 
     def get_stock_data(self, symbol, timeframe):
         """A more refined stock quote function."""
         # Request stock quotes from iex cloud
         request = ("https://cloud.iexapis.com/stable/stock/market/batch?"
-                    f"symbols={symbol}&types=chart,quote&"
-                    f"range={timeframe}&token={self.iexcloud_key}")
+                   f"symbols={symbol}&types=chart,quote&"
+                   f"range={timeframe}&token={self.iexcloud_key}")
 
         response = requests.get(request)
-        
+
         try:
             return json.loads(response.content)
         except json.JSONDecodeError:
-            if response.status_code==402:
+            if response.status_code == 402:
                 return {"error": 402}
             return {}
 
@@ -67,7 +62,7 @@ class SbonkCommands(commands.Cog):
         close = chart[0]["close"]
         extend_list = []
         if minutes:
-            ## Extends data with null values in case its the middle of the day
+            # Extends data with null values in case its the middle of the day
             extend_list = [np.nan] * (390 - len(prices))
             close = quote["previousClose"]
 
@@ -120,32 +115,32 @@ class SbonkCommands(commands.Cog):
         string += " "
         pattern = r"[$][a-zA-Z]{1,4}[^a-zA-Z]"
         prefixed_symbols = re.findall(pattern, string)
-        
+
         ticker_list = [s[:-1] for s in prefixed_symbols]
         ticker_dict = {}
 
-        #Finds ticker arguments and stores them in a dict
+        # Finds ticker arguments and stores them in a dict
         for ticker in ticker_list:
             index = string.find(ticker)
-            location= index+len(ticker)
+            location = index+len(ticker)
             if string[location] == "[":
                 start = location + 1
                 end = location + string[location:].find("]")
                 args = string[start:end].split("|") + ["", "", "", ""]
-                
-                ticker_dict[ticker[1:]] = { 
-                                            "range": args[0], 
-                                            "message": args[1],
-                                            "mock": args[2],
-                                            "delete": args[3],
-                                            }
+
+                ticker_dict[ticker[1:]] = {
+                    "range": args[0],
+                    "message": args[1],
+                    "mock": args[2],
+                    "delete": args[3],
+                }
             else:
-                ticker_dict[ticker[1:]] = { 
-                                            "range": "1d", 
-                                            "message": None,
-                                            "mock": None,
-                                            "delete": None,
-                                            }
+                ticker_dict[ticker[1:]] = {
+                    "range": "1d",
+                    "message": None,
+                    "mock": None,
+                    "delete": None,
+                }
 
         return ticker_dict
 
@@ -156,10 +151,6 @@ class SbonkCommands(commands.Cog):
         if message.author.id == self.bot.user.id or message.author.id in cfg.supermuted_users:
             return
 
-        # Salm and others aint gonna hurt my feelings anymore
-        if message.author.id not in self.xpev_victims and "$xpev" in message.content.lower():
-            return await message.channel.send(f"{utils.weirdchamp()} You aint even holding I think the fuck not")
-
         # He Bought and He Sold
         if message.content.lower() in ("he bought", "he bought?"):
             return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
@@ -167,7 +158,7 @@ class SbonkCommands(commands.Cog):
             return await message.channel.send("https://www.youtube.com/watch?v=TRXdxiot5JM")
 
         ticker_info = SbonkCommands.extract_symbols(message.content)
-        
+
         for ticker, args in ticker_info.items():
             data = self.get_stock_data(ticker, args['range'])
             ticker = ticker.upper()
@@ -181,7 +172,8 @@ class SbonkCommands(commands.Cog):
 
             # Send chart
             async with message.channel.typing():
-                chart = SbonkCommands.draw_symbol_chart(data[ticker], args['range'])
+                chart = SbonkCommands.draw_symbol_chart(
+                    data[ticker], args['range'])
                 file = discord.File(chart, filename=f"{ticker}.png")
                 await message.channel.send(file=file)  # send stock chart
                 if args['message']:

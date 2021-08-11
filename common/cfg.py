@@ -11,9 +11,10 @@ extensions = [
     "cogs.errors",
     "cogs.catalog",
     "cogs.craigslister",
-    "cogs.mafia",
+    "cogs.games.mafia",
     "cogs.roast",
     "cogs.games.hangman",
+    "cogs.music"
 ]
 
 
@@ -31,7 +32,8 @@ bot = commands.Bot(
 
 # GLOBAL DATA
 
-admin_ids = {128595549975871488, 244574519027564544}  # Gumbachi#0506  # SoloMan98#3426
+# Gumbachi#0506  # SoloMan98#3426
+admin_ids = {128595549975871488, 244574519027564544}
 
 emojis = {
     "checkmark": "✅",
@@ -51,16 +53,22 @@ supermuted_users = set()
 activities = itertools.cycle(
     [
         discord.Activity(name="with your feelings", type=ActivityType.playing),
-        discord.Activity(name="your cries for help", type=ActivityType.listening),
-        discord.Activity(name="Salm's color change", type=ActivityType.watching),
-        discord.Activity(name="18 poggers gifs at once", type=ActivityType.watching),
+        discord.Activity(name="your cries for help",
+                         type=ActivityType.listening),
+        discord.Activity(name="Salm's color change",
+                         type=ActivityType.watching),
+        discord.Activity(name="18 poggers gifs at once",
+                         type=ActivityType.watching),
         discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
-        discord.Activity(name="The Poggers Olympics", type=ActivityType.competing),
+        discord.Activity(name="The Poggers Olympics",
+                         type=ActivityType.competing),
         discord.Activity(
             name="Derk struggle with craigslisting", type=ActivityType.watching
         ),
-        discord.Activity(name="Salmon kill the economy", type=ActivityType.watching),
-        discord.Activity(name="Roses 50 times in one day", type=ActivityType.listening),
+        discord.Activity(name="Salmon kill the economy",
+                         type=ActivityType.watching),
+        discord.Activity(name="Roses 50 times in one day",
+                         type=ActivityType.listening),
         discord.Activity(name="hard to get", type=ActivityType.playing),
         discord.Activity(name="my weight", type=ActivityType.watching),
         discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
@@ -123,8 +131,8 @@ poggers_links = [
 ]
 
 spam_words = [
-    'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops', 
+    'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
     'Video Games', 'Drones', 'Speakers', 'Cameras',
     'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
-    'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile', 
-    ]
+    'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
+]
