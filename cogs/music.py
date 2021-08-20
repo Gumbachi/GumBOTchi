@@ -4,15 +4,13 @@ import asyncio
 import youtube_dl
 import discord
 from discord.ext import commands
-from discord.ext.commands import CommandError
+from discord.ext.commands import CommandError, CommandInvokeError
 import common.cfg as cfg
 from common.cfg import song_queue
 
 
 class MusicCommands(commands.Cog):
     """Cog that handles all audio related commands."""
-
-    CLIENT_TIMEOUT = 60
 
     def __init__(self, bot):
         self.bot = bot
@@ -57,29 +55,17 @@ class MusicCommands(commands.Cog):
         # disconnect when bot is out of songs to play
         while player.is_playing():
             await asyncio.sleep(1)
-            cfg.client_timeout = 0
 
         if song_queue:
             await self.play_next_song(player)
 
     @commands.command(name="connect", aliases=["join"])
-    async def connect_to_voice(self, ctx):
+    async def connect_to_voice(self, ctx, song=None):
         """Disconnects if active voice channel"""
         client = self.get_voice_client(ctx.guild.id)
         if client:
             raise CommandError("Bot is already connected somewhere")
-        player = await ctx.author.voice.channel.connect()
-
-        while cfg.client_timeout <= self.CLIENT_TIMEOUT:
-            await asyncio.sleep(1)
-            if not player.is_playing():
-                if song_queue:
-                    await self.play_next_song(player)
-                else:
-                    print("counting")
-                    cfg.client_timeout += 1
-
-        await player.disconnect()
+        return await ctx.author.voice.channel.connect()
 
     @commands.command(name="disconnect", aliases=["dc"])
     async def disconnect_from_voice(self, ctx):
@@ -116,7 +102,7 @@ class MusicCommands(commands.Cog):
         await player.disconnect()
 
     @commands.command(name="play")
-    async def enqueue_song(self, ctx, *, query):
+    async def play_song(self, ctx, *, query):
         """Plays and audiostream from a youtube video."""
 
         if len(song_queue) >= 10:
@@ -131,10 +117,11 @@ class MusicCommands(commands.Cog):
         # Attempt to acquire voice client
         try:
             player = await ctx.invoke(self.bot.get_command("connect"))
-        except CommandError:
+        except CommandInvokeError:
+            print("Couldnt find")
             player = self.get_voice_client(ctx.guild.id)
-            if not player:
-                raise CommandError("Bot is probably in another channel rn")
+            if player.channel != ctx.author.voice.channel:
+                raise CommandError("Bot is in another channel rn")
 
         # Prepare and add song data to queue
         required_data = ("url", "title", "duration", "thumbnail")
@@ -192,14 +179,6 @@ class MusicCommands(commands.Cog):
             color=discord.Color.teal()
         )
         await ctx.send(embed=q_embed)
-
-    @commands.command(name="stop")
-    async def stopsong(self, ctx):
-        """stop song"""
-        player = self.get_voice_client(ctx.guild.id)
-        if player.channel != ctx.author.voice.channel:
-            raise CommandError("You gotta be in the same channel")
-        player.stop()
 
 
 def setup(bot):
