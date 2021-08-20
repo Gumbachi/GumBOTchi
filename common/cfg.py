@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 import common.database as db
 from discord import ActivityType
+from collections import deque
 
 extensions = [
     "cogs.general",
@@ -44,6 +45,9 @@ emojis = {
     "double_down": "⏬",
     "updown_arrow": "↕️",
 }
+
+song_queue = deque(maxlen=10)
+client_timeout = 0
 
 catalogs = {}
 builders = {}
