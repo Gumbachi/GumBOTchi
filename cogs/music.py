@@ -60,7 +60,7 @@ class MusicCommands(commands.Cog):
             await self.play_next_song(player)
 
     @commands.command(name="connect", aliases=["join"])
-    async def connect_to_voice(self, ctx, song=None):
+    async def connect_to_voice(self, ctx):
         """Disconnects if active voice channel"""
         client = self.get_voice_client(ctx.guild.id)
         if client:
@@ -117,7 +117,7 @@ class MusicCommands(commands.Cog):
         # Attempt to acquire voice client
         try:
             player = await ctx.invoke(self.bot.get_command("connect"))
-        except CommandInvokeError:
+        except (CommandError, CommandInvokeError):
             print("Couldnt find")
             player = self.get_voice_client(ctx.guild.id)
             if player.channel != ctx.author.voice.channel:
