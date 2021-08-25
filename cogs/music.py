@@ -1,171 +1,147 @@
 import os
-from datetime import timedelta
 import asyncio
 import youtube_dl
 import discord
-from discord.ext import commands
-from discord.ext.commands import CommandError, CommandInvokeError
-import common.cfg as cfg
+from discord.ext import commands, tasks
+from discord.ext.commands import CommandError
 from common.cfg import song_queue
+from common.utils import normalize_time
+
+# TODO Loooops, DC timer, better lookign queue, play all cmd
+
+
+def bot_in_vc(ctx):
+    """A Check to see if bot is in the cmd author VC."""
+    if ctx.voice_client:
+        return ctx.voice_client.channel == ctx.author.voice.channel
 
 
 class MusicCommands(commands.Cog):
     """Cog that handles all audio related commands."""
+    YDL_OPTS = {
+        "format": "bestaudio/best",
+        "extractaudio": True,
+        "audioformat": "mp3",
+        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+        "restrictfilenames": True,
+        "noplaylist": True,
+        "nocheckcertificate": True,
+        "ignoreerrors": False,
+        "logtostderr": False,
+        "quiet": True,
+        "no_warnings": True,
+        "default_search": "auto",
+        "source_address": "0.0.0.0",
+    }
+    FFMPEG_OPTS = {
+        "executable": os.getenv("FFMPEG_PATH"),
+        "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+        "options": "-vn",
+    }
 
     def __init__(self, bot):
         self.bot = bot
-        self.soundclip_aliases = {
-            "cc": "clingclang",
-            "dtyd": "dancetillyouredead"
-        }
+        self.queue_timer.start()
 
-    def get_voice_client(self, gid):
-        for client in self.bot.voice_clients:
-            if gid == client.guild.id:
-                cfg.client_timeout = 0  # reset timeout counter
-                return client
+    def cog_check(self, ctx):
+        return ctx.guild.id in (565257922356051973, 169562731085692928)
 
-    async def play_next_song(self, player):
-        """Plays the next song up in the Queue"""
-        # song is skipped
-        if player.is_playing():
-            player.stop()
+    @classmethod
+    def get_song_data(cls, query):
+        """Handles all youtubedl stuff."""
+        with youtube_dl.YoutubeDL(cls.YDL_OPTS) as ydl:
+            song_info = ydl.extract_info(f"ytsearch:{query}", download=False)
+            try:
+                data = song_info["entries"][0]
+            except KeyError:
+                return None  # Couldnt find song
 
-        # break and dc if no more songs queued
+            required_data = ("url", "title", "duration", "thumbnail")
+            return {k: data[k] for k in required_data}
+
+    @classmethod
+    async def play_next_song(cls, voice_client):
+        """Plays the next song in the queue."""
+        if voice_client.is_playing():
+            voice_client.stop()
+
+        # do nothing if no more songs queued
         if not song_queue:
             return
 
         # pop and play next song
         song = song_queue.pop()
-        audio_stream = discord.FFmpegPCMAudio(
-            song["url"],
-            executable=os.getenv("FFMPEG_PATH")
-        )
-        player.play(audio_stream)
+        audio = discord.FFmpegPCMAudio(song["url"], **cls.FFMPEG_OPTS)
+        voice_client.play(audio)
 
         # Send now playing embed
         play_embed = discord.Embed(
-            title=f"{song['title']}",
-            description=str(timedelta(seconds=int(song["duration"]))),
+            title="NOW PLAYING",
+            description=f"{song['title']}\n{normalize_time(song['duration'])}",
             color=discord.Color.green()
         )
         play_embed.set_thumbnail(url=song["thumbnail"])
-        await song["textchannel"].send(embed=play_embed)
-
-        # disconnect when bot is out of songs to play
-        while player.is_playing():
-            await asyncio.sleep(1)
-
-        if song_queue:
-            await self.play_next_song(player)
+        await song["text_channel"].send(embed=play_embed)
 
     @commands.command(name="connect", aliases=["join"])
     async def connect_to_voice(self, ctx):
-        """Disconnects if active voice channel"""
-        client = self.get_voice_client(ctx.guild.id)
-        if client:
-            raise CommandError("Bot is already connected somewhere")
+        """Connects bot to voice channel and returns the client."""
+        # user is not in VC
+        if not ctx.author.voice:
+            return await ctx.send("https://tenor.com/view/kermit-the-frog-looking-for-directions-navigate-is-lost-gif-11835765")
         return await ctx.author.voice.channel.connect()
 
     @commands.command(name="disconnect", aliases=["dc"])
+    @commands.check(bot_in_vc)
     async def disconnect_from_voice(self, ctx):
         """Disconnects if active voice channel"""
-        client = self.get_voice_client(ctx.guild.id)
-        if not client:
-            raise CommandError("Bot is not in your VC")
-        await client.disconnect()
+        await ctx.voice_client.disconnect()
         song_queue.clear()
 
-    @commands.command(name="soundclip", aliases=["sc", "clip"])
-    async def play_soundclip(self, ctx, *, name):
-        """Plays a sound clip given a name"""
-        # turn input into a sound clip path
-        name = name.lower()
-        name = self.soundclip_aliases.get(name, name)
-        name += ".mp3"
-        if name not in os.listdir("resources/sounds"):
-            raise CommandError("Invalid clip name")
-
-        source = f"resources/sounds/{name}"
-
-        # Play audio
-        player = await ctx.invoke(self.bot.get_command("connect"))
-        audio_clip = discord.FFmpegPCMAudio(
-            executable=os.getenv("FFMPEG_PATH"),
-            source=source
-        )
-        player.play(audio_clip)
-
-        # Wait for clip to finish and dc
-        while player.is_playing():
-            await asyncio.sleep(1)
-        await player.disconnect()
-
     @commands.command(name="play")
-    async def play_song(self, ctx, *, query):
-        """Plays and audiostream from a youtube video."""
+    async def queue_song(self, ctx, *, query):
+        """Plays audio from a YT vid in the voice channel."""
+        voice_client = ctx.voice_client
+        if not voice_client:
+            voice_client = await ctx.invoke(self.bot.get_command("connect"))
 
-        if len(song_queue) >= 10:
-            raise CommandError("Max 10 Queued songs")
-
-        # Find youtube video data with ytdl
-        ydl_opts = {"format": "bestaudio", "noplaylist": True, "quiet": True}
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            song_info = ydl.extract_info(f"ytsearch:{query}", download=False)
-            data = song_info["entries"][0]
-
-        # Attempt to acquire voice client
-        try:
-            player = await ctx.invoke(self.bot.get_command("connect"))
-        except (CommandError, CommandInvokeError):
-            print("Couldnt find")
-            player = self.get_voice_client(ctx.guild.id)
-            if player.channel != ctx.author.voice.channel:
-                raise CommandError("Bot is in another channel rn")
-
-        # Prepare and add song data to queue
-        required_data = ("url", "title", "duration", "thumbnail")
-        song = {k: data[k] for k in required_data}
-        song["textchannel"] = ctx.channel
+        # attempt to find song data
+        song = self.get_song_data(query)
+        if not song:
+            raise CommandError("No dice on that one.")
+        song["text_channel"] = ctx.channel
         song_queue.append(song)
 
         # added song to queue
-        if player.is_playing():
+        if voice_client.is_playing() and len(song_queue) >= 1:
             embed = discord.Embed(
-                title=f"{song['title']} added to queue.",
+                title=f"Song added to queue.",
+                description=f"{song['title']} added to queue behind {len(song_queue)-1} other songs.",
                 color=discord.Color.green()
             )
             embed.set_thumbnail(url=song["thumbnail"])
             await ctx.send(embed=embed)
         # now playing song
         else:
-            await self.play_next_song(player)
+            await self.play_next_song(voice_client)
 
     @commands.command(name="skip")
-    async def skip_song(self, ctx):
+    @commands.check(bot_in_vc)
+    async def next_song(self, ctx):
         """Skips to the next song in the queue"""
-        player = self.get_voice_client(ctx.guild.id)
-        if player.channel != ctx.author.voice.channel:
-            raise CommandError("You gotta be in the same channel")
-
-        await self.play_next_song(player)
+        await self.play_next_song(ctx.voice_client)
 
     @commands.command(name="pause")
+    @commands.check(bot_in_vc)
     async def pause_song(self, ctx):
         """Pause the song"""
-        player = self.get_voice_client(ctx.guild.id)
-        if player.channel != ctx.author.voice.channel:
-            raise CommandError("You gotta be in the same channel")
-        player.pause()
+        ctx.voice_client.pause()
 
     @commands.command(name="unpause", aliases=["resume"])
+    @commands.check(bot_in_vc)
     async def resume_song(self, ctx):
         """resumes the paused song"""
-        player = self.get_voice_client(ctx.guild.id)
-        if player.channel != ctx.author.voice.channel:
-            raise CommandError("You gotta be in the same channel")
-
-        player.resume()
+        ctx.voice_client.resume()
 
     @commands.command(name="queue", aliases=["q"])
     async def show_queue(self, ctx):
@@ -180,6 +156,69 @@ class MusicCommands(commands.Cog):
         )
         await ctx.send(embed=q_embed)
 
+    @tasks.loop(seconds=3.0)
+    async def queue_timer(self):
+        """Checks the voice clients to see if one has stopped."""
+        for client in self.bot.voice_clients:
+            if client.is_playing():
+                continue
+            if song_queue:
+                await self.play_next_song(client)
+
+
+class SoundclipCommands(commands.Cog):
+    """A bunch of commands for soundclips."""
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    def cog_check(self, ctx):
+        """Checks if the bot is currently not connected or paused in the same channel"""
+        if ctx.voice_client:
+            if ctx.voice_client.is_playing or ctx.voice_client.channel != ctx.author.voice.channel:
+                return False
+        return True
+
+    @staticmethod
+    async def play_soundclip(ctx, source):
+        """Plays a sound clip given a name."""
+        voice_client = ctx.voice_client
+        if not voice_client:
+            voice_client = await ctx.author.voice.channel.connect()
+
+        # Play audio
+        soundclip = discord.FFmpegPCMAudio(
+            executable=os.getenv("FFMPEG_PATH"),
+            source=source
+        )
+        voice_client.play(soundclip)
+
+        # Wait for clip to finish and dc
+        while voice_client.is_playing():
+            await asyncio.sleep(1)
+        await voice_client.disconnect()
+
+    @commands.command(name="bruh")
+    async def sc_bruh(self, ctx):
+        """Play bruh sound effect #2."""
+        await self.play_soundclip(ctx, "resources/sounds/bruh.mp3")
+
+    @commands.command(name="clingclang", aliases=["cc", "clanger"])
+    async def sc_clingclang(self, ctx):
+        """Play Cling Clang."""
+        await self.play_soundclip(ctx, "resources/sounds/clingclang.mp3")
+
+    @commands.command(name="gottem")
+    async def sc_gottem(self, ctx):
+        """Play we gottem soundclip."""
+        await self.play_soundclip(ctx, "resources/sounds/gottem.mp3")
+
+    @commands.command(name="guh")
+    async def sc_guh(self, ctx):
+        """Play guh soundclip."""
+        await self.play_soundclip(ctx, "resources/sounds/guh.mp3")
+
 
 def setup(bot):
     bot.add_cog(MusicCommands(bot))
+    bot.add_cog(SoundclipCommands(bot))

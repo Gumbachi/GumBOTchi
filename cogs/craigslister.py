@@ -3,7 +3,7 @@
 # TODO Make it so channel is set per guild and not wherever user calls clme
 
 
-from pprint import pprint
+import requests
 
 import common.database as db
 import discord
@@ -210,8 +210,7 @@ class Craigslister(commands.Cog):
             try:
                 for listing in generator.get_results(sort_by='newest', include_details=True):
                     listings.append(listing)
-            except Exception as e:
-                print(f"Name of error is {type(e)}")
+            except requests.exceptions.HTTPError:
                 for listing in generator.get_results(sort_by='newest'):
                     listings.append(listing)
 
@@ -229,7 +228,8 @@ class Craigslister(commands.Cog):
                     body = [sentence for sentence in listing['body'].split(
                             '\n') if 'http' not in sentence and len(sentence) > 2]
                     body = '\n'.join(body)
-                except: pass
+                except:
+                    pass
                 finally:
                     listing['body'] = body
             else:
@@ -238,17 +238,17 @@ class Craigslister(commands.Cog):
                 clean_listings.append(listing)
                 continue
 
-
             spam = 0
             if len(body) > 500:
                 # remove keywords from spam list
-                spam_wrds = [i for i in [e.upper() for e in spam_words] if i not in [j.upper() for j in keywords]]
+                spam_wrds = [i for i in [e.upper() for e in spam_words] if i not in [
+                    j.upper() for j in keywords]]
                 for word in spam_wrds:
                     # -1 means the word is not found
                     if body.find(word) != -1:
                         spam += 1
                     # Too spammy so break
-                    if spam > 1: 
+                    if spam > 1:
                         break
 
             # If less than 2 strikes then add to list
@@ -256,7 +256,7 @@ class Craigslister(commands.Cog):
                 clean_listings.append(listing)
 
         return clean_listings
-    
+
     async def send_listing(self, listing, channel):
         """Takes a listing object and sends it to the specified channel"""
 
