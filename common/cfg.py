@@ -107,6 +107,7 @@ poggers_activation_phrases = {
     "pognut",
     "ponginos",
     "piggas",
+    "ponggers",
 }
 
 poggers_links = [
