@@ -7,7 +7,7 @@ from discord.ext.commands import CommandError
 from common.cfg import song_queue
 from common.utils import normalize_time
 
-# TODO Loooops, DC timer, better lookign queue, play all cmd
+# TODO Loooops, DC timer, better lookign queue, play all cmd, normalize volume maybe
 
 
 def bot_in_vc(ctx):
