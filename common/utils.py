@@ -2,6 +2,7 @@
 from common.cfg import bot
 import random
 from datetime import timedelta
+import time
 
 
 def weirdchamp():
@@ -22,4 +23,8 @@ def mock(text):
 
 
 def normalize_time(seconds):
-    return str(timedelta(seconds=int(seconds)))
+    """Turns seconds into H:M:S"""
+    if seconds < 3600:
+        return time.strftime("%M:%S", time.gmtime(seconds))
+    else:
+        return time.strftime("%H:%M:%S", time.gmtime(seconds))

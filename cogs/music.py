@@ -7,8 +7,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
 from common.utils import normalize_time
 
-# TODO DC timer, play all cmd, normalize volume maybe,
-# TODO Time estimates, queue print limit
+# TODO DC timer, play all cmd, normalize volume maybe
 
 
 def bot_in_vc(ctx):
@@ -118,7 +117,8 @@ class MusicCommands(commands.Cog):
             queue.appendleft(song)
             embed = discord.Embed(
                 title=f"Added To Queue",
-                description=f"[{song['title']}]({song['webpage_url']})\nETA: 5",
+                description=(f"[{song['title']}]({song['webpage_url']})\n"
+                             f"Estimated Wait: {queue.time_until(len(queue)-1)}"),
                 color=discord.Color.blue()
             )
             embed.set_thumbnail(url=song["thumbnail"])
@@ -213,15 +213,23 @@ class MusicCommands(commands.Cog):
 
         embed = discord.Embed(
             title=f"QUEUEUEUEUE\t\t\t{pause_status}\t{loop_status}\t{cycle_status}",
-            description=f"NOW PLAYING:\n[{queue.current_song['title']}]({queue.current_song['webpage_url']})",
+            description=f"**NOW PLAYING**\n[{queue.current_song['title']}]({queue.current_song['webpage_url']})",
             color=discord.Color.blue()
         )
         embed.set_thumbnail(url=queue.current_song["thumbnail"])
 
-        for i, song in enumerate(reversed(queue), 1):
+        # Format queue to only 5 songs for space
+        songlist = list(queue)
+        songlist.reverse()  # needs to be reversed to display properly
+        if len(queue) > 5:
+            songlist = songlist[:5]  # only 5 songs displayed
+            embed.set_footer(text=f"{len(queue)-5} Songs are not displayed")
+
+        # Add each song
+        for i, song in enumerate(songlist, 1):
             embed.add_field(
                 name=f"{i}. {song['title']}",
-                value=f"{normalize_time(song['duration'])} - [Link]({song['webpage_url']})",
+                value=f"Estimated Wait: {queue.time_until(i-1)} - [Link]({song['webpage_url']})",
                 inline=False
             )
         await ctx.send(embed=embed)
@@ -241,6 +249,7 @@ class MusicCommands(commands.Cog):
                     # add song back onto queue if cycle is enabled
                     if queue.cycle:
                         queue.appendleft(queue.current_song)
+
                     await self.play_song(client, queue.pop())
 
 
@@ -255,7 +264,6 @@ class SoundclipCommands(commands.Cog):
         if ctx.voice_client:
             if ctx.voice_client.is_playing or ctx.voice_client.channel != ctx.author.voice.channel:
                 return False
-        return True
 
     @staticmethod
     async def play_soundclip(ctx, source):
@@ -308,9 +316,6 @@ class SongQueue(collections.deque):
         self.paused = False
         self.current_song = None
 
-    def __repr__(self) -> str:
-        return super().__repr__() + f"{self.loop}\n{self.cycle}\n{self.current_song}"
-
     @classmethod
     def get_queue(cls, gid: int):
         """Return active song queue or make a new one."""
@@ -323,6 +328,13 @@ class SongQueue(collections.deque):
     def is_empty(self):
         """Not necessary but more readable."""
         return len(self) == 0
+
+    def time_until(self, index):
+        """Calculate time until a song is played."""
+        time_until = self.current_song["duration"]
+        for i in range(index):
+            time_until += self[i]["duration"]
+        return normalize_time(time_until)
 
 
 def setup(bot):
