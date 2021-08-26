@@ -1,13 +1,14 @@
+import collections
 import os
 import asyncio
 import youtube_dl
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
-from common.cfg import song_queue
 from common.utils import normalize_time
 
-# TODO Loooops, DC timer, better lookign queue, play all cmd, normalize volume maybe
+# TODO DC timer, play all cmd, normalize volume maybe,
+# TODO Time estimates, queue print limit
 
 
 def bot_in_vc(ctx):
@@ -43,9 +44,6 @@ class MusicCommands(commands.Cog):
         self.bot = bot
         self.queue_timer.start()
 
-    def cog_check(self, ctx):
-        return ctx.guild.id in (565257922356051973, 169562731085692928)
-
     @classmethod
     def get_song_data(cls, query):
         """Handles all youtubedl stuff."""
@@ -56,32 +54,35 @@ class MusicCommands(commands.Cog):
             except KeyError:
                 return None  # Couldnt find song
 
-            required_data = ("url", "title", "duration", "thumbnail")
+            required_data = ("url", "title", "duration",
+                             "thumbnail", "webpage_url")
             return {k: data[k] for k in required_data}
 
     @classmethod
-    async def play_next_song(cls, voice_client):
-        """Plays the next song in the queue."""
+    async def play_song(cls, voice_client, song):
+        """Plays the next song in the queue.
+        If song is not provided then it plays next song
+        """
+        # ensure voice client is not playing
         if voice_client.is_playing():
             voice_client.stop()
 
-        # do nothing if no more songs queued
-        if not song_queue:
-            return
+        # update queue object
+        queue = SongQueue.get_queue(voice_client.guild.id)
+        queue.current_song = song
 
-        # pop and play next song
-        song = song_queue.pop()
+        # format and play audio
         audio = discord.FFmpegPCMAudio(song["url"], **cls.FFMPEG_OPTS)
         voice_client.play(audio)
 
-        # Send now playing embed
-        play_embed = discord.Embed(
+        # Send now playing message
+        embed = discord.Embed(
             title="NOW PLAYING",
-            description=f"{song['title']}\n{normalize_time(song['duration'])}",
-            color=discord.Color.green()
+            description=f"[{song['title']}]({song['webpage_url']})\n{normalize_time(song['duration'])}",
+            color=discord.Color.blue()
         )
-        play_embed.set_thumbnail(url=song["thumbnail"])
-        await song["text_channel"].send(embed=play_embed)
+        embed.set_thumbnail(url=song["thumbnail"])
+        await song["text_channel"].send(embed=embed)
 
     @commands.command(name="connect", aliases=["join"])
     async def connect_to_voice(self, ctx):
@@ -96,65 +97,134 @@ class MusicCommands(commands.Cog):
     async def disconnect_from_voice(self, ctx):
         """Disconnects if active voice channel"""
         await ctx.voice_client.disconnect()
-        song_queue.clear()
+        SongQueue.instances.pop(ctx.guild.id, None)
 
     @commands.command(name="play")
     async def queue_song(self, ctx, *, query):
         """Plays audio from a YT vid in the voice channel."""
-        voice_client = ctx.voice_client
-        if not voice_client:
+
+        if not (voice_client := ctx.voice_client):
             voice_client = await ctx.invoke(self.bot.get_command("connect"))
 
         # attempt to find song data
-        song = self.get_song_data(query)
-        if not song:
+        if not (song := self.get_song_data(query)):
             raise CommandError("No dice on that one.")
         song["text_channel"] = ctx.channel
-        song_queue.append(song)
+
+        queue = SongQueue.get_queue(ctx.guild.id)
 
         # added song to queue
-        if voice_client.is_playing() and len(song_queue) >= 1:
+        if queue.current_song:
+            queue.appendleft(song)
             embed = discord.Embed(
-                title=f"Song added to queue.",
-                description=f"{song['title']} added to queue behind {len(song_queue)-1} other songs.",
-                color=discord.Color.green()
+                title=f"Added To Queue",
+                description=f"[{song['title']}]({song['webpage_url']})\nETA: 5",
+                color=discord.Color.blue()
             )
             embed.set_thumbnail(url=song["thumbnail"])
             await ctx.send(embed=embed)
         # now playing song
         else:
-            await self.play_next_song(voice_client)
+            await self.play_song(voice_client, song)
 
     @commands.command(name="skip")
     @commands.check(bot_in_vc)
     async def next_song(self, ctx):
         """Skips to the next song in the queue"""
-        await self.play_next_song(ctx.voice_client)
+        queue = SongQueue.get_queue(ctx.guild.id)
+        if queue.is_empty():
+            if queue.cycle:
+                await self.play_song(ctx.voice_client, queue.current_song)
+            else:
+                ctx.voice_client.stop()
+        else:
+            queue.loop = False  # turn off looping if skipped
+            # add song back onto queue if cycle is enabled
+            if queue.cycle:
+                queue.appendleft(queue.current_song)
+
+            await self.play_song(ctx.voice_client, queue.pop())
 
     @commands.command(name="pause")
     @commands.check(bot_in_vc)
     async def pause_song(self, ctx):
         """Pause the song"""
         ctx.voice_client.pause()
+        SongQueue.get_queue(ctx.guild.id).paused = True
 
     @commands.command(name="unpause", aliases=["resume"])
     @commands.check(bot_in_vc)
     async def resume_song(self, ctx):
         """resumes the paused song"""
         ctx.voice_client.resume()
+        SongQueue.get_queue(ctx.guild.id).paused = False
+
+    @commands.command(name="loop", aliases=["repeat"])
+    @commands.check(bot_in_vc)
+    async def loop_song(self, ctx):
+        """Flips loop status for current song"""
+        queue = SongQueue.get_queue(ctx.guild.id)
+        queue.loop = not queue.loop
+
+        if queue.loop:
+            embed = discord.Embed(title="Looping  🔂")
+        else:
+            embed = discord.Embed(title="Not Looping  ❌")
+        await ctx.send(embed=embed)
+
+    @commands.command(name="cycle")
+    @ commands.check(bot_in_vc)
+    async def cycle_queue(self, ctx):
+        """Flips cycle status for current song"""
+        queue = SongQueue.get_queue(ctx.guild.id)
+        queue.cycle = not queue.cycle
+
+        if queue.cycle:
+            embed = discord.Embed(title="Cycling  🔁")
+        else:
+            embed = discord.Embed(title="Not Cycling  ❌")
+        await ctx.send(embed=embed)
+
+    @ commands.command(name="nowplaying", aliases=["np"])
+    async def display_current_song(self, ctx):
+        """Shows the current song"""
+        song = SongQueue.get_queue(ctx.guild.id).current_song
+        if song:
+            embed = discord.Embed(
+                title="NOW PLAYING",
+                description=f"[{song['title']}]({song['webpage_url']})\n{normalize_time(song['duration'])}",
+                color=discord.Color.blue()
+            )
+            embed.set_thumbnail(url=song["thumbnail"])
+        else:
+            embed = discord.Embed(title="Nothing is Playing")
+        await ctx.send(embed=embed)
 
     @commands.command(name="queue", aliases=["q"])
     async def show_queue(self, ctx):
         """Shows the queue of songs"""
-        if len(song_queue) == 0:
-            raise CommandError("Nothing is currently queued")
+        queue = SongQueue.get_queue(ctx.guild.id)
+        if not queue.current_song:
+            raise CommandError("Nothing in queue or playing")
 
-        q_embed = discord.Embed(
-            title="Your Queue",
-            description='\n'.join([song["title"] for song in song_queue]),
-            color=discord.Color.teal()
+        loop_status = "🔂" if queue.loop else "❌"
+        cycle_status = "🔁" if queue.cycle else "❌"
+        pause_status = "⏸️" if queue.paused else "▶️"
+
+        embed = discord.Embed(
+            title=f"QUEUEUEUEUE\t\t\t{pause_status}\t{loop_status}\t{cycle_status}",
+            description=f"NOW PLAYING:\n[{queue.current_song['title']}]({queue.current_song['webpage_url']})",
+            color=discord.Color.blue()
         )
-        await ctx.send(embed=q_embed)
+        embed.set_thumbnail(url=queue.current_song["thumbnail"])
+
+        for i, song in enumerate(reversed(queue), 1):
+            embed.add_field(
+                name=f"{i}. {song['title']}",
+                value=f"{normalize_time(song['duration'])} - [Link]({song['webpage_url']})",
+                inline=False
+            )
+        await ctx.send(embed=embed)
 
     @tasks.loop(seconds=3.0)
     async def queue_timer(self):
@@ -162,8 +232,16 @@ class MusicCommands(commands.Cog):
         for client in self.bot.voice_clients:
             if client.is_playing():
                 continue
-            if song_queue:
-                await self.play_next_song(client)
+            if (queue := SongQueue.get_queue(client.guild.id)):
+                if queue.paused:
+                    return
+                elif queue.loop:
+                    await self.play_song(client, queue.current_song)
+                else:
+                    # add song back onto queue if cycle is enabled
+                    if queue.cycle:
+                        queue.appendleft(queue.current_song)
+                    await self.play_song(client, queue.pop())
 
 
 class SoundclipCommands(commands.Cog):
@@ -217,6 +295,34 @@ class SoundclipCommands(commands.Cog):
     async def sc_guh(self, ctx):
         """Play guh soundclip."""
         await self.play_soundclip(ctx, "resources/sounds/guh.mp3")
+
+
+class SongQueue(collections.deque):
+    """Handles the current song queue."""
+    instances = {}
+
+    def __init__(self):
+        super().__init__()
+        self.loop = False
+        self.cycle = False
+        self.paused = False
+        self.current_song = None
+
+    def __repr__(self) -> str:
+        return super().__repr__() + f"{self.loop}\n{self.cycle}\n{self.current_song}"
+
+    @classmethod
+    def get_queue(cls, gid: int):
+        """Return active song queue or make a new one."""
+        queue = cls.instances.get(gid)
+        if queue is None:
+            queue = SongQueue()
+            cls.instances[gid] = queue
+        return queue
+
+    def is_empty(self):
+        """Not necessary but more readable."""
+        return len(self) == 0
 
 
 def setup(bot):

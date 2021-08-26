@@ -1,14 +1,15 @@
 """CRAIGSLISTER"""
 
-# TODO Make it so channel is set per guild and not wherever user calls clme
-
-
 import requests
 
 import common.database as db
 import discord
 from common.cfg import spam_words
-from craigslist import CraigslistForSale
+try:
+    from craigslist import CraigslistForSale
+except:
+    print("Craigslist sucks dick")
+
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError
 

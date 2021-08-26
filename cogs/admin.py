@@ -62,14 +62,6 @@ class AdminCommands(commands.Cog):
         supermuted_users.add(member.id)
         await ctx.send(embed=discord.Embed(title=f"Supermuted {member.name}"))
 
-    @commands.command(name="cycle")
-    async def cycle_presence(self, ctx):
-        """Force changes the bots status"""
-        new_activity = next(activities)
-        print(f"Cycling Presence to {new_activity}")
-        if ctx.author.id in admin_ids:
-            await self.bot.change_presence(activity=new_activity)
-
     @commands.command(name="test")
     async def test_command(self, ctx):
         """Just a test command."""
