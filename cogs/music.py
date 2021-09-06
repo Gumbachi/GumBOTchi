@@ -145,6 +145,54 @@ class MusicCommands(commands.Cog):
 
             await self.play_song(ctx.voice_client, queue.pop())
 
+    @commands.command(name="queue", aliases=["q"])
+    async def show_queue(self, ctx):
+        """Shows the queue of songs"""
+        queue = SongQueue.get_queue(ctx.guild.id)
+        if not queue.current_song:
+            raise CommandError("Nothing in queue or playing")
+
+        loop_status = "🔂" if queue.loop else "❌"
+        cycle_status = "🔁" if queue.cycle else "❌"
+        pause_status = "⏸️" if queue.paused else "▶️"
+
+        embed = discord.Embed(
+            title=f"QUEUEUEUEUE\t\t\t{pause_status}\t{loop_status}\t{cycle_status}",
+            description=f"**NOW PLAYING**\n[{queue.current_song['title']}]({queue.current_song['webpage_url']})",
+            color=discord.Color.blue()
+        )
+        embed.set_thumbnail(url=queue.current_song["thumbnail"])
+
+        # Format queue to only 5 songs for space
+        songlist = list(queue)
+        songlist.reverse()  # needs to be reversed to display properly
+        if len(queue) > 5:
+            songlist = songlist[:5]  # only 5 songs displayed
+            embed.set_footer(text=f"{len(queue)-5} Songs are not displayed")
+
+        # Add each song
+        for i, song in enumerate(songlist, 1):
+            embed.add_field(
+                name=f"{i}. {song['title']}",
+                value=f"Estimated Wait: {queue.time_until(i-1)} - [Link]({song['webpage_url']})",
+                inline=False
+            )
+        await ctx.send(embed=embed)
+
+    @commands.command(name="unqueue", aliases=["unq"])
+    async def remove_from_queue(self, ctx, index: int):
+        """Remove a song from the queue."""
+        queue = SongQueue.get_queue(ctx.guild.id)
+
+        try:
+            if index < 1:
+                raise IndexError()  # negatives are not allowed
+            del queue[-index]  # negative index because queue is reversed
+        except IndexError:
+            raise CommandError("Can't remove that because it doesn't exist")
+
+        await ctx.send(embed=discord.Embed(title="Song Removed"))
+
     @commands.command(name="pause")
     @commands.check(bot_in_vc)
     async def pause_song(self, ctx):
@@ -198,40 +246,6 @@ class MusicCommands(commands.Cog):
             embed.set_thumbnail(url=song["thumbnail"])
         else:
             embed = discord.Embed(title="Nothing is Playing")
-        await ctx.send(embed=embed)
-
-    @commands.command(name="queue", aliases=["q"])
-    async def show_queue(self, ctx):
-        """Shows the queue of songs"""
-        queue = SongQueue.get_queue(ctx.guild.id)
-        if not queue.current_song:
-            raise CommandError("Nothing in queue or playing")
-
-        loop_status = "🔂" if queue.loop else "❌"
-        cycle_status = "🔁" if queue.cycle else "❌"
-        pause_status = "⏸️" if queue.paused else "▶️"
-
-        embed = discord.Embed(
-            title=f"QUEUEUEUEUE\t\t\t{pause_status}\t{loop_status}\t{cycle_status}",
-            description=f"**NOW PLAYING**\n[{queue.current_song['title']}]({queue.current_song['webpage_url']})",
-            color=discord.Color.blue()
-        )
-        embed.set_thumbnail(url=queue.current_song["thumbnail"])
-
-        # Format queue to only 5 songs for space
-        songlist = list(queue)
-        songlist.reverse()  # needs to be reversed to display properly
-        if len(queue) > 5:
-            songlist = songlist[:5]  # only 5 songs displayed
-            embed.set_footer(text=f"{len(queue)-5} Songs are not displayed")
-
-        # Add each song
-        for i, song in enumerate(songlist, 1):
-            embed.add_field(
-                name=f"{i}. {song['title']}",
-                value=f"Estimated Wait: {queue.time_until(i-1)} - [Link]({song['webpage_url']})",
-                inline=False
-            )
         await ctx.send(embed=embed)
 
     @tasks.loop(seconds=3.0)
