@@ -106,6 +106,12 @@ poggers_activation_phrases = {
     "ponginos",
     "piggas",
     "ponggers",
+    "poggiewoggie",
+    "pogaroni",
+    "pogaroni and cheese",
+    "pogeroni and cheese",
+    "pogflip",
+    "poggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggers",
 }
 
 poggers_links = [
