@@ -59,6 +59,11 @@ class GeneralCommands(commands.Cog):
         if message.content.lower() == "f":
             await message.channel.send("https://tenor.com/view/press-f-pay-respect-coffin-burial-gif-12855021")
 
+        # rainbow listener
+        if message.author.id == 235902262168256515 and message.role_mentions:
+            if message.role_mentions[0].id == 853368252474196018:
+                await message.channel.send(file=discord.File('resources/images/hereitcomes.png'))
+
     @tasks.loop(seconds=300)
     async def activity_switcher(self):
         await self.bot.change_presence(activity=next(cfg.activities))
