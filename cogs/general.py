@@ -15,6 +15,10 @@ class GeneralCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.rainbow_responses = [
+            'derkresponse1',
+            'derkresponse2'
+        ]
         self.activity_switcher.start()
 
     @commands.command(name="help", aliases=["halp"])
@@ -59,10 +63,11 @@ class GeneralCommands(commands.Cog):
         if message.content.lower() == "f":
             await message.channel.send("https://tenor.com/view/press-f-pay-respect-coffin-burial-gif-12855021")
 
-        # rainbow listener
+        # rainbow response listener
         if message.author.id == 235902262168256515 and message.role_mentions:
             if message.role_mentions[0].id == 853368252474196018:
-                await message.channel.send(file=discord.File('resources/images/hereitcomes.png'))
+                response = f'resources/images/{random.choice(self.rainbow_responses)}.png'
+                await message.channel.send(file=discord.File(response))
 
     @tasks.loop(seconds=300)
     async def activity_switcher(self):
