@@ -6,13 +6,15 @@ from discord.ext import commands
 from pymongo.errors import DuplicateKeyError
 
 
-class CommandErrors(commands.Cog):
+class CommandErrors(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
+    @discord.Cog.listener()
     async def on_command_error(self, ctx, error):
         """The event triggered when an error is raised while invoking a command."""
+
+        print(error)
 
         print("error caught", type(error))
 
@@ -31,6 +33,8 @@ class CommandErrors(commands.Cog):
             )
 
         ################ CUSTOM ERROR HANDLING ################
+
+        # f"Where are your perms tho? Kinda {Emoji.WEIRDCHAMP} if you ask me."
 
         if isinstance(error, DuplicateKeyError):
             return await ctx.send(

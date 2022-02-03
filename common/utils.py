@@ -5,11 +5,6 @@ from datetime import timedelta
 import time
 
 
-def weirdchamp():
-    """U know what it does"""
-    return str(bot.get_emoji(655466727441956865))
-
-
 def mock(text):
     letters = list(text)
     updated_text = []

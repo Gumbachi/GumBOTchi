@@ -1,82 +1,67 @@
 import itertools
 import discord
-from discord.ext import commands
+from discord import Activity
+from discord.enums import Status
 import common.database as db
-from discord import ActivityType
+from discord import ActivityType as ActType
 
-extensions = [
-    "cogs.general",
-    "cogs.sbonks",
-    "cogs.admin",
-    "cogs.errors",
-    "cogs.catalog",
-    "cogs.craigslister",
-    "cogs.games.mafia",
-    "cogs.roast",
-    "cogs.games.hangman",
-    "cogs.music"
-]
+# Create the bot
+bot = discord.Bot(
+    description="Multi-purpose chadbot",
+    activity=Activity(name="Just Woke Up", type=ActType.playing),
+    status=Status.dnd,
+    owner_id=128595549975871488
+)
 
 
-def get_prefix(bot, message):
-    """Gets the prefix per server"""
-    try:
-        return db.guildget(message.guild.id, "prefix")
-    except AttributeError:
-        return "!"  # default
+class Vip():
+    DIDNA = 235902262168256515
+    GUM = 128595549975871488
+    SALMON = 244574519027564544
+    SWEET = 224506294801793025
+    BRAIDED = 187273639874396160
+    RABBIT = 193517510958514177
 
 
-bot = commands.Bot(
-    command_prefix=get_prefix, help_command=None, intents=discord.Intents.all()
-)  # creates bot object
+class Emoji():
+    CHECK = "✅"
+    CROSS = "❌"
+    WEIRDCHAMP = "<:weirdchamp:891567122285735977>"
+    GUH = "<:guh:924116109651746816>"
 
-# GLOBAL DATA
 
-# Gumbachi#0506  # SoloMan98#3426
-admin_ids = {128595549975871488, 244574519027564544}
+class Tenor():
+    F = "https://tenor.com/view/press-f-pay-respect-coffin-burial-gif-12855021"
+    LOST_KERMIT = "https://tenor.com/view/kermit-the-frog-looking-for-directions-navigate-is-lost-gif-11835765"
+    HE_BOUGHT = "https://tenor.com/view/bogdanoff-dump-it-stocks-crypto-gif-20477588"
+    HE_SOLD = "https://tenor.com/view/bogdanoff-he-sold-pump-it-gif-23606817"
 
-emojis = {
-    "checkmark": "✅",
-    "crossmark": "❌",
-    "left_arrow": "⬅️",
-    "right_arrow": "➡️",
-    "home_arrow": "↩️",
-    "double_down": "⏬",
-    "updown_arrow": "↕️",
-}
+
+class Role():
+    RAINBOW = 853368252474196018
+
+
+admins = [Vip.GUM, Vip.SALMON, Vip.SWEET]
+dev_guilds = [565257922356051973]
+
 
 song_queues = {}
 
-catalogs = {}
-builders = {}
-supermuted_users = set()
-
-# Activities/status include (watching, playing, listening)
-activities = itertools.cycle(
-    [
-        discord.Activity(name="with your feelings", type=ActivityType.playing),
-        discord.Activity(name="your cries for help",
-                         type=ActivityType.listening),
-        discord.Activity(name="Salm's color change",
-                         type=ActivityType.watching),
-        discord.Activity(name="18 poggers gifs at once",
-                         type=ActivityType.watching),
-        discord.Activity(name="XPEV's Downfall", type=ActivityType.watching),
-        discord.Activity(name="The Poggers Olympics",
-                         type=ActivityType.competing),
-        discord.Activity(
-            name="Derk struggle with craigslisting", type=ActivityType.watching
-        ),
-        discord.Activity(name="Salmon kill the economy",
-                         type=ActivityType.watching),
-        discord.Activity(name="Roses 50 times in one day",
-                         type=ActivityType.listening),
-        discord.Activity(name="hard to get", type=ActivityType.playing),
-        discord.Activity(name="my weight", type=ActivityType.watching),
-        discord.Activity(name="THREES?!?!?!", type=ActivityType.playing),
-        discord.Activity(name="for LGMA Esports", type=ActivityType.playing),
-    ]
-)
+activities = itertools.cycle([
+    Activity(name="with your feelings", type=ActType.playing),
+    Activity(name="your cries for help", type=ActType.listening),
+    Activity(name="Salm's color change", type=ActType.watching),
+    Activity(name="18 poggers gifs at once", type=ActType.watching),
+    Activity(name="XPEV's Downfall", type=ActType.watching),
+    Activity(name="The Poggers Olympics", type=ActType.competing),
+    Activity(name="Derk try to craigslist", type=ActType.watching),
+    Activity(name="Salmon kill the economy", type=ActType.watching),
+    Activity(name="Roses 50 times in one day", type=ActType.listening),
+    Activity(name="hard to get", type=ActType.playing),
+    Activity(name="my weight", type=ActType.watching),
+    Activity(name="THREES?!?!?!", type=ActType.playing),
+    Activity(name="for LGMA Esports", type=ActType.playing)
+])
 
 poggers_activation_phrases = {
     "pog",
@@ -110,8 +95,7 @@ poggers_activation_phrases = {
     "pogaroni",
     "pogaroni and cheese",
     "pogeroni and cheese",
-    "pogflip",
-    "poggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggers",
+    "pogflip"
 }
 
 poggers_links = [
