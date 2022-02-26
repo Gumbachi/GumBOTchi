@@ -1,52 +1,37 @@
 """Runs the discord bot"""
 import os
-
-import discord
-import logging
-
-from cogs.craigslister import Craigslister
-from common.cfg import bot, extensions, get_prefix, supermuted_users
-import common.cfg as cfg
-
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(
-    filename='discord.log', encoding='utf-8', mode='w')
-handler.setFormatter(logging.Formatter(
-    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-logger.addHandler(handler)
+from pathlib import Path
+from common.cfg import bot
 
 
-@bot.event
+@bot.listen()
 async def on_ready():
-    """Change presence and report ready."""
-    await bot.change_presence(activity=next(cfg.activities))
+    """Bot is now ready to rumble."""
     print("Ready to go")
 
+# .py files in cogs that are not cogs
+ignored = [
+    "cogs.music.buttons",
+    "cogs.music.player",
+    "cogs.music.song"
+]
 
-@bot.event
-async def on_message(message):
-    """Message listener."""
-    # make sure it doesnt run when bot writes message
-    if message.author == bot.user:
-        return
-
-    # shows prefix if bot is mentioned
-    if message.mentions and message.mentions[0].id == bot.user.id:
-        await message.channel.send(f"Type `{get_prefix(bot, message)}`help for help.")
-
-    if message.author.id in supermuted_users:
-        return await message.delete()
-
-    await bot.process_commands(message)
-
-# loads extensions(cogs) listed in vars.py
 if __name__ == '__main__':
-    for extension in extensions:
+    # find all .py files in ./cogs
+    for ext in Path("./cogs").glob("**/*.py"):
         try:
-            bot.load_extension(extension)
+            # extensions must be in cogs.general format
+            ext = str(ext).replace("/", ".").replace("\\", ".")
+            ext = ext[:-3]  # trim .py extension
+
+            # skip ignored extensions
+            if ext in ignored:
+                continue
+
+            bot.load_extension(ext)
+            print(f"LOADED: {ext}")
+
         except Exception as e:
-            print(f"Couldnt load {extension}")
-            print(e)
+            print(f"Couldnt load {ext} because {e}")
 
 bot.run(os.getenv("TOKEN"))  # runs the bot

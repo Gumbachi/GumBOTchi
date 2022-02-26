@@ -1,188 +1,166 @@
+"""Draws sbonks for the people. Styling found is res/sbonks.mplstyle ."""
+
 import io
-import json
 import os
 import re
 
-import common.cfg as cfg
-import common.utils as utils
+import aiohttp
+
+from common.cfg import Tenor, Emoji
 import discord
 import matplotlib.pyplot as plt
 import numpy as np
-import requests
-from discord.ext import commands
 
 
-class SbonkCommands(commands.Cog):
-    """Hold and executes all sbonk commands."""
+class SbonkCommands(discord.Cog):
+    """Holds all sbonk related commands/listeners."""
 
     def __init__(self, bot):
         self.bot = bot
-        self.iexcloud_key = os.getenv("IEXCLOUD_KEY")
+        self.api_key = os.getenv("IEXCLOUD_KEY")
 
-    def get_stock_data(self, symbol, timeframe):
+    async def get_stock_data(self, symbols, *endpoints):
         """A more refined stock quote function."""
         # Request stock quotes from iex cloud
-        request = ("https://cloud.iexapis.com/stable/stock/market/batch?"
-                   f"symbols={symbol}&types=chart,quote&"
-                   f"range={timeframe}&token={self.iexcloud_key}")
+        params = {
+            "types": ','.join(endpoints),
+            "symbols": ','.join(symbols),
+            "displayPercent": "true",
+            "token": self.api_key
+        }
+        url = f"https://cloud.iexapis.com/stable/stock/market/batch"
 
-        response = requests.get(request)
-
-        try:
-            return json.loads(response.content)
-        except json.JSONDecodeError:
-            if response.status_code == 402:
-                return {"error": 402}
-            return {}
+        # Make web request asynchronously
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                return {}
 
     @staticmethod
-    def draw_symbol_chart(symbol_data, timeframe):
-        """
-        Draw image for ONE symbol and return image
-        Args:
-            symbol_data(dict): dict must contain "chart" and "quote"
-        """
-        minutes = True if timeframe == "1d" else False
-        chart_timeframe = "Today" if minutes else f"{timeframe} chart"
-        key = "average" if minutes else "close"
-        quote = symbol_data["quote"]
-        chart = symbol_data["chart"]
+    def draw_symbol_chart(symbol_data):
+        """Draw day chart for one symbol."""
 
-        # pull average price for each minute
-        prices = [x[key] if x[key] else 0
-                  for x in symbol_data["chart"]]
+        quote = symbol_data["quote"]
+        intraday = symbol_data["intraday-prices"]
+        data_length = 390
+
+        prices = [x['close'] for x in intraday]
 
         def find_last(i):
+            """Fills in price gaps with previous data point"""
             for i in range(i, 0, -1):
                 if prices[i]:
                     return prices[i]
-            return prices[i] if prices[i] else quote["previousClose"]
+            return prices[i] or quote["previousClose"]
+
+        # format data for graphing
         prices = [find_last(i) for i in range(len(prices))]
+        prices += [np.nan] * (data_length - len(prices))
+        prices = prices[::5]
 
-        close = chart[0]["close"]
-        extend_list = []
-        if minutes:
-            # Extends data with null values in case its the middle of the day
-            extend_list = [np.nan] * (390 - len(prices))
-            close = quote["previousClose"]
+        # set text and arrow
+        if quote["latestPrice"] >= quote["previousClose"]:
+            color = "lime"
+            arrow = '▲'
+        else:
+            color = "red"
+            arrow = '▼'
 
-        average_list = prices + extend_list
-        color = "lime" if quote["latestPrice"] >= close else "red"
-        pct_change = (quote["latestPrice"]/close) - 1
-        change = quote["latestPrice"] - close
-        data_len = len(average_list)
+        change = quote['change']
+        change_pct = quote["changePercent"]
 
         # plot graph
-        plt.ioff()  # ignore exception
-        plt.clf()
-        plt.style.use('dark_background')
-        plt.xlim((0, data_len))
-        plt.plot(list(range(data_len)), average_list, color=color)
-        plt.hlines(close, 0, data_len,
-                   colors="grey", linestyles="dotted")
-
-        # remove extraneous lines
-        plt.xticks([])
-        plt.yticks([])
-        ax = plt.gca()
-        for side in ("left", "right", "top", "bottom"):
-            ax.spines[side].set_visible(False)
+        plt.style.use('./res/sbonks.mplstyle')  # use defined style
+        plt.clf()  # Reset so graphs dont overlap. This must be after plt.style.use
+        plt.axis('off')  # disable labels maybe could move this to .mplstyle
+        plt.xlim(0, len(prices))
+        plt.plot(list(range(len(prices))), prices, color=color)
+        plt.axhline(y=quote['previousClose'], color="grey", linestyle="dotted")
+        ax = plt.gca()  # get current axes for transform
 
         # add Symbol and price text
-        price = quote["extendedPrice"] if quote["extendedPrice"] else quote["latestPrice"]
+        price = quote["extendedPrice"] or quote["latestPrice"]
         text = f"{quote['symbol']} ${price:.2f}"
-        plt.text(0, 1.1, text, va="bottom", ha="left",
-                 size=30, c="white", transform=ax.transAxes)
+        plt.text(x=0, y=1.1, s=text, va="bottom", ha="left",
+                 size=35, c="white", transform=ax.transAxes)
 
         # add change text
-        change_emoji = "⬆️" if pct_change >= 0 else "⬇️"
-        change_text = f"{change_emoji}{abs(change):.2f} ({pct_change*100:.2f}%)"
-        color = "lime" if pct_change >= 0 else "red"
-        plt.text(0, 1, change_text, va="bottom", ha="left",
-                 size=20, c=color, transform=ax.transAxes)
-        plt.text(1, 1.15, f"{chart_timeframe}", va="bottom", ha="right",
-                 size=12, c="grey", transform=ax.transAxes)
+        change_text = f"{arrow} {abs(change):.2f} ({change_pct:.2f}%)"
+        plt.text(x=0, y=1, s=change_text, va="bottom", ha="left",
+                 size=25, c=color, transform=ax.transAxes)
 
         # convert the chart to a bytes object Discord can read
         buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=300)
+        plt.savefig(buffer)
         buffer = buffer.getvalue()
         return io.BytesIO(buffer)
 
     @staticmethod
     def extract_symbols(string):
         """Extract valid symbols from a string."""
-        string += " "
+        string += " "  # needed because ticker must be followed by non alpha
         pattern = r"[$][a-zA-Z]{1,4}[^a-zA-Z]"
         prefixed_symbols = re.findall(pattern, string)
 
-        ticker_list = [s[:-1] for s in prefixed_symbols]
-        ticker_dict = {}
+        # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
+        return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
 
-        # Finds ticker arguments and stores them in a dict
-        for ticker in ticker_list:
-            index = string.find(ticker)
-            location = index+len(ticker)
-            if string[location] == "[":
-                start = location + 1
-                end = location + string[location:].find("]")
-                args = string[start:end].split("|") + ["", "", "", ""]
-
-                ticker_dict[ticker[1:]] = {
-                    "range": args[0],
-                    "message": args[1],
-                    "mock": args[2],
-                    "delete": args[3],
-                }
-            else:
-                ticker_dict[ticker[1:]] = {
-                    "range": "1d",
-                    "message": None,
-                    "mock": None,
-                    "delete": None,
-                }
-
-        return ticker_dict
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        """Listens for sbonks"""
+    @discord.Cog.listener("on_message")
+    async def quick_responses(self, message):
+        """Process quick responses."""
         # ignore bot
-        if message.author.id == self.bot.user.id or message.author.id in cfg.supermuted_users:
+        if message.author.id == self.bot.user.id:
             return
 
-        # He Bought and He Sold
+        # guh listener
+        if message.content.lower() == "guh":
+            return await message.channel.send(Emoji.GUH)
+
+        # He Bought listener
         if message.content.lower() in ("he bought", "he bought?"):
-            return await message.channel.send("https://www.youtube.com/watch?v=61Q6wWu5ziY")
-        elif message.content.lower() in ("he sold", "he sold?"):
-            return await message.channel.send("https://www.youtube.com/watch?v=TRXdxiot5JM")
+            return await message.channel.send(Tenor.HE_BOUGHT)
 
-        ticker_info = SbonkCommands.extract_symbols(message.content)
+        # He Sold listener
+        if message.content.lower() in ("he sold", "he sold?"):
+            return await message.channel.send(Tenor.HE_SOLD)
 
-        for ticker, args in ticker_info.items():
-            data = self.get_stock_data(ticker, args['range'])
-            ticker = ticker.upper()
-            # weirdchamp for unknown symbol
-            if ticker not in data.keys():
-                if data.get("error") == 402:
-                    await message.channel.send("Out of juice :peepoSad:")
-                    continue
-                await message.channel.send(utils.weirdchamp())
+    @discord.Cog.listener("on_message")
+    async def parse_symbols(self, message):
+        """Listens for sbonks."""
+        # ignore bot
+        if message.author.id == self.bot.user.id:
+            return
+
+        # Parse symbols from message and check if there are any
+        symbols = self.extract_symbols(message.content)
+        if not symbols:
+            return
+
+        # Fetch data from iex and check if there is any
+        data = await self.get_stock_data(symbols, 'quote', 'intraday-prices')
+        if not data:
+            return await message.channel.send(Emoji.WEIRDCHAMP)
+
+        if data.get("error") == 402:
+            return await message.channel.send("Ran out of juice :peepoSad:")
+
+        files = []
+        for symbol in symbols:
+            symbol_data = data.get(symbol, None)
+
+            # Check that symbol data exists
+            if not symbol_data:
+                await message.channel.send(f"{Emoji.WEIRDCHAMP} **{symbol}** {Emoji.WEIRDCHAMP}")
                 continue
 
-            # Send chart
+            # Draw and send the chart
             async with message.channel.typing():
-                chart = SbonkCommands.draw_symbol_chart(
-                    data[ticker], args['range'])
-                file = discord.File(chart, filename=f"{ticker}.png")
-                await message.channel.send(file=file)  # send stock chart
-                if args['message']:
-                    if args['mock']:
-                        await message.channel.send(utils.mock(args['message']))
-                    else:
-                        await message.channel.send(args['message'])
-                if args['delete']:
-                    await message.delete()
+                chart = self.draw_symbol_chart(symbol_data)
+                file = discord.File(chart, filename=f"{symbol}.png")
+                files.append(file)
+
+        await message.reply(files=files)
 
 
 def setup(bot):
