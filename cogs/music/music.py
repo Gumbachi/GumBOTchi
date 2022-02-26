@@ -110,7 +110,7 @@ class Music(discord.Cog):
 
 def setup(bot):
     """Entry point for loading cogs. Required for all cogs"""
-    if not os.path.isfile(os.getenv("FFMPEG_PATH")):
+    if os.getenv("FFMPEG_PATH") != "ffmpeg" and not os.path.isfile(os.getenv("FFMPEG_PATH")):
         raise FileNotFoundError("Couldn't locate FFMPEG executable")
 
     bot.add_cog(Music(bot))
