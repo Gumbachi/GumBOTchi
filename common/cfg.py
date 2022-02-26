@@ -31,7 +31,7 @@ class Emoji():
 
 class Tenor():
     F = "https://tenor.com/view/press-f-pay-respect-coffin-burial-gif-12855021"
-    LOST_KERMIT = "https://tenor.com/view/kermit-the-frog-looking-for-directions-navigate-is-lost-gif-11835765"
+    KERMIT_LOST = "https://tenor.com/view/kermit-the-frog-looking-for-directions-navigate-is-lost-gif-11835765"
     HE_BOUGHT = "https://tenor.com/view/bogdanoff-dump-it-stocks-crypto-gif-20477588"
     HE_SOLD = "https://tenor.com/view/bogdanoff-he-sold-pump-it-gif-23606817"
 
