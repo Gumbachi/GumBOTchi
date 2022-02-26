@@ -10,7 +10,7 @@ class Roasts(discord.Cog):
         with open("./res/roasts.txt") as f:
             self.roasts = f.readlines()
 
-    @slash_command(guild_ids=[565257922356051973])
+    @slash_command()
     async def roast(self, ctx, victim: discord.Member):
         """Roasts the living shit out of somebody. These roasts are absolutely devastating. Use with caution."""
         roast_embed = discord.Embed(

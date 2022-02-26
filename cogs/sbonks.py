@@ -59,12 +59,6 @@ class SbonkCommands(discord.Cog):
         prices += [np.nan] * (data_length - len(prices))
         prices = prices[::5]
 
-        print(intraday[-1])
-
-        print(prices)
-        print(len(prices))
-        # print(len(intraday))
-
         # set text and arrow
         if quote["latestPrice"] >= quote["previousClose"]:
             color = "lime"

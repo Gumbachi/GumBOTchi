@@ -1,7 +1,6 @@
 import discord
 from discord.commands import slash_command
-from discord.ext.commands.errors import MissingPermissions
-from common.cfg import dev_guilds
+from discord.ext.commands import MissingPermissions
 
 
 class AdminCommands(discord.Cog):
@@ -10,9 +9,9 @@ class AdminCommands(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(guild_ids=dev_guilds)
+    @slash_command(name="purge")
     async def purge(self, ctx, amount: int):
-        """purge a set amount of messages!"""
+        """purge a specific amount of messages"""
 
         # Admin check
         if not ctx.author.guild_permissions.administrator:

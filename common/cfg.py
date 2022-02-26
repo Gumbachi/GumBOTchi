@@ -2,7 +2,6 @@ import itertools
 import discord
 from discord import Activity
 from discord.enums import Status
-import common.database as db
 from discord import ActivityType as ActType
 
 # Create the bot
@@ -42,10 +41,7 @@ class Role():
 
 
 admins = [Vip.GUM, Vip.SALMON, Vip.SWEET]
-dev_guilds = [565257922356051973]
-
-
-song_queues = {}
+devguilds = [565257922356051973]
 
 activities = itertools.cycle([
     Activity(name="with your feelings", type=ActType.playing),

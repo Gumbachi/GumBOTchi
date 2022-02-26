@@ -2,7 +2,8 @@ import random
 from pathlib import Path
 
 import discord
-from common.cfg import Vip, Role, Tenor, activities, dev_guilds
+from common.cfg import (Role, Tenor, Vip, activities,
+                        poggers_activation_phrases, poggers_links)
 from discord.commands import slash_command
 from discord.ext import tasks
 
@@ -14,7 +15,7 @@ class GeneralCommands(discord.Cog):
         self.bot = bot
         self.activity_cycler.start()
 
-    @slash_command(name="howdy", guild_ids=dev_guilds)
+    @slash_command(name="howdy")
     async def howdy(self, ctx):
         """Command to check if bot is alive or if you need a friend."""
         await ctx.respond(f"Howdy {ctx.author.mention}!")
@@ -25,6 +26,10 @@ class GeneralCommands(discord.Cog):
         # ignore the bot user
         if message.author.id == self.bot.user.id:
             return
+
+        # pog listener
+        if message.content.lower() in poggers_activation_phrases:
+            await message.channel.send(random.choice(poggers_links))
 
         # f listener
         if message.content.lower() == "f":
