@@ -20,7 +20,7 @@ class MusicPlayer():
 
     def __init__(self, guild: discord.Guild):
         self.guild: discord.Guild = guild
-        self.interaction: discord.Interaction = None
+        self.message: discord.Message = None
         self.repeat_type: RepeatType = RepeatType.REPEATOFF
         self.paused = False
         self.current: Song = None
@@ -85,7 +85,8 @@ class MusicPlayer():
             description=f"**NOW PLAYING**\n[{self.current.title}]({self.current.webpage_url})"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
-        embed.set_footer(text="Only showing 5 songs. Other songs are hidden")
+        embed.set_footer(
+            text=f"Shows up to 5 songs. Hidden: {max(0, len(self.songlist) - 5)}")
 
         for i, song in enumerate(self.songlist[:5], 1):
             embed.add_field(
@@ -125,9 +126,9 @@ class MusicPlayer():
 
     async def update(self):
         """Attempt to update the active player message."""
-        if self.interaction:
+        if self.message:
             try:
-                await self.interaction.edit_original_message(embed=self.embed, view=self.controller)
+                await self.message.edit(embed=self.embed, view=self.controller)
             except discord.NotFound:
                 pass
 

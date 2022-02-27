@@ -52,7 +52,7 @@ class Music(discord.Cog):
         await ctx.respond(Emoji.CHECK)
 
     @slash_command(name="play")
-    async def play(self, ctx, song: str):
+    async def play(self, ctx: discord.ApplicationContext, song: str):
         """Command to start the music player"""
 
         # Need to defer response since it takes time
@@ -74,22 +74,17 @@ class Music(discord.Cog):
             return await ctx.respond(embed=emb)
 
         await mp.play_next()
-        interaction = await ctx.respond(embed=mp.embed, view=mp.controller)
-        mp.interaction = interaction
+        message = await ctx.send(embed=mp.embed, view=mp.controller)
+        mp.message = message
+        await ctx.respond(message.jump_url)
 
     @slash_command(name="player")
-    async def send_player(self, ctx):
+    async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
 
         mp = self.get_player(ctx.guild)
-        mp.interaction = await ctx.respond(embed=mp.embed, view=mp.controller)
-
-    @slash_command(name="queue")
-    async def display_queue(self, ctx):
-        """Display the song queue"""
-
-        mp = self.get_player(ctx.guild)
-        await ctx.respond(embed=mp.queue)
+        mp.message = await ctx.send(embed=mp.embed, view=mp.controller)
+        await ctx.respond(mp.message.jump_url)
 
     @tasks.loop(seconds=5)
     async def player_loop(self):

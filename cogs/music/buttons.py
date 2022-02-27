@@ -89,4 +89,4 @@ class QueueButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.player.queue_displayed = not self.player.queue_displayed
-        await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
+        await self.player.update()
