@@ -1,12 +1,11 @@
 import os
 
 import discord
-
-from common.cfg import Emoji, Tenor, devguilds
 from discord.commands import slash_command
 from discord.ext import tasks
 from discord.ext.commands import CommandError
 
+from common.cfg import Emoji, Tenor, devguilds
 from .player import MusicPlayer
 from .song import Song
 
@@ -19,7 +18,7 @@ class Music(discord.Cog):
         self.players = {}
         self.player_loop.start()
 
-    def get_player(self, guild):
+    def get_player(self, guild: discord.Guild) -> MusicPlayer:
         """Return active player or make a new one."""
 
         try:
@@ -75,14 +74,15 @@ class Music(discord.Cog):
             return await ctx.respond(embed=emb)
 
         await mp.play_next()
-        await ctx.respond(embed=mp.embed, view=mp.controller)
+        interaction = await ctx.respond(embed=mp.embed, view=mp.controller)
+        mp.interaction = interaction
 
     @slash_command(name="player")
     async def send_player(self, ctx):
         """Get the music player and its buttons."""
 
         mp = self.get_player(ctx.guild)
-        await ctx.respond(embed=mp.embed, view=mp.controller)
+        mp.interaction = await ctx.respond(embed=mp.embed, view=mp.controller)
 
     @slash_command(name="queue")
     async def display_queue(self, ctx):

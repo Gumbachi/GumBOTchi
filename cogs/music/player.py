@@ -1,10 +1,12 @@
 """Holds the queue class for the music player."""
 import os
+
 import discord
-from cogs.music.song import Song
 from discord.ui import View
+from discord.enums import ButtonStyle
 
 from .buttons import *
+from .song import Song
 
 FFMPEG_OPTS = {
     "executable": os.getenv("FFMPEG_PATH"),
@@ -14,14 +16,15 @@ FFMPEG_OPTS = {
 
 
 class MusicPlayer():
-    """A player class with 1 belonging to each guild"""
+    """A player class with only 1 belonging to each guild."""
 
-    def __init__(self, guild):
-        self.guild = guild
-
+    def __init__(self, guild: discord.Guild):
+        self.guild: discord.Guild = guild
+        self.interaction: discord.Interaction = None
         self.repeat_type: RepeatType = RepeatType.REPEATOFF
         self.paused = False
         self.current: Song = None
+        self.queue_displayed = False
         self.songlist: list[Song] = []
 
     @property
@@ -34,12 +37,15 @@ class MusicPlayer():
 
     @property
     def embed(self) -> discord.Embed:
-
+        """Generates a discord Embed object based on music player state."""
         if not self.current:
             return discord.Embed(
                 title="No Songs Playing",
                 description="`/play` is the solution"
             )
+
+        if self.queue_displayed:
+            return self.queue
 
         embed = discord.Embed(
             title="NOW PLAYING",
@@ -50,7 +56,30 @@ class MusicPlayer():
         return embed
 
     @property
+    def controller(self) -> discord.ui.View:
+        """Generates the buttons for the music player based on music player state."""
+        play_button = PlayButton(self) if self.paused else PauseButton(self)
+        skip_button = SkipButton(self)
+
+        # Handle displaying the repeat button
+        if self.repeat_type == RepeatType.REPEAT:
+            repeat_button = RepeatButton(self)
+        elif self.repeat_type == RepeatType.REPEATONE:
+            repeat_button = RepeatOneButton(self)
+        else:
+            repeat_button = RepeatOffButton(self)
+
+        # Handle displaying the queue button
+        if self.queue_displayed:
+            queue_button = QueueButton(self, style=ButtonStyle.green)
+        else:
+            queue_button = QueueButton(self)
+
+        return View(repeat_button, play_button, skip_button, queue_button, timeout=None)
+
+    @property
     def queue(self) -> discord.Embed:
+        """Generates the song queue discord Embed based on the songlist and state of the player."""
         embed = discord.Embed(
             title="QUEUEUEUEUEUE",
             description=f"**NOW PLAYING**\n[{self.current.title}]({self.current.webpage_url})"
@@ -66,21 +95,8 @@ class MusicPlayer():
             )
         return embed
 
-    @property
-    def controller(self) -> discord.ui.View:
-        play_button = PlayButton(self) if self.paused else PauseButton(self)
-        skip_button = SkipButton(self)
-
-        if self.repeat_type == RepeatType.REPEAT:
-            repeat_button = RepeatButton(self)
-        elif self.repeat_type == RepeatType.REPEATONE:
-            repeat_button = RepeatOneButton(self)
-        else:
-            repeat_button = RepeatOffButton(self)
-
-        return View(repeat_button, play_button, skip_button, timeout=None)
-
     def enqueue(self, song: Song):
+        """Add a song to the music player's queue."""
         self.songlist.append(song)
 
     async def play_next(self):
@@ -99,10 +115,21 @@ class MusicPlayer():
         elif self.repeat_type == RepeatType.REPEATOFF:
             self.current = self.songlist.pop(0)
 
+        # update player message
+        await self.update()
+
         # Play the song
         audio = discord.FFmpegPCMAudio(self.current.url, **FFMPEG_OPTS)
         self.guild.voice_client.play(audio)
         self.paused = False
+
+    async def update(self):
+        """Attempt to update the active player message."""
+        if self.interaction:
+            try:
+                await self.interaction.edit_original_message(embed=self.embed, view=self.controller)
+            except discord.NotFound:
+                pass
 
     def resume(self):
         self.paused = False

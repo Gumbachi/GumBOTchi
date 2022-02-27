@@ -1,6 +1,7 @@
 """Module holds classes for the buttons of the music player."""
 
 from enum import Enum
+
 import discord
 from discord.enums import ButtonStyle
 from discord.ui import Button
@@ -18,6 +19,7 @@ class Emoji:
     SKIP = "⏩"
     REPEAT = "🔁"
     REPEATONE = "🔂"
+    QUEUE = "📜"
 
 
 class PlayButton(Button):
@@ -78,3 +80,13 @@ class RepeatOneButton(Button):
     async def callback(self, interaction: discord.Interaction):
         self.player.repeat_type = RepeatType.REPEATOFF
         await interaction.response.edit_message(view=self.player.controller)
+
+
+class QueueButton(Button):
+    def __init__(self, player, style: ButtonStyle = ButtonStyle.gray):
+        super().__init__(emoji=Emoji.QUEUE, style=style)
+        self.player = player
+
+    async def callback(self, interaction: discord.Interaction):
+        self.player.queue_displayed = not self.player.queue_displayed
+        await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
