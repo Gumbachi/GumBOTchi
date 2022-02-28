@@ -104,7 +104,7 @@ class MusicPlayer():
         """Will begin the next song based on the repeat configuration."""
 
         # only disconnect if not repeatone because repeat one doesnt need to pop queue
-        if self.empty and self.repeat_type != RepeatType.REPEATONE:
+        if self.empty and self.repeat_type == RepeatType.REPEATOFF:
             return await self.guild.voice_client.disconnect()
 
         # Repeat should loop the entire list
