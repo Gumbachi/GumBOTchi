@@ -1,4 +1,6 @@
 import discord
+from discord import ApplicationContext as Context
+from discord.commands import Option
 from discord.commands import slash_command
 from discord.ext.commands import MissingPermissions
 
@@ -10,7 +12,7 @@ class AdminCommands(discord.Cog):
         self.bot = bot
 
     @slash_command(name="purge")
-    async def purge(self, ctx, amount: int):
+    async def purge(self, ctx: Context, amount: Option(int, "The amount of messages to purge")):
         """purge a specific amount of messages"""
 
         # Admin check

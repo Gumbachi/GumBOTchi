@@ -1,6 +1,8 @@
 import os
 
 import discord
+from discord import ApplicationContext as Context
+from discord.commands import Option
 from discord.commands import slash_command
 from discord.ext import tasks
 from discord.ext.commands import CommandError
@@ -52,7 +54,7 @@ class Music(discord.Cog):
         await ctx.respond(Emoji.CHECK)
 
     @slash_command(name="play")
-    async def play(self, ctx: discord.ApplicationContext, song: str):
+    async def play(self, ctx: Context, song: Option(str, "Search for a song on youtube")):
         """Command to start the music player"""
 
         # Need to defer response since it takes time
@@ -79,7 +81,7 @@ class Music(discord.Cog):
         await ctx.respond(message.jump_url)
 
     @slash_command(name="player")
-    async def send_player(self, ctx: discord.ApplicationContext):
+    async def send_player(self, ctx: Context):
         """Get the music player and its buttons."""
 
         mp = self.get_player(ctx.guild)

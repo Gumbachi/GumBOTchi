@@ -21,7 +21,7 @@ class GeneralCommands(discord.Cog):
         await ctx.respond(f"Howdy {ctx.author.mention}!")
 
     @discord.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         """Listen to messages."""
         # ignore the bot user
         if message.author.id == self.bot.user.id:
