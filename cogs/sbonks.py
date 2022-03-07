@@ -5,9 +5,10 @@ import os
 import re
 
 import aiohttp
-
-from common.cfg import Tenor, Emoji
 import discord
+from discord.commands import slash_command
+
+from common.cfg import Tenor, Emoji, devguilds
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -19,7 +20,7 @@ class SbonkCommands(discord.Cog):
         self.bot = bot
         self.api_key = os.getenv("IEXCLOUD_KEY")
 
-    async def get_stock_data(self, symbols, *endpoints):
+    async def get_stock_data(self, symbols: list[str], *endpoints: str):
         """A more refined stock quote function."""
         # Request stock quotes from iex cloud
         params = {
@@ -36,6 +37,26 @@ class SbonkCommands(discord.Cog):
                 if resp.status == 200:
                     return await resp.json()
                 return {}
+
+    async def get_historical_data(symbol: str, timeframe: str):
+        """
+        Get close data for multiple days.
+
+        timeframe can be 1w, 
+
+        """
+        pass
+
+    async def get_credit_usage(self):
+        params = {"token": self.api_key}
+        url = f"https://cloud.iexapis.com/stable/account/usage/credits"
+
+        # Make web request asynchronously
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get("monthlyUsage")
 
     @staticmethod
     def draw_symbol_chart(symbol_data):
@@ -105,6 +126,18 @@ class SbonkCommands(discord.Cog):
 
         # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
         return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
+
+    @slash_command(name="credits", guild_ids=devguilds)
+    async def get_credits(self, ctx):
+        credits_used = await self.get_credit_usage()
+        usage_percent = credits_used/50000 * 100
+        color = discord.Color.green() if credits_used < 50000 else discord.Color.red()
+        emb = discord.Embed(
+            title=f"{usage_percent:.2f}%",
+            description=f"({credits_used}/50,000)",
+            color=color
+        )
+        await ctx.respond(embed=emb)
 
     @discord.Cog.listener("on_message")
     async def quick_responses(self, message):
