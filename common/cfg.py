@@ -9,7 +9,8 @@ bot = discord.Bot(
     description="Multi-purpose chadbot",
     activity=Activity(name="Just Woke Up", type=ActType.playing),
     status=Status.dnd,
-    owner_id=128595549975871488
+    owner_id=128595549975871488,
+    intents=discord.Intents.all()
 )
 
 

@@ -82,18 +82,26 @@ class MusicPlayer():
         """Generates the song queue discord Embed based on the songlist and state of the player."""
         embed = discord.Embed(
             title="QUEUEUEUEUEUE",
-            description=f"**NOW PLAYING**\n[{self.current.title}]({self.current.webpage_url})"
+            description=f"**NOW PLAYING**\n[{self.current.title}]({self.current.webpage_url})\n"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
         embed.set_footer(
             text=f"Shows up to 5 songs. Hidden: {max(0, len(self.songlist) - 5)}")
 
-        for i, song in enumerate(self.songlist[:5], 1):
+        if self.songlist:
             embed.add_field(
-                name=f"{i}. {song.title}",
-                value=f"🕒 {song.duration} - [Link]({song.webpage_url})",
-                inline=False
+                name="UP NEXT",
+                value="\n\n".join(
+                    [f"[{song.title}]({song.webpage_url})\n{song.duration}" for song in self.songlist])
             )
+
+            # for i, song in enumerate(self.songlist[:5], 1):
+            #     embed.add_field(
+            #         name=f"[{song.title}]({song.webpage_url})\n{song.duration}",
+            #         value=f"",
+            #         inline=False
+            #     )
+
         return embed
 
     def enqueue(self, song: Song):

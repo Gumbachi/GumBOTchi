@@ -127,7 +127,7 @@ class SbonkCommands(discord.Cog):
         # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
         return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
 
-    @slash_command(name="credits", guild_ids=devguilds)
+    @slash_command(name="credits")
     async def get_credits(self, ctx):
         credits_used = await self.get_credit_usage()
         usage_percent = credits_used/50000 * 100
