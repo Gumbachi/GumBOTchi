@@ -1,5 +1,5 @@
 # GumBOTchi
-[Invite Link](https://discord.com/api/oauth2/authorize?client_id=563740217337708544&permissions=268822592&scope=bot)
+[Invite Link](https://discord.com/api/oauth2/authorize?client_id=563740217337708544&permissions=8&scope=bot%20applications.commands)
 
 ## Git
 1. [How to install](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
