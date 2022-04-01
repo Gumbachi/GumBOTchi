@@ -16,7 +16,8 @@ cogs = [
     # "cogs.pog",
     # "cogs.roast",
     # "cogs.sbonks",
-    "cogs.games.rps.rps"
+    # "cogs.games.rps.rps",
+    "cogs.games.tictactoe.tictactoe"
 ]
 
 if __name__ == '__main__':
