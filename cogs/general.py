@@ -53,16 +53,6 @@ class GeneralCommands(discord.Cog):
         """Wait to cycle presence until bot is logged in."""
         await self.bot.wait_until_ready()
 
-    @discord.Cog.listener()
-    async def on_guild_join(self, guild):
-        """Bot has joined a guild."""
-        print(f"Joined {guild.name}")
-
-    @discord.Cog.listener()
-    async def on_guild_remove(self, guild):
-        """Bot is kicked/removed."""
-        print(f"Left {guild.name}")
-
 
 def setup(bot):
     """Entry point for loading cogs."""
