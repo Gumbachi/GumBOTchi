@@ -12,12 +12,12 @@ async def on_ready():
 # .py files to load up
 cogs = [
     "cogs.general",
-    # "cogs.music.music",
-    # "cogs.pog",
-    # "cogs.roast",
-    # "cogs.sbonks",
-    # "cogs.games.rps.rps",
-    # "cogs.games.tictactoe.tictactoe",
+    "cogs.music.music",
+    "cogs.pog",
+    "cogs.roast",
+    "cogs.sbonks",
+    "cogs.games.rps.rps",
+    "cogs.games.tictactoe.tictactoe",
     "cogs.games.connectfour.connectfour"
 ]
 
