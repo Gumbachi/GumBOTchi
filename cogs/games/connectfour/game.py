@@ -33,7 +33,7 @@ class Game:
         """Generates a string representing the cursor row."""
         row = [Emoji.EMPTY] * 7
         row[self.cursor_position] = self.get_piece(self.turn)
-        return "   ".join(row)
+        return " ".join(row)
 
     @property
     def displayboard(self):
@@ -54,15 +54,13 @@ class Game:
     @property
     def view(self) -> discord.ui.View:
 
-        sb = SubmitButton(self)
-        sb.disabled = bool(self.winner)
+        submitbutton = SubmitButton(self)
+        submitbutton.disabled = bool(self.winner)
 
         return discord.ui.View(
-            BigLeftButton(self),
             LeftButton(self),
             RightButton(self),
-            BigRightButton(self),
-            sb,
+            submitbutton,
             timeout=None
         )
 
@@ -76,8 +74,11 @@ class Game:
             return Emoji.YELLOW
         return Emoji.WHITE
 
-    def get_column(self, index: int):
+    def column(self, index: int):
         return [row[index] for row in self.board]
+
+    def row(self, index: int):
+        return self.board[index]
 
     def swap_turn(self):
         """Switches the current player whose turn it is."""

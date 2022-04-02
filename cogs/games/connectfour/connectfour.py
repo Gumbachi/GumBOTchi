@@ -9,9 +9,8 @@ class ConnectFour(discord.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.instances = {}
 
-    @slash_command(name="connect4", guild_ids=devguilds)
+    @slash_command(name="connect4")
     async def begin_connect4(
         self,
         ctx: discord.ApplicationContext,
@@ -20,8 +19,6 @@ class ConnectFour(discord.Cog):
         """Begin a game of Connect Four with a friend."""
 
         game = Game(ctx.author, opponent)
-        self.instances[(ctx.author.id, opponent.id)] = game
-
         await ctx.respond(embed=game.embed, view=game.view)
 
 
