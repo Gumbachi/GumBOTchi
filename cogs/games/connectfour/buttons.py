@@ -3,10 +3,15 @@ import discord
 from discord.enums import ButtonStyle
 from discord.ui import Button
 
+# This is here for typing to avoid cyclic import
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from cogs.games.connectfour.game import Game
+
 
 class RightButton(Button):
-    def __init__(self, game):
-        super().__init__(emoji="▶️", style=ButtonStyle.gray)
+    def __init__(self, game: 'Game'):
+        super().__init__(emoji="▶️")
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
@@ -17,8 +22,8 @@ class RightButton(Button):
 
 
 class LeftButton(Button):
-    def __init__(self, game):
-        super().__init__(emoji="◀️", style=ButtonStyle.gray)
+    def __init__(self, game: 'Game'):
+        super().__init__(emoji="◀️")
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
@@ -29,20 +34,15 @@ class LeftButton(Button):
 
 
 class SubmitButton(Button):
-    def __init__(self, game):
+    def __init__(self, game: 'Game'):
         super().__init__(emoji="✅", style=ButtonStyle.green)
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
         # Check if move is legal
-        if all(self.game.get_column(self.game.cursor_position)):
+        if all(self.game.column(self.game.cursor_position)):
             return
 
         self.game.submit_move()
 
-        self.game.check_win()
-
-        if not self.game.winner:
-            self.game.swap_turn()
-
-        await interaction.response.edit_message(embed=self.game.embed)
+        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)

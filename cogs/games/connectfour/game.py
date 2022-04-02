@@ -1,3 +1,4 @@
+import random
 import discord
 from .buttons import *
 
@@ -14,17 +15,17 @@ class Game:
     """Game object to facilitate game state and game actions."""
 
     def __init__(self, playerone: discord.Member, playertwo: discord.Member):
-        self.playerone = playerone
-        self.playertwo = playertwo
+        self.p1 = playerone
+        self.p2 = playertwo
         self.board = [[None] * 7 for _ in range(6)]
         self.cursor_position = 3
-        self.turn = playerone
+        self.turn = self.p1
         self.winner = None
 
     def __str__(self):
         string = f"{self.cursor_row}\n\n"
         for row in self.displayboard:
-            string += "   ".join(row) + "\n"
+            string += " ".join(row) + "\n"
 
         return string
 
@@ -32,66 +33,120 @@ class Game:
     def cursor_row(self):
         """Generates a string representing the cursor row."""
         row = [Emoji.EMPTY] * 7
-        row[self.cursor_position] = self.get_piece(self.turn)
+        row[self.cursor_position] = self.getpiece(self.turn)
         return " ".join(row)
 
     @property
     def displayboard(self):
         """Replaces board of players with emojis."""
-        return [[self.get_piece(p) for p in row] for row in self.board]
+        return [[self.getpiece(p) for p in row] for row in self.board]
 
     @property
-    def embed(self) -> discord.Embed:
-        """Formats the game into a discord Embed."""
-        title = f"{Emoji.RED} {self.playerone.name} VS {Emoji.YELLOW} {self.playertwo.name}"
+    def headline(self):
         if self.winner:
-            title = f"{self.winner.name} Wins!"
-
-        color = discord.Color.yellow() if self.turn == self.playertwo else discord.Color.red()
-
-        return discord.Embed(title=title, description=str(self), color=color)
+            return f"{self.winner.name} Wins!"
+        return f"{Emoji.RED} {self.p1.nick or self.p1.name} VS {Emoji.YELLOW} {self.p2.nick or self.p2.name}"
 
     @property
-    def view(self) -> discord.ui.View:
+    def color(self):
+        if self.turn == self.p1:
+            return discord.Color.red()
+        return discord.Color.yellow()
+
+    @property
+    def embed(self):
+        """Formats the game into a discord Embed."""
+        return discord.Embed(
+            title=self.headline,
+            description=str(self),
+            color=self.color
+        )
+
+    @property
+    def view(self):
 
         submitbutton = SubmitButton(self)
         submitbutton.disabled = bool(self.winner)
 
+        leftbutton = LeftButton(self)
+        leftbutton.disabled = bool(self.winner)
+
+        rightbutton = RightButton(self)
+        rightbutton.disabled = bool(self.winner)
+
         return discord.ui.View(
-            LeftButton(self),
-            RightButton(self),
+            leftbutton,
+            rightbutton,
             submitbutton,
-            timeout=None
+            timeout=900
         )
 
-    def get_player(self, piece: Emoji) -> discord.Member:
-        return self.playerone if piece == Emoji.RED else self.playertwo
+    def getplayer(self, piece: Emoji):
+        """Get player from an Emoji"""
+        return self.p1 if piece == Emoji.RED else self.p2
 
-    def get_piece(self, player: discord.Member | None) -> Emoji:
-        if player == self.playerone:
-            return Emoji.RED
-        if player == self.playertwo:
-            return Emoji.YELLOW
-        return Emoji.WHITE
+    def getpiece(self, player: discord.Member | None):
+        match player:
+            case self.p1:
+                return Emoji.RED
+            case self.p2:
+                return Emoji.YELLOW
+            case _:
+                return Emoji.WHITE
 
     def column(self, index: int):
+        """Returns a column of the board."""
         return [row[index] for row in self.board]
 
     def row(self, index: int):
+        """Returns a row of the board."""
         return self.board[index]
 
     def swap_turn(self):
         """Switches the current player whose turn it is."""
-        self.turn = self.playertwo if self.turn == self.playerone else self.playerone
+        self.turn = self.p2 if self.turn == self.p1 else self.p1
+        if self.turn.bot:
+            self.automove()
 
-    def submit_move(self):
-        """Processes where the piece should go."""
+    def column_is_full(self, index: int):
+        """Check if a column is full of pieces"""
+        return all(self.column(index))
+
+    def find_open_row_index(self, column: int):
+        """Find the first row index with an empty spot within a column"""
+        # Work way up from bottom of board to find open slot
         for i in range(5, -1, -1):
-            if self.board[i][self.cursor_position]:
+            if self.board[i][column]:
                 continue
 
-            self.board[i][self.cursor_position] = self.turn
+            return i
+
+    def automove(self):
+
+        options = list(range(7))
+        random.shuffle(options)
+
+        for i in options:
+            if self.column_is_full(i):
+                continue
+
+            self.submit_move(i)
             break
+
+    def submit_move(self, column: int | None = None):
+        """Processes where the piece should go."""
+
+        column = self.cursor_position if column == None else column
+
+        if self.column_is_full(column):
+            return
+
+        row = self.find_open_row_index(column)
+        self.board[row][column] = self.turn
+
+        self.check_win()
+        if not self.winner:
+            self.swap_turn()
 
     def check_win(self):
         """Determine if a player has won."""

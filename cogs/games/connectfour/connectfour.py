@@ -10,11 +10,11 @@ class ConnectFour(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="connect4")
+    @slash_command(name="connect4", guild_ids=devguilds)
     async def begin_connect4(
         self,
         ctx: discord.ApplicationContext,
-        opponent: Option(discord.Member, description="Player 2")
+        opponent: Option(discord.Member, description="Select Player 2")
     ):
         """Begin a game of Connect Four with a friend."""
 
