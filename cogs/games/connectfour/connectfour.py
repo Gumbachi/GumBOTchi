@@ -10,7 +10,7 @@ class ConnectFour(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="connect4", guild_ids=devguilds)
+    @slash_command(name="connect4")
     async def begin_connect4(
         self,
         ctx: discord.ApplicationContext,
