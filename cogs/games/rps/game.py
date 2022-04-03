@@ -76,6 +76,18 @@ class Game():
         for button in self.buttons:
             button.disabled = True
 
+            # Set buttons to green/red for win loss
+            if self.state == RPSState.PLAYERONEWIN:
+                if button.move == self.p1.move:
+                    button.style = discord.ButtonStyle.green
+                elif button.move == self.p2.move:
+                    button.style = discord.ButtonStyle.red
+            elif self.state == RPSState.PLAYERTWOWIN:
+                if button.move == self.p2.move:
+                    button.style = discord.ButtonStyle.green
+                elif button.move == self.p1.move:
+                    button.style = discord.ButtonStyle.red
+
     def reset(self):
         """Reset the game state and player choices"""
         self.p1.choice = None
@@ -83,8 +95,10 @@ class Game():
         self.p2 = Player(self.p2.user)
         self.state = RPSState.ONGOING
 
+        # Reset buttons
         for button in self.buttons:
             button.disabled = False
+            button.style = discord.ButtonStyle.gray
 
 
 class RPSButton(discord.ui.Button):
