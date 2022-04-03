@@ -1,23 +1,22 @@
 import discord
-from cogs.games.rps.enums import RPSMove, RPSState
+from cogs.games.rps.enums import Move, RPSMove, RPSState
 from cogs.games.rps.player import Player
-
-import cogs.games.rps.buttons as buttons
 
 
 class Game():
+    """Holds data for a RockPaperScissors Game."""
 
     def __init__(self, playerone: discord.Member, playertwo: discord.Member):
         self.p1 = Player(playerone)
         self.p2 = Player(playertwo)
 
         self.buttons = [
-            buttons.RockButton(self),
-            buttons.PaperButton(self),
-            buttons.ScissorButton(self)
+            RPSButton(self, RPSMove.ROCK),
+            RPSButton(self, RPSMove.PAPER),
+            RPSButton(self, RPSMove.SCISSORS),
         ]
 
-        self.state: RPSState = RPSState.ONGOING
+        self.state = RPSState.ONGOING
 
     @property
     def embed(self):
@@ -34,28 +33,21 @@ class Game():
     @property
     def headline(self):
         """Generates the string to be the title of the game embed."""
-        # Player one wins
-        if self.state == RPSState.PLAYERONEWIN:
-            return f"{self.p1} Wins!"
-
-        # Player two wins
-        if self.state == RPSState.PLAYERTWOWIN:
-            return f"{self.p2} Wins!"
-
-        # Its a tie
-        if self.state == RPSState.TIE:
-            return f"It's a tie :("
-
-        # Default
-        return f"{self.p1} vs {self.p2}"
+        match self.state:
+            case RPSState.PLAYERONEWIN:
+                return f"{self.p1} Wins!"
+            case RPSState.PLAYERTWOWIN:
+                return f"{self.p2} Wins!"
+            case RPSState.TIE:
+                return f"It's a tie :("
+            case _:
+                return f"{self.p1} VS {self.p2}"
 
     @property
     def playbyplay(self):
         """Generates the string that represents the game events."""
-        if self.state == RPSState.ONGOING:
-            return
-
-        return f"{self.p1} plays {self.p1.move}\n{self.p2} counters with {self.p2.move}"
+        if not self.state == RPSState.ONGOING:
+            return f"{self.p1} plays {self.p1.move}\n{self.p2} counters with {self.p2.move}"
 
     @property
     def players(self):
@@ -65,28 +57,15 @@ class Game():
         """Check the game status for a win."""
 
         if self.p1.choice is None or self.p2.choice is None:
-            print(self.p1.choice, self.p2.choice)
             return
 
-        win_conditions = {
-            # Player One win conditions
-            (RPSMove.ROCK, RPSMove.SCISSORS): RPSState.PLAYERONEWIN,
-            (RPSMove.PAPER, RPSMove.ROCK): RPSState.PLAYERONEWIN,
-            (RPSMove.SCISSORS, RPSMove.PAPER): RPSState.PLAYERONEWIN,
-
-            # Player two win conditions
-            (RPSMove.SCISSORS, RPSMove.ROCK): RPSState.PLAYERTWOWIN,
-            (RPSMove.PAPER, RPSMove.SCISSORS): RPSState.PLAYERTWOWIN,
-            (RPSMove.ROCK, RPSMove.PAPER): RPSState.PLAYERTWOWIN,
-
-            # Tie conditions
-            (RPSMove.ROCK, RPSMove.ROCK): RPSState.TIE,
-            (RPSMove.PAPER, RPSMove.PAPER): RPSState.TIE,
-            (RPSMove.SCISSORS, RPSMove.SCISSORS): RPSState.TIE
-        }
-
-        # set game state
-        self.state = win_conditions[(self.p1.choice, self.p2.choice)]
+        # Determine game result
+        if self.p1.choice == self.p2.choice:
+            self.state = RPSState.TIE
+        elif self.p1.choice > self.p2.choice:
+            self.state = RPSState.PLAYERONEWIN
+        else:
+            self.state = RPSState.PLAYERTWOWIN
 
         # end game and disable buttons
         self.end()
@@ -94,3 +73,23 @@ class Game():
     def end(self):
         for button in self.buttons:
             button.disabled = True
+
+
+class RPSButton(discord.ui.Button):
+    def __init__(self, game: Game, move: Move):
+        super().__init__(emoji=move.emoji)
+        self.game = game
+        self.move = move
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user not in self.game.players:
+            return
+
+        # Set the player choice to the move made
+        if self.game.p1 == interaction.user:
+            self.game.p1.choice = self.move
+        else:
+            self.game.p2.choice = self.move
+
+        self.game.check_win()
+        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)

@@ -15,9 +15,12 @@ class RightButton(Button):
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
-        if self.game.cursor_position == 6:
+        if interaction.user != self.game.turn:
             return
-        self.game.cursor_position += 1
+
+        if self.game.cursor_position < 6:
+            self.game.cursor_position += 1
+
         await interaction.response.edit_message(embed=self.game.embed)
 
 
@@ -27,9 +30,12 @@ class LeftButton(Button):
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
-        if self.game.cursor_position == 0:
+        if interaction.user != self.game.turn:
             return
-        self.game.cursor_position -= 1
+
+        if self.game.cursor_position > 0:
+            self.game.cursor_position -= 1
+
         await interaction.response.edit_message(embed=self.game.embed)
 
 
@@ -39,10 +45,29 @@ class SubmitButton(Button):
         self.game = game
 
     async def callback(self, interaction: discord.Interaction):
-        # Check if move is legal
-        if all(self.game.column(self.game.cursor_position)):
+        if interaction.user != self.game.turn:
             return
 
-        self.game.submit_move()
+        if not self.game.column_is_full(self.game.cursor_position):
+            self.game.submit_move()
 
         await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)
+
+
+class ResendButton(Button):
+    def __init__(self, game: 'Game'):
+        super().__init__(emoji="⏬")
+        self.game = game
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user not in self.game.players:
+            return
+
+        new_message = await interaction.channel.send(embed=self.game.embed, view=self.game.view)
+
+        moved_embed = discord.Embed(
+            title=f"{interaction.user.nick or interaction.user.name} has moved this game",
+            description=f"[Jump]({new_message.jump_url})"
+        )
+
+        await interaction.response.edit_message(embed=moved_embed, view=None)

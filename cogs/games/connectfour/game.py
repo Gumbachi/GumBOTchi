@@ -30,6 +30,10 @@ class Game:
         return string
 
     @property
+    def players(self):
+        return (self.p1, self.p2)
+
+    @property
     def cursor_row(self):
         """Generates a string representing the cursor row."""
         row = [Emoji.EMPTY] * 7

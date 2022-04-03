@@ -2,13 +2,13 @@ import random
 import discord
 from typing import Optional
 
-from cogs.games.rps.enums import RPSMove
+from cogs.games.rps.enums import Move, RPSMove
 
 
 class Player:
     def __init__(self, user: discord.Member):
         self.user = user
-        self.choice: Optional[RPSMove] = None
+        self.choice: Optional[Move] = None
 
         # Set default if bot is playing
         if self.user.bot:
@@ -22,8 +22,8 @@ class Player:
         return self.user.nick or self.user.name
 
     def __eq__(self, other):
-        return other.id == self.user.id
+        return self.user.id == other.id
 
     @property
     def move(self):
-        return self.choice.value
+        return self.choice
