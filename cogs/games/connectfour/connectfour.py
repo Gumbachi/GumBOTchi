@@ -17,7 +17,6 @@ class ConnectFour(discord.Cog):
         opponent: Option(discord.Member, description="Select Player 2")
     ):
         """Begin a game of Connect Four with a friend."""
-
         game = Game(ctx.author, opponent)
         await ctx.respond(embed=game.embed, view=game.view)
 

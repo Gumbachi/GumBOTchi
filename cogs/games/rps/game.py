@@ -28,7 +28,9 @@ class Game():
 
     @property
     def view(self):
-        return discord.ui.View(*self.buttons)
+        replayButton = ReplayButton(self)
+
+        return discord.ui.View(*self.buttons, ReplayButton(self))
 
     @property
     def headline(self):
@@ -74,6 +76,16 @@ class Game():
         for button in self.buttons:
             button.disabled = True
 
+    def reset(self):
+        """Reset the game state and player choices"""
+        self.p1.choice = None
+        # player 2 could be bot so reinit player
+        self.p2 = Player(self.p2.user)
+        self.state = RPSState.ONGOING
+
+        for button in self.buttons:
+            button.disabled = False
+
 
 class RPSButton(discord.ui.Button):
     def __init__(self, game: Game, move: Move):
@@ -92,4 +104,21 @@ class RPSButton(discord.ui.Button):
             self.game.p2.choice = self.move
 
         self.game.check_win()
+        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)
+
+
+class ReplayButton(discord.ui.Button):
+    def __init__(self, game: Game):
+        super().__init__(emoji="🔁")
+        self.game = game
+
+        if self.game.state == RPSState.ONGOING:
+            self.disabled = True
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user not in self.game.players:
+            return
+
+        self.game.reset()
+
         await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)

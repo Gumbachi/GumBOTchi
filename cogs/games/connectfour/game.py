@@ -82,6 +82,7 @@ class Game:
             leftbutton,
             rightbutton,
             submitbutton,
+            ResendButton(self),
             timeout=900
         )
 
