@@ -57,7 +57,8 @@ activities = itertools.cycle([
     Activity(name="hard to get", type=ActType.playing),
     Activity(name="my weight", type=ActType.watching),
     Activity(name="THREES?!?!?!", type=ActType.playing),
-    Activity(name="for LGMA Esports", type=ActType.playing)
+    Activity(name="for LGMA Esports", type=ActType.playing),
+    Activity(name="4D Quantum Chess", type=ActType.playing),
 ])
 
 poggers_activation_phrases = {
