@@ -12,6 +12,13 @@ class IEXAPI:
     KEY = os.getenv("IEXCLOUD_KEY")
     BASE_URL = "https://cloud.iexapis.com/stable"
 
+    async def get_credits(self) -> int:
+        params = {"token": self.KEY}
+        url = f"{self.BASE_URL}/account/usage/credits"
+
+        data = await self._get(url, params)
+        return data.get("monthlyUsage", -1)
+
     async def get_intraday(self, symbols: list[str]) -> list[SymbolData]:
         """Request data for a single day for multiple symbols."""
         url = f"{self.BASE_URL}/stock/market/batch"
