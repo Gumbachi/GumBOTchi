@@ -15,7 +15,7 @@ cogs = [
     "cogs.music.music",
     "cogs.pog",
     "cogs.roast",
-    "cogs.sbonks",
+    "cogs.sbonks.sbonks",
     "cogs.games.rps.rps",
     "cogs.games.tictactoe.tictactoe",
     "cogs.games.connectfour.connectfour"
