@@ -18,7 +18,8 @@ cogs = [
     "cogs.sbonks.sbonks",
     "cogs.games.rps.rps",
     "cogs.games.tictactoe.tictactoe",
-    "cogs.games.connectfour.connectfour"
+    "cogs.games.connectfour.connectfour",
+    "cogs.craigslister"
 ]
 
 if __name__ == '__main__':

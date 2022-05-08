@@ -5,7 +5,7 @@ from time import time
 import discord
 from discord import Option, slash_command, ApplicationContext
 from numpy import extract
-from cogs.sbonks.model.iexapi import IEXAPI, IEXAPIError
+from cogs.sbonks.iexapi import IEXAPI, IEXAPIError
 
 from common.cfg import Tenor, Emoji
 
@@ -56,9 +56,12 @@ class SbonkCommands(discord.Cog):
         try:
             if timeframe == "1D":
                 data = await self.IEXAPI.get_intraday([symbol])
+                data = data[0]
+                precision = 5
 
             elif timeframe == "1W":
-                return await ctx.respond("In the works")
+                data = await self.IEXAPI.get_week(symbol=symbol)
+                precision = 1
 
             elif timeframe == "1M":
                 return await ctx.respond("In the works")
@@ -78,7 +81,7 @@ class SbonkCommands(discord.Cog):
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
         async with ctx.channel.typing():
-            await ctx.respond(file=data[0].graph())
+            await ctx.respond(file=data.graph(precision))
 
     @discord.Cog.listener("on_message")
     async def quick_responses(self, message: discord.Message):

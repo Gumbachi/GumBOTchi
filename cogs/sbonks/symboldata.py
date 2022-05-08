@@ -10,12 +10,12 @@ class SymbolData:
     def __init__(
         self,
         symbol: str,
-        previous_close: float,
         price: float,
         change: float,
         change_percent: float,
         extended_price: float | None,
         datapoints: list[float],
+        previous_close: float | None = None,
         datalength: int = 390,  # What is the max amount of data points
         style: str = "./cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
     ) -> None:
