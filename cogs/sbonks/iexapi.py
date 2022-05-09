@@ -69,11 +69,20 @@ class IEXAPI:
     async def get_three_month(self, symbol: str) -> SymbolData:
         return await self._get_chart(symbol, "3m", 2)
 
+    async def get_six_month(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "6m", 4)
+
     async def get_year(self, symbol: str) -> SymbolData:
         return await self._get_chart(symbol, "1y", 6)
 
+    async def get_two_year(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "2y", 8)
+
     async def get_five_year(self, symbol: str) -> SymbolData:
         return await self._get_chart(symbol, "5y", 20)
+
+    async def get_max(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "max", 35)
 
     async def _get_chart(self, symbol: str, timeframe: str, interval: int = 1) -> SymbolData:
         url = f"{self.BASE_URL}/stock/{symbol}/chart/{timeframe}"
@@ -97,7 +106,8 @@ class IEXAPI:
             change_percent=change_percent,
             extended_price=quote.get("extendedPrice"),
             datapoints=[x['close'] for x in data],
-            datalength=len(data)
+            datalength=len(data),
+            timeframe=timeframe.upper()
         )
 
     async def _get(self, url: str, params: dict | None = None) -> dict:

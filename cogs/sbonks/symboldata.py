@@ -17,6 +17,7 @@ class SymbolData:
         datapoints: list[float],
         previous_close: float | None = None,
         datalength: int = 390,  # What is the max amount of data points
+        timeframe: str = "1D",
         style: str = "./cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
     ) -> None:
         self.symbol = symbol
@@ -27,6 +28,7 @@ class SymbolData:
         self.extended_price = extended_price
         self.datapoints = datapoints
         self.datalength = datalength
+        self.timeframe = timeframe
         self.style = style
 
     @property
@@ -51,7 +53,7 @@ class SymbolData:
         interpolated += [np.nan] * (self.datalength - len(interpolated))
         return interpolated[::precision]
 
-    def graph(self, precision: int = 5) -> discord.File:
+    def graph(self, precision: int = 5, description: str | None = None) -> discord.File:
         """Draw chart representing the symboldata"""
         prices = self.get_interpolated_data(precision=precision)
 
@@ -74,6 +76,15 @@ class SymbolData:
         change_text = f"{self.arrow} {abs(self.change):.2f} ({self.change_percent:.2f}%)"
         plt.text(x=0, y=1, s=change_text, va="bottom", ha="left",
                  size=25, c=self.color, transform=ax.transAxes)
+
+        # Draw timeframe text
+        plt.text(x=1, y=1.15, s=self.timeframe, va="bottom", ha="right",
+                 size=20, c="gray", transform=ax.transAxes)
+
+        # Draw special message
+        if description:
+            plt.text(x=0, y=0, s=description, va="top", ha="left",
+                     size=20, c="gray", transform=ax.transAxes)
 
         # convert the chart to a discord.File
         buffer = io.BytesIO()

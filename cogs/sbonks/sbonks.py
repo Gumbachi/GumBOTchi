@@ -45,9 +45,10 @@ class SbonkCommands(discord.Cog):
         timeframe: Option(
             str,
             description="Choose how hard you want to hit our allowance",
-            choices=["1D", "1W", "1M", "3M", "1Y", "5Y"],
+            choices=["1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "MAX"],
             default="1D"
-        )
+        ),
+        message: Option(str, "Because weed is the future") = None
     ):
         """Show a sbonk chart for a specific timeframe"""
 
@@ -71,12 +72,24 @@ class SbonkCommands(discord.Cog):
                 data = await self.IEXAPI.get_three_month(symbol=symbol)
                 precision = 1
 
+            elif timeframe == "6M":
+                data = await self.IEXAPI.get_six_month(symbol=symbol)
+                precision = 1
+
             elif timeframe == "1Y":
                 data = await self.IEXAPI.get_year(symbol=symbol)
                 precision = 1
 
+            elif timeframe == "2Y":
+                data = await self.IEXAPI.get_two_year(symbol=symbol)
+                precision = 1
+
             elif timeframe == "5Y":
                 data = await self.IEXAPI.get_five_year(symbol=symbol)
+                precision = 1
+
+            elif timeframe == "MAX":
+                data = await self.IEXAPI.get_max(symbol=symbol)
                 precision = 1
 
         except IEXAPIError:
@@ -86,7 +99,7 @@ class SbonkCommands(discord.Cog):
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
         async with ctx.channel.typing():
-            await ctx.respond(file=data.graph(precision))
+            await ctx.respond(file=data.graph(precision, message))
 
     @discord.Cog.listener("on_message")
     async def quick_responses(self, message: discord.Message):
