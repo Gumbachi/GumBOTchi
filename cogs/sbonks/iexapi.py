@@ -61,36 +61,47 @@ class IEXAPI:
         return data
 
     async def get_week(self, symbol: str) -> SymbolData:
-        url = f"{self.BASE_URL}/stock/{symbol}/chart/5dm"
+        return await self._get_chart(symbol, "5dm", 10)
+
+    async def get_month(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "1m")
+
+    async def get_three_month(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "3m", 2)
+
+    async def get_year(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "1y", 6)
+
+    async def get_five_year(self, symbol: str) -> SymbolData:
+        return await self._get_chart(symbol, "5y", 20)
+
+    async def _get_chart(self, symbol: str, timeframe: str, interval: int = 1) -> SymbolData:
+        url = f"{self.BASE_URL}/stock/{symbol}/chart/{timeframe}"
         params = {
             "chartCloseOnly": "true",
-            "chartInterval": "10",
+            "chartInterval": interval,
             "includeToday": "true"
         }
-        week_data = await self._get(url=url, params=params)
+
+        data = await self._get(url=url, params=params)
         quote = await self.get_quote(symbol)
 
-        print(week_data)
-
-        change = quote["latestPrice"] - week_data[0]["open"]
-        change_percent = abs(change) / week_data[0]["open"] * 100
+        change = quote["latestPrice"] - data[0]["close"]
+        change_percent = abs(change) / data[0]["close"] * 100
 
         return SymbolData(
             symbol=quote["symbol"],
-            previous_close=week_data[0]["open"],
+            previous_close=data[0]["close"],
             price=quote["latestPrice"],
             change=change,
             change_percent=change_percent,
             extended_price=quote.get("extendedPrice"),
-            datapoints=[x['close'] for x in week_data],
-            datalength=len(week_data)
+            datapoints=[x['close'] for x in data],
+            datalength=len(data)
         )
 
-    async def get_year(self, symbol: str) -> SymbolData:
-        pass
-
     async def _get(self, url: str, params: dict | None = None) -> dict:
-        """Underlying api request function."""
+        """Underlying generic async api get request"""
 
         params = {} if params == None else params
         params.update({"token": self.KEY})

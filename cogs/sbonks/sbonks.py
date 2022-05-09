@@ -64,16 +64,21 @@ class SbonkCommands(discord.Cog):
                 precision = 1
 
             elif timeframe == "1M":
-                return await ctx.respond("In the works")
+                data = await self.IEXAPI.get_month(symbol=symbol)
+                precision = 1
 
             elif timeframe == "3M":
-                return await ctx.respond("In the works")
+                data = await self.IEXAPI.get_three_month(symbol=symbol)
+                precision = 1
 
             elif timeframe == "1Y":
-                return await ctx.respond("In the works")
+                data = await self.IEXAPI.get_year(symbol=symbol)
+                precision = 1
 
             elif timeframe == "5Y":
-                return await ctx.respond("In the works")
+                data = await self.IEXAPI.get_five_year(symbol=symbol)
+                precision = 1
+
         except IEXAPIError:
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
