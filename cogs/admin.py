@@ -10,12 +10,14 @@ class AdminCommands(discord.Cog):
         self.bot = bot
 
     @slash_command(name="purge")
-    async def purge(self, ctx, amount: Option(int, "The amount of messages to purge", min_value=1, max_value=99)):
+    async def purge(self, ctx: discord.ApplicationContext, amount: Option(int, "The amount of messages to purge", min_value=1, max_value=99)):
         """purge a specific amount of messages"""
 
         # Admin check
         if not ctx.author.guild_permissions.administrator:
             raise MissingPermissions()
+
+        await ctx.defer()
 
         await ctx.channel.purge(limit=amount + 1)
         await ctx.respond(f"purged {amount} messages")
