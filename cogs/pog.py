@@ -61,7 +61,7 @@ class PogCommands(discord.Cog):
 
         # pog responses are cut off to avoid discord limit
         if len(responses) > 20:
-            embed.set_footer("only showing the first 20")
+            embed.set_footer(text="only showing the first 20")
 
         await ctx.respond(embed=embed)
 
