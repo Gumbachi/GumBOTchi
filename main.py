@@ -1,7 +1,18 @@
 """Runs the discord bot"""
 import os
-from pathlib import Path
-from common.cfg import bot
+import discord
+
+# Create the bot
+bot = discord.Bot(
+    description="Multi-purpose chadbot",
+    activity=discord.Activity(
+        name="Just Woke Up",
+        type=discord.ActivityType.playing
+    ),
+    status=discord.Status.dnd,
+    owner_id=128595549975871488,
+    intents=discord.Intents.all()
+)
 
 
 @bot.listen()

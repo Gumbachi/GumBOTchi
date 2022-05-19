@@ -1,5 +1,6 @@
 import io
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import discord
 
@@ -94,3 +95,8 @@ class SymbolData:
             fp=io.BytesIO(buffer),
             filename=f"{self.symbol}.png"
         )
+
+
+def mock(text):
+    mocked_letters = [random.choice((c.upper(), c.lower())) for c in text]
+    return "".join(mocked_letters)

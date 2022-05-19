@@ -1,9 +1,10 @@
 import random
 import discord
-from discord.commands import slash_command
-from discord.ext.commands import MissingPermissions
+from discord import slash_command
 
 from common.cfg import poggers_activation_phrases
+
+from common.database import db
 
 
 class PogCommands(discord.Cog):
@@ -13,67 +14,54 @@ class PogCommands(discord.Cog):
         self.bot = bot
 
     @slash_command(name="pogify")
-    async def pogify(self, ctx, pogresponse: str):
+    async def pogify(self, ctx: discord.ApplicationContext, response: str):
         """Add a pog response"""
         # Admin check
         if not ctx.author.guild_permissions.manage_messages:
-            raise MissingPermissions()
+            return await ctx.respond("Sure, but where are your permissions")
 
-        # add pog response to database. document added if not exists
-        response = await db.guilds.update_one(
-            {"_id": ctx.guild.id},
-            {"$push": {"pogresponses": pogresponse}},
-            upsert=True
-        )
+        result = db.add_pog_response(ctx.guild.id, response)
 
         # Check for success
-        if response.modified_count == 1:
-            await ctx.respond(f"Added `{pogresponse}` to pog responses")
+        if result == True:
+            await ctx.respond(f"Added `{response}` to pog responses")
         else:
-            await ctx.respond("Something went wrong on my end")
+            await ctx.respond("Something went wrong. Try again or something")
 
     @slash_command(name="unpogify")
-    async def unpogify(self, ctx, pogresponse: str):
+    async def unpogify(self, ctx: discord.ApplicationContext, response: str):
         """Delete a pog response"""
         # Admin check
         if not ctx.author.guild_permissions.manage_messages:
-            raise MissingPermissions()
+            return await ctx.respond("Sure, but where are your permissions")
 
         # attempts to delete a pog response
-        response = await db.guilds.update_one(
-            {"_id": ctx.guild.id},
-            {"$pull": {"pogresponses": pogresponse}}
-        )
+        result = db.remove_pog_response(ctx.guild.id, response)
 
         # Check for success
-        if response.modified_count == 1:
-            await ctx.respond(f"Deleted `{pogresponse}` from pog responses`")
+        if result == True:
+            await ctx.respond(f"Deleted `{response}` from pog responses")
         else:
             await ctx.respond("Could not find pog response.")
 
     @slash_command(name="poglist")
-    async def poglist(self, ctx):
+    async def poglist(self, ctx: discord.ApplicationContext):
         """Displays a list of pog responses"""
 
-        response = await db.guilds.find_one(
-            {"_id": ctx.guild.id},
-            {"_id": 0, "pogresponses": 1}
-        )
+        responses = db.get_pogresponses(ctx.guild.id)
 
-        pog_responses = response.get("pogresponses", [])
+        # check for pog responses
+        if not responses:
+            return await ctx.respond("This is not pog at all. Consider `pogify`ing")
 
         embed = discord.Embed(
             title="Pog Responses",
-            description='\n'.join(pog_responses[:20])
+            description='\n'.join(responses[:20])
         )
 
-        # check for pog responses
-        if not pog_responses:
-            embed.description = "This is not pog at all. Consider `/pogify`ing"
-
         # pog responses are cut off to avoid discord limit
-        if len(pog_responses) > 20:
-            embed.set_footer("Some pog responses are not shown")
+        if len(responses) > 20:
+            embed.set_footer("only showing the first 20")
 
         await ctx.respond(embed=embed)
 
@@ -84,27 +72,15 @@ class PogCommands(discord.Cog):
         if message.author.id == self.bot.user.id:
             return
 
-        # f listener
+        # pog listener
         if message.content.lower() in poggers_activation_phrases:
 
             # get pog responses and check if there are any
-            pog_responses = await fetch_pog_responses(message.guild.id)
-            if not pog_responses:
-                return
-
-            await message.channel.send(random.choice(pog_responses))
+            responses = db.get_pogresponses(message.guild.id)
+            if responses:
+                await message.channel.send(random.choice(responses))
 
 
 def setup(bot):
     """Entry point for loading cogs."""
-    raise Exception("NOT YET IMPLEMENTED")
     bot.add_cog(PogCommands(bot))
-
-
-async def fetch_pog_responses(id):
-    """Fetches pog responses from mongodb."""
-    response = await db.guilds.find_one(
-        {"_id": id},
-        {"_id": 0, "pogresponses": 1}
-    )
-    return response.get("pogresponses", [])

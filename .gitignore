@@ -6,3 +6,5 @@ test.py
 graph.png
 .DS_Store
 discord.log
+secrets.py
+keys.py

@@ -2,8 +2,7 @@ import random
 from pathlib import Path
 
 import discord
-from common.cfg import (Role, Tenor, Vip, activities,
-                        poggers_activation_phrases, poggers_links)
+from common.cfg import Role, Tenor, Vip, activities
 from discord.commands import slash_command
 from discord.ext import tasks
 
@@ -26,10 +25,6 @@ class GeneralCommands(discord.Cog):
         # ignore the bot user
         if message.author.id == self.bot.user.id:
             return
-
-        # pog listener
-        if message.content.lower() in poggers_activation_phrases:
-            await message.channel.send(random.choice(poggers_links))
 
         # f listener
         if message.content.lower() == "f":
