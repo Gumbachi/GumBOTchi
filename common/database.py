@@ -2,7 +2,7 @@ import os
 import pymongo
 
 # database connection setup
-mongo_string = f"mongodb+srv://Gumbachi:{os.getenv("MONGO_PASS")}@discordbotcluster.afgyl.mongodb.net/GumbotchiDB?retryWrites=true&w=majority"
+mongo_string = f"mongodb+srv://Gumbachi:{os.getenv('MONGO_PASS')}@discordbotcluster.afgyl.mongodb.net/GumbotchiDB?retryWrites=true&w=majority"
 connection = pymongo.MongoClient(mongo_string)
 
 
