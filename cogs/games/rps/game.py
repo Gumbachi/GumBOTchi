@@ -28,8 +28,6 @@ class Game():
 
     @property
     def view(self):
-        replayButton = ReplayButton(self)
-
         return discord.ui.View(*self.buttons, ReplayButton(self))
 
     @property

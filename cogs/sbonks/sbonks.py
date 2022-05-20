@@ -48,7 +48,8 @@ class SbonkCommands(discord.Cog):
             choices=["1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "MAX"],
             default="1D"
         ),
-        message: Option(str, "Because weed is the future") = None
+        message: Option(str, "Because weed is the future") = None,
+        mock: Option(bool, "bEcAuSe WeEd Is ThE fUtuRe") = False
     ):
         """Show a sbonk chart for a specific timeframe"""
 
@@ -99,7 +100,7 @@ class SbonkCommands(discord.Cog):
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
         async with ctx.channel.typing():
-            await ctx.respond(file=data.graph(precision, message))
+            await ctx.respond(file=data.graph(precision, message, mock))
 
     @discord.Cog.listener("on_message")
     async def quick_responses(self, message: discord.Message):
