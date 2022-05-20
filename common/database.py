@@ -70,7 +70,7 @@ class DB:
 
         return response.modified_count != 0
 
-    def get_pogresponses(self, id: int) -> list[str]:
+    def get_pogresponses(self, id: int):
         """Retrieve the list of pog responses."""
         response = self._guilds.find_one(
             filter={"_id": id},
@@ -82,6 +82,18 @@ class DB:
 
         return response.get("pogresponses") or []
 
+    def insert_query(self, query):
+        self._queries.insert_one(query.to_db())
+    
+    def delete_query(self, query):
+        try:
+            self._queries.delete_one(query.to_db())
+        except IndexError:
+            pass
+            # raise CommandError("You fucked it, try again")
 
+    def get_queries(self):
+        return self._queries.find({})
+    
 db = DB(connection)
 print("Connected to DB")
