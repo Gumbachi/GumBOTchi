@@ -32,6 +32,7 @@ class Craigs:
                     'search_titles': False,
                     'posted_today': True,
                     'bundle_duplicates': True,
+                    'min_price': 5
                 }
             )
 
