@@ -46,6 +46,7 @@ class Craigslister(discord.Cog):
     async def uncraigslist_me_daddy(self, ctx,
             index: Option(int, "Index of query you want to delete")
         ):
+        """Treat yo self to deleting a query"""
         queries = self.craig.get_user_queries(ctx.author.id)
         to_delete = queries[index-1]
         result = db.delete_query(to_delete)
@@ -58,6 +59,7 @@ class Craigslister(discord.Cog):
 
     @slash_command(name="clqueries")
     async def show_queries(self, ctx):
+        """Treat yo self to seeing your queries"""
         queries = self.craig.get_user_queries(ctx.author.id)
         query_embed = discord.Embed(
             title=f"Craigslistings for {ctx.author.name}",
