@@ -3,7 +3,7 @@ from pathlib import Path
 import discord
 from discord.ext import tasks
 from discord import ApplicationContext, slash_command, Option
-from cogs.craigslister.craigslister_classes import Craigs, CLQuery
+from cogs.craigslister.Craigs import Craigs, CLQuery
 from common.database import db
 from datetime import datetime
 
@@ -33,10 +33,14 @@ class Craigslister(discord.Cog):
         """Treat yo self to a craigslist query"""
         new_query = CLQuery(
                             uid= ctx.user.id, zip_code=zip, state=state, channel=ctx.channel.id, site = site, keywords=keywords, spam_tolerance=spam_tolerance, budget=budget, distance=distance, category=category, has_image=has_image, ping=ping)
-        db.insert_query(new_query)
-        self.craig.active_queries.append(new_query)
-        self.craig.update()
-        return await ctx.respond("Added.")
+        result = db.insert_query(new_query)
+
+        if result:
+            self.craig.active_queries.append(new_query)
+            self.craig.update()
+            return await ctx.respond("Added.")
+        else:
+            return await ctx.respond("Failed to add to DB.")
 
     @slash_command(name="uncraigslistmedaddy")
     async def uncraigslist_me_daddy(self, ctx,
@@ -44,10 +48,13 @@ class Craigslister(discord.Cog):
         ):
         queries = self.craig.get_user_queries(ctx.author.id)
         to_delete = queries[index-1]
-        self.craig.active_queries.remove(to_delete)
-        db.delete_query(to_delete)
-        self.craig.update()
-        return await ctx.channel.send("Query removed.")
+        result = db.delete_query(to_delete)
+        if result:
+            self.craig.active_queries.remove(to_delete)
+            self.craig.update()
+            return await ctx.respond("Query removed.")
+        else:
+            return await ctx.respond("Didn't work.")
 
     @slash_command(name="clqueries")
     async def show_queries(self, ctx):
@@ -67,7 +74,7 @@ class Craigslister(discord.Cog):
                 inline=False
             )
 
-        return await ctx.send(embed=query_embed)
+        return await ctx.respond(embed=query_embed)
 
     @tasks.loop(seconds=300)
     async def lookup_queries(self):

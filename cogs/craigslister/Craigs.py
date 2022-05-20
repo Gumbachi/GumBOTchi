@@ -1,36 +1,7 @@
-import re
 from craigslist import CraigslistForSale
 from common.database import db
-
-import requests
+from cogs.craigslister.CLQuery import CLQuery
 import discord
-
-class CLQuery:
-    def __init__(   
-                self, uid, zip_code, state, channel, site, 
-                keywords, spam_tolerance = 1, budget = 1000, distance = 30, 
-                category="sss", has_image=False, ping=True
-        ):
-        self.owner_id = uid
-        self.zip_code = zip_code
-        self.state = state
-        self.channel = channel
-        self.site = site
-        self.budget = budget
-        self.distance = distance
-        self.keywords = keywords
-        self.has_image = has_image
-        self.spam_tolerance = spam_tolerance
-        self.ping = ping
-        self.category = category
-        self.sent_listings = set()
-
-    def to_db(self):
-        final_dic = {}
-        for k, v in self.__dict__.items():
-            if k not in ["sent_listings"]:
-                final_dic[k] = v
-        return final_dic 
 
 class Craigs:
     def __init__ (self):
@@ -41,6 +12,37 @@ class Craigs:
             'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
             'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
         ]
+    
+    def search(self, query: CLQuery):
+        """Uses the query to search CL. 
+        Returns a list of ALL matching posts"""
+        listings = []
+        # Iterate through keywords and search CL
+        for keyword in query.keywords.split(", "):
+            # Searches CL with the parameters
+            generator = CraigslistForSale(
+                site=query.site,
+                category=query.category,
+                filters={
+                    'query': keyword,
+                    'max_price': int(query.budget),
+                    'has_image': query.has_image,
+                    'zip_code': query.zip_code,
+                    'search_distance': query.distance,
+                    'search_titles': False,
+                    'posted_today': True,
+                    'bundle_duplicates': True,
+                }
+            )
+
+            # Adds listings to a list, include details returns an error if listing doesn't have body
+            try:
+                for listing in generator.get_results(sort_by='newest', include_details=True):
+                    listings.append(listing)
+            except Exception as e:
+                for listing in generator.get_results(sort_by='newest'):
+                    listings.append(listing)
+        return listings
 
     def update(self):
         queries = db.get_queries()
@@ -73,14 +75,6 @@ class Craigs:
             if query.owner_id == uid:
                 queries.append(query)
         return queries
-
-    def true_index(self, indexed_query):
-        true_index = None
-        for i, query in enumerate(self.active_queries):
-            if query is indexed_query:
-                true_index = i
-                break
-        return true_index
 
     async def process_query(self, bot, query: CLQuery):
         ## Search
@@ -115,6 +109,14 @@ class Craigs:
                                 color=discord.Color.blue())
             await channel.send(embed=embed)
 
+    def filter_listings(self, listings, query:CLQuery):
+        filtered_listings = []
+        for listing in listings:
+            if listing["id"] not in query.sent_listings:
+                if not self.is_spam(listing=listing, query=query):
+                    filtered_listings.append(listing)
+        return filtered_listings
+
     def is_spam(self, listing, query: CLQuery):
         spam = 0
         body = listing["body"]
@@ -129,17 +131,8 @@ class Craigs:
                 # Too spammy so break
                 if spam > query.spam_tolerance:
                     return True
-
         return False
-
-    def filter_listings(self, listings, query:CLQuery):
-        filtered_listings = []
-        for listing in listings:
-            if listing["id"] not in query.sent_listings:
-                if not self.is_spam(listing=listing, query=query):
-                    filtered_listings.append(listing)
-        return filtered_listings
-
+    
     def clean_listings(self, listings):
         clean_listings = []
         for listing in listings:
@@ -159,38 +152,6 @@ class Craigs:
             clean_listings.append(clean_listing)
         return clean_listings
 
-
     def update_listings(self, listings, query: CLQuery):
         for listing in listings:
             query.sent_listings.add(listing["id"])
-
-    def search(self, query: CLQuery):
-        """Uses the query to search CL. 
-        Returns a list of ALL matching posts"""
-        listings = []
-        # Iterate through keywords and search CL
-        for keyword in query.keywords.split(", "):
-            # Searches CL with the parameters
-            generator = CraigslistForSale(
-                site=query.site,
-                category=query.category,
-                filters={
-                    'query': keyword,
-                    'max_price': int(query.budget),
-                    'has_image': query.has_image,
-                    'zip_code': query.zip_code,
-                    'search_distance': query.distance,
-                    'search_titles': False,
-                    'posted_today': True,
-                    'bundle_duplicates': True,
-                }
-            )
-
-            # Adds listings to a list, include details returns an error if listing doesn't have body
-            try:
-                for listing in generator.get_results(sort_by='newest', include_details=True):
-                    listings.append(listing)
-            except Exception as e:
-                for listing in generator.get_results(sort_by='newest'):
-                    listings.append(listing)
-        return listings
