@@ -107,10 +107,11 @@ class MusicPlayer():
 
         return embed
 
-    async def enqueue(self, song: Song):
+    async def enqueue(self, song: Song, person: discord.User = None):
         """Add a song to the music player's queue."""
         self.songlist.append(song)
-        self.last_action = f"Queued {song.title}"
+        if person:
+            self.last_action = f"{person.name} queued {song.title}"
 
     async def play_next(self):
         """Will begin the next song based on the repeat configuration."""
@@ -148,20 +149,29 @@ class MusicPlayer():
             except discord.NotFound:
                 pass
 
-    def resume(self):
+    def resume(self, person: discord.User = None):
+        if person:
+            self.last_action = f"{person.name} resumed {self.current.title}"
         self.paused = False
         self.guild.voice_client.resume()
 
-    def pause(self):
+    def pause(self, person: discord.User = None):
+        if person:
+            self.last_action = f"{person.name} paused {self.current.title}"
         self.paused = True
         self.guild.voice_client.pause()
 
-    async def rewind(self):
+    async def rewind(self, person: discord.User = None):
+        if person:
+            self.last_action = f"{person.name} rewound {self.current.title}"
         rtype = self.repeat_type
         self.repeat_type = RepeatType.REPEATONE
-        await self.skip()
+        self.guild.voice_client.stop()
+        await self.play_next()
         self.repeat_type = rtype
 
-    async def skip(self):
+    async def skip(self, person: discord.User = None):
+        if person:
+            self.last_action = f"{person.name} skipped {self.current.title}"
         self.guild.voice_client.stop()
         await self.play_next()

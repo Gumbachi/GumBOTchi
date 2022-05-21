@@ -3,7 +3,6 @@ import os
 import discord
 from discord.commands import slash_command
 from discord.ext import tasks
-from discord.ext.commands import CommandError
 
 from .player import MusicPlayer
 

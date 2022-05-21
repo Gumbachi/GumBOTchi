@@ -38,8 +38,8 @@ class PlayButton(Button):
         self.player = player
 
     async def callback(self, interaction: discord.Interaction):
-        self.player.resume()
-        await interaction.response.edit_message(view=self.player.controller)
+        self.player.resume(person=interaction.user)
+        await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
 
 
 class PauseButton(Button):
@@ -48,8 +48,8 @@ class PauseButton(Button):
         self.player = player
 
     async def callback(self, interaction: discord.Interaction):
-        self.player.pause()
-        await interaction.response.edit_message(view=self.player.controller)
+        self.player.pause(person=interaction.user)
+        await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
 
 
 class SkipButton(Button):
@@ -58,7 +58,7 @@ class SkipButton(Button):
         self.player = player
 
     async def callback(self, interaction: discord.Interaction):
-        await self.player.skip()
+        await self.player.skip(person=interaction.user)
         await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
 
 
@@ -68,7 +68,7 @@ class RewindButton(Button):
         self.player = player
 
     async def callback(self, interaction: discord.Interaction):
-        await self.player.rewind()
+        await self.player.rewind(person=interaction.user)
         await interaction.response.edit_message(embed=self.player.embed, view=self.player.controller)
 
 
@@ -147,7 +147,7 @@ class SongModal(Modal):
         query = self.children[0].value
 
         song = Song.from_query(query)
-        await self.player.enqueue(song)
+        await self.player.enqueue(song, person=interaction.user)
 
         if not interaction.user.voice:
             return await interaction.response.send_message(Tenor.KERMIT_LOST)
