@@ -43,6 +43,7 @@ class Music(discord.Cog):
 
             mp = self.get_player(client.guild)
             await mp.play_next()
+            await mp.update()
 
     @player_loop.before_loop
     async def before_player_loop(self):
