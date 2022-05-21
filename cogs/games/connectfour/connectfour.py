@@ -1,6 +1,5 @@
 import discord
-from common.cfg import devguilds
-from discord.commands import slash_command, Option
+from discord.commands import slash_command, user_command, Option
 from .game import Game
 
 
@@ -10,8 +9,14 @@ class ConnectFour(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @user_command(name="Connect 4")
+    async def user_connectfour(self, ctx: discord.ApplicationContext, opponent: discord.Member):
+        """Context menu Rock Paper Scissors"""
+        c4 = self.bot.get_application_command("connect4")
+        await ctx.invoke(c4, opponent)
+
     @slash_command(name="connect4")
-    async def begin_connect4(
+    async def connectfour(
         self,
         ctx: discord.ApplicationContext,
         opponent: Option(discord.Member, description="Select Player 2")

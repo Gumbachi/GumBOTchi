@@ -1,10 +1,10 @@
 import random
 import discord
-from discord import slash_command
-
+from discord import SlashCommandGroup
 from common.cfg import poggers_activation_phrases
-
 from common.database import db
+import common.utils as utils
+from discord.ext import pages
 
 
 class PogCommands(discord.Cog):
@@ -13,39 +13,41 @@ class PogCommands(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="pogify")
-    async def pogify(self, ctx: discord.ApplicationContext, response: str):
+    pog = SlashCommandGroup("pog", "Edit the way pog functionality behaves")
+
+    @pog.command()
+    async def add(self, ctx: discord.ApplicationContext, response: str):
         """Add a pog response"""
         # Admin check
         if not ctx.author.guild_permissions.manage_messages:
             return await ctx.respond("Sure, but where are your permissions")
 
-        result = db.add_pog_response(ctx.guild.id, response)
+        success = db.add_pog_response(ctx.guild.id, response)
 
         # Check for success
-        if result == True:
+        if success:
             await ctx.respond(f"Added `{response}` to pog responses")
         else:
             await ctx.respond("Something went wrong. Try again or something")
 
-    @slash_command(name="unpogify")
-    async def unpogify(self, ctx: discord.ApplicationContext, response: str):
+    @pog.command()
+    async def remove(self, ctx: discord.ApplicationContext, response: str):
         """Delete a pog response"""
         # Admin check
         if not ctx.author.guild_permissions.manage_messages:
             return await ctx.respond("Sure, but where are your permissions")
 
         # attempts to delete a pog response
-        result = db.remove_pog_response(ctx.guild.id, response)
+        success = db.remove_pog_response(ctx.guild.id, response)
 
         # Check for success
-        if result == True:
+        if success:
             await ctx.respond(f"Deleted `{response}` from pog responses")
         else:
             await ctx.respond("Could not find pog response.")
 
-    @slash_command(name="poglist")
-    async def poglist(self, ctx: discord.ApplicationContext):
+    @pog.command()
+    async def list(self, ctx: discord.ApplicationContext):
         """Displays a list of pog responses"""
 
         responses = db.get_pogresponses(ctx.guild.id)
@@ -54,16 +56,15 @@ class PogCommands(discord.Cog):
         if not responses:
             return await ctx.respond("This is not pog at all. Consider `pogify`ing")
 
-        embed = discord.Embed(
-            title="Pog Responses",
-            description='\n'.join(responses[:20])
-        )
+        embeds = [
+            discord.Embed(
+                title=f"Pog Responses",
+                description='\n'.join(chunk)
+            ) for chunk in utils.chunk(responses, chunksize=8)
+        ]
 
-        # pog responses are cut off to avoid discord limit
-        if len(responses) > 20:
-            embed.set_footer(text="only showing the first 20")
-
-        await ctx.respond(embed=embed)
+        paginator = pages.Paginator(pages=embeds, show_disabled=False)
+        await paginator.respond(ctx.interaction, ephemeral=False)
 
     @discord.Cog.listener()
     async def on_message(self, message):

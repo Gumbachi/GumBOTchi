@@ -11,6 +11,7 @@ bot = discord.Bot(
     ),
     status=discord.Status.dnd,
     owner_id=128595549975871488,
+    debug_guilds=[565257922356051973],
     intents=discord.Intents.all()
 )
 
@@ -31,7 +32,7 @@ cogs = [
     "cogs.games.tictactoe.tictactoe",
     "cogs.games.connectfour.connectfour",
     "cogs.craigslister.craigslister",
-    "cogs.admin"
+    "cogs.emojifier.emojifier"
 ]
 
 if __name__ == '__main__':

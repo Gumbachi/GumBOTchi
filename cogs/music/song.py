@@ -28,6 +28,10 @@ class Song():
         self.thumbnail = songdata['thumbnail']
 
     @property
+    def embed_format(self):
+        return f"[{self.title}]({self.webpage_url})\n{self.duration}"
+
+    @property
     def duration(self) -> str:
         if self._duration < 3600:
             return time.strftime("%M:%S", time.gmtime(self._duration))

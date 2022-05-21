@@ -1,15 +1,11 @@
 import os
 
 import discord
-from discord import ApplicationContext as Context
-from discord.commands import Option
 from discord.commands import slash_command
 from discord.ext import tasks
 from discord.ext.commands import CommandError
 
-from common.cfg import Emoji, Tenor, devguilds
 from .player import MusicPlayer
-from .song import Song
 
 
 class Music(discord.Cog):
@@ -22,7 +18,6 @@ class Music(discord.Cog):
 
     def get_player(self, guild: discord.Guild) -> MusicPlayer:
         """Return active player or make a new one."""
-
         try:
             return self.players[guild.id]
         except KeyError:
@@ -30,58 +25,8 @@ class Music(discord.Cog):
             self.players[guild.id] = player
             return player
 
-    @staticmethod
-    async def connect_to_voice(ctx):
-        """Connect to your voice channel"""
-        # user is not in voice channel
-        if not ctx.author.voice:
-            raise CommandError("You aren't in a voice channel")
-
-        # user is in different voice channel
-        if ctx.voice_client is not None:
-            await ctx.voice_client.move_to(ctx.author.voice.channel)
-        else:
-            await ctx.author.voice.channel.connect()
-
-    @slash_command(name="disconnect")
-    async def disconnect_from_voice(self, ctx):
-        """Disconnect bot from your voice channel"""
-        if not ctx.voice_client:
-            return await ctx.respond(Emoji.WEIRDCHAMP)
-
-        await ctx.voice_client.disconnect()
-        del self.players[ctx.guild.id]
-        await ctx.respond(Emoji.CHECK)
-
-    @slash_command(name="play")
-    async def play(self, ctx: Context, song: Option(str, "Search for a song on youtube")):
-        """Command to start the music player"""
-
-        # Need to defer response since it takes time
-        await ctx.interaction.response.defer()
-
-        try:
-            await self.connect_to_voice(ctx)
-        except CommandError:
-            return await ctx.respond(Tenor.KERMIT_LOST)
-
-        song = Song.from_query(song)
-        mp = self.get_player(ctx.guild)
-        mp.enqueue(song)
-
-        # Add to queue if there is already something playing
-        if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
-            emb = discord.Embed(title="Added to queue", description=song.title)
-            emb.set_thumbnail(url=song.thumbnail)
-            return await ctx.respond(embed=emb)
-
-        await mp.play_next()
-        message = await ctx.send(embed=mp.embed, view=mp.controller)
-        mp.message = message
-        await ctx.respond(message.jump_url)
-
-    @slash_command(name="player")
-    async def send_player(self, ctx: Context):
+    @slash_command(name="jukebox")
+    async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
 
         mp = self.get_player(ctx.guild)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import discord
 from common.cfg import Role, Tenor, Vip, activities
-from discord.commands import slash_command
+from discord.commands import slash_command, Option
 from discord.ext import tasks
 
 
@@ -15,9 +15,17 @@ class GeneralCommands(discord.Cog):
         self.activity_cycler.start()
 
     @slash_command(name="howdy")
-    async def howdy(self, ctx):
+    async def howdy(self, ctx: discord.ApplicationContext):
         """Command to check if bot is alive or if you need a friend."""
         await ctx.respond(f"Howdy {ctx.author.mention}!")
+
+    @slash_command(name="purge")
+    @discord.default_permissions(administrator=True)
+    async def purge(self, ctx: discord.ApplicationContext, amount: Option(int, "The amount of messages to purge", min_value=1, max_value=1000)):
+        """purge a specific amount of messages"""
+        await ctx.defer()
+        await ctx.channel.purge(limit=amount + 1)
+        await ctx.respond(f"purged {amount} messages")
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
