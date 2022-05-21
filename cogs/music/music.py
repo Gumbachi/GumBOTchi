@@ -28,7 +28,6 @@ class Music(discord.Cog):
     @slash_command(name="jukebox")
     async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
-
         mp = self.get_player(ctx.guild)
         mp.message = await ctx.send(embed=mp.embed, view=mp.controller)
         await ctx.respond(mp.message.jump_url)
