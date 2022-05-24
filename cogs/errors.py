@@ -11,5 +11,5 @@ class CommandErrors(discord.Cog):
         await ctx.respond(f"Houston we have a problem: \n{error}")
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(CommandErrors(bot))

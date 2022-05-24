@@ -25,5 +25,5 @@ class TicTacToe(discord.Cog):
         await ctx.respond(embed=game.embed, view=game.view)
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(TicTacToe(bot))

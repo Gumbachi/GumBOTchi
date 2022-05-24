@@ -1,8 +1,8 @@
-from calendar import week
 import os
 
 import aiohttp
 from cogs.sbonks.symboldata import SymbolData
+from common.database import db
 
 
 class IEXAPIError(Exception):
@@ -10,21 +10,17 @@ class IEXAPIError(Exception):
 
 
 class IEXAPI:
-    KEY = os.getenv("IEXCLOUD_KEY")
     BASE_URL = "https://cloud.iexapis.com/stable"
 
-    async def get_credits(self) -> int:
-        params = {"token": self.KEY}
-        url = f"{self.BASE_URL}/account/usage/credits"
+    def __init__(self, guild_id: int) -> None:
+        self.iexkey = db.get_sbonk_key(guild_id)
 
-        data = await self._get(url, params)
-        return data.get("monthlyUsage", -1)
+        if self.iexkey is None:
+            raise IEXAPIError("Missing IEX KEY")
 
     async def get_quote(self, symbol: str) -> dict:
-        params = {"token": self.KEY}
         url = f"{self.BASE_URL}/stock/{symbol}/quote"
-
-        data = await self._get(url, params)
+        data = await self._get(url)
         return data
 
     async def get_intraday(self, symbols: list[str]) -> list[SymbolData]:
@@ -114,7 +110,7 @@ class IEXAPI:
         """Underlying generic async api get request"""
 
         params = {} if params == None else params
-        params.update({"token": self.KEY})
+        params.update({"token": self.iexkey})
 
         # Make web request asynchronously
         async with aiohttp.ClientSession() as session:
