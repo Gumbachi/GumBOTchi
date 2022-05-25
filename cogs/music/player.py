@@ -3,7 +3,6 @@ import os
 
 import discord
 from discord.ui import View
-from discord.enums import ButtonStyle
 
 from .components import *
 from .song import Song
@@ -106,6 +105,16 @@ class MusicPlayer():
             )
 
         return embed
+
+    async def set_message(self, message: discord.Message):
+        """Replace the active jukebox under the hood"""
+        if self.message != None:
+            try:
+                await self.message.delete()
+            except discord.NotFound:
+                pass
+
+        self.message = message
 
     async def enqueue(self, song: Song, person: discord.User = None):
         """Add a song to the music player's queue."""

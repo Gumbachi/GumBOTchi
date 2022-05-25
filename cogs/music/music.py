@@ -1,4 +1,5 @@
 import os
+import random
 
 import discord
 from discord.commands import slash_command
@@ -13,6 +14,12 @@ class Music(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
+        self.response_lines = [
+            "*Inserting Quarters*",
+            "Vibe Established 🎧",
+            "Queueing up so much country music",
+            "Dropping the needle"
+        ]
         self.player_loop.start()
 
     def get_player(self, guild: discord.Guild) -> MusicPlayer:
@@ -28,8 +35,10 @@ class Music(discord.Cog):
     async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
         mp = self.get_player(ctx.guild)
-        mp.message = await ctx.send(embed=mp.embed, view=mp.controller)
-        await ctx.respond(mp.message.jump_url)
+        await ctx.respond(random.choice(self.response_lines))
+
+        message = await ctx.send(embed=mp.embed, view=mp.controller)
+        await mp.set_message(message)
 
     @tasks.loop(seconds=5)
     async def player_loop(self):
