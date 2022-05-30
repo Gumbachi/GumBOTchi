@@ -43,21 +43,6 @@ Songs can be controlled and managed with the provided buttons
 
 ![GumBOTchi's Jukebox](res/img/showcase/jukeboxshowcase.png) 
 
-## Running the bot yourself
-If for some reason you would like to run this bot yourself then you will need to have certain environment variables set  
-```env
-# Required to run the bot
-TOKEN=YourBotToken
-
-# Optional -- Needed for Craigslist/Pog
-MONGO_PASS=YourMongoDBPassword
-
-# Optional -- Needed for Jukebox/Music
-FFMPEG_PATH=PathToFFMPEGExecutable
-```
-The entry point is **main.py**
-
-
 ## Invite GumBOTchi
 
  - TODO
