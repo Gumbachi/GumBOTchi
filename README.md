@@ -24,8 +24,7 @@ Sweet will fill this section in I just know it
 
 ## Games  
 GumBOTchi has some games you can play against your friends or against GumBOTchi.  
-You can do this by `right clicking your target > Apps > Game of Your Choice`  
-You can also use each game's slash command if you prefer  
+You can do this by `right clicking your opponent's picture/name > Apps > Game of Your Choice`  
 ![Rock Paper Scissors](res/img/showcase/rpsshowcase.png)  
 ![TicTacToe](res/img/showcase/tttinprogress.png) 
 ![TicTacToe](res/img/showcase/tttfinished.png)  
