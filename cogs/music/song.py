@@ -33,6 +33,7 @@ class Song():
 
     @property
     def duration(self) -> str:
+        """Duration of the song in string format"""
         if self._duration < 3600:
             return time.strftime("%M:%S", time.gmtime(self._duration))
         return time.strftime("%H:%M:%S", time.gmtime(self._duration))
