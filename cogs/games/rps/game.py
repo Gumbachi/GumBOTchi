@@ -17,11 +17,12 @@ class Game():
         ]
 
         self.state = RPSState.ONGOING
+        self.score = [0, 0]
 
     @property
     def embed(self):
         return discord.Embed(
-            title=self.headline,
+            title=f"{self.headline}  •  {self.scoreline}",
             description=self.playbyplay,
             color=discord.Color.blue()
         )
@@ -29,6 +30,10 @@ class Game():
     @property
     def view(self):
         return discord.ui.View(*self.buttons, ReplayButton(self))
+
+    @property
+    def scoreline(self):
+        return ' - '.join([str(x) for x in self.score])
 
     @property
     def headline(self):
@@ -46,7 +51,7 @@ class Game():
     @property
     def playbyplay(self):
         """Generates the string that represents the game events."""
-        if not self.state == RPSState.ONGOING:
+        if self.state != RPSState.ONGOING:
             return f"{self.p1} plays {self.p1.move}\n{self.p2} counters with {self.p2.move}"
 
     @property
@@ -64,8 +69,10 @@ class Game():
             self.state = RPSState.TIE
         elif self.p1.choice > self.p2.choice:
             self.state = RPSState.PLAYERONEWIN
+            self.score[0] += 1
         else:
             self.state = RPSState.PLAYERTWOWIN
+            self.score[1] += 1
 
         # end game and disable buttons
         self.end()
