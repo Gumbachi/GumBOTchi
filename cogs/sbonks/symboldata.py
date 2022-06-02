@@ -1,8 +1,14 @@
 import io
-import numpy as np
 import random
-import matplotlib.pyplot as plt
+
 import discord
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load matplotlib font
+for font in font_manager.findSystemFonts(['./res/fonts']):
+    font_manager.fontManager.addfont(path=font)
 
 
 class SymbolData:

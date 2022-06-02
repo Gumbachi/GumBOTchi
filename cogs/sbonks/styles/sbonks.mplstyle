@@ -1,5 +1,5 @@
-lines.linewidth : 1.8
-font.family: Segoe UI
+lines.linewidth: 1.8
+font.family: Inter
 
 axes.spines.left: False
 axes.spines.bottom: False

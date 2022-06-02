@@ -7,6 +7,7 @@ from cogs.craigslister.Craigs import Craigs, CLQuery
 from common.database import db
 from datetime import datetime
 
+
 class Craigslister(discord.Cog):
     """Handles simple commands and listeners."""
 
@@ -32,7 +33,7 @@ class Craigslister(discord.Cog):
     ):
         """Treat yo self to a craigslist query"""
         new_query = CLQuery(
-                            uid= ctx.user.id, zip_code=zip, state=state, channel=ctx.channel.id, site = site, keywords=keywords, spam_tolerance=spam_tolerance, budget=budget, distance=distance, category=category, has_image=has_image, ping=ping)
+            uid=ctx.user.id, zip_code=zip, state=state, channel=ctx.channel.id, site=site, keywords=keywords, spam_tolerance=spam_tolerance, budget=budget, distance=distance, category=category, has_image=has_image, ping=ping)
         result = db.insert_query(new_query)
 
         if result:
@@ -44,8 +45,9 @@ class Craigslister(discord.Cog):
 
     @slash_command(name="uncraigslistmedaddy")
     async def uncraigslist_me_daddy(self, ctx,
-            index: Option(int, "Index of query you want to delete")
-        ):
+                                    index: Option(
+                                        int, "Index of query you want to delete")
+                                    ):
         """Treat yo self to deleting a query"""
         queries = self.craig.get_user_queries(ctx.author.id)
         to_delete = queries[index-1]
@@ -86,7 +88,8 @@ class Craigslister(discord.Cog):
 
     @lookup_queries.before_loop
     async def before_loop(self):
-        await self.bot.wait_until_ready()        
+        await self.bot.wait_until_ready()
+
 
 def setup(bot):
     """Entry point for loading cogs."""
