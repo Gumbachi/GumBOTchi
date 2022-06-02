@@ -105,7 +105,7 @@ class SbonkCommands(discord.Cog):
         await ctx.respond(file=data.graph(precision, message, mock))
 
     @discord.Cog.listener("on_message")
-    async def quick_responses(self, message: discord.Message):
+    async def sbonks_quick_responses(self, message: discord.Message):
         """Process quick responses."""
         if message.author.bot:
             return
@@ -131,7 +131,13 @@ class SbonkCommands(discord.Cog):
         # Parse symbols from message and check if there are any
         symbols = self.extract_symbols(message.content)
         if not symbols:
-            return
+
+            # $Braided listener
+            if message.content.lower() == "$braided":
+                symbols = ["AMD", "NVDA"]
+
+            else:
+                return
 
         # Fetch data from iex and check if there is any
         try:
