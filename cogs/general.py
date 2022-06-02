@@ -21,11 +21,23 @@ class GeneralCommands(discord.Cog):
 
     @slash_command(name="purge")
     @discord.default_permissions(administrator=True)
-    async def purge(self, ctx: discord.ApplicationContext, amount: Option(int, "The amount of messages to purge", min_value=1, max_value=1000)):
+    async def purge(
+        self, ctx: discord.ApplicationContext,
+        amount: Option(int, "The amount of messages to purge"),
+        target: Option(discord.Member, "We all know who this is for") = None
+    ):
         """purge a specific amount of messages"""
         await ctx.defer()
+
+        if target:
+            await ctx.channel.purge(
+                limit=amount,
+                check=lambda x: x.author == target
+            )
+            return await ctx.respond(f"purged {amount} messages")
+
         await ctx.channel.purge(limit=amount + 1)
-        await ctx.respond(f"purged {amount} messages")
+        await ctx.respond(f"purged messages")
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
