@@ -144,13 +144,18 @@ class SongModal(Modal):
 
     async def callback(self, interaction: discord.Interaction):
 
+        if not interaction.user.voice:
+            self.player.last_action = f"{interaction.user.name} tried to grief"
+            return await interaction.response.send_message(Tenor.KERMIT_LOST)
+
+        if interaction.user.voice.channel != interaction.guild.voice_client.channel:
+            self.player.last_action = f"{interaction.user.name} tried to steal the bot"
+            return await self.player.update()
+
         query = self.children[0].value
 
         song = Song.from_query(query)
         await self.player.enqueue(song, person=interaction.user)
-
-        if not interaction.user.voice:
-            return await interaction.response.send_message(Tenor.KERMIT_LOST)
 
         voice_client = interaction.guild.voice_client
 
