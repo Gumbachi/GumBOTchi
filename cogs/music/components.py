@@ -144,11 +144,14 @@ class SongModal(Modal):
 
     async def callback(self, interaction: discord.Interaction):
 
+        voice_client = interaction.guild.voice_client
+        user_vc = interaction.user.voice.channel
+
         if not interaction.user.voice:
             self.player.last_action = f"{interaction.user.name} tried to grief"
             return await interaction.response.send_message(Tenor.KERMIT_LOST)
 
-        if interaction.user.voice.channel != interaction.guild.voice_client.channel:
+        if voice_client != None and user_vc != voice_client.channel:
             self.player.last_action = f"{interaction.user.name} tried to steal the bot"
             return await self.player.update()
 
