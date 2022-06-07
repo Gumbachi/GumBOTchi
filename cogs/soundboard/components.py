@@ -27,6 +27,8 @@ class SoundboardMenu(View):
         # Wait for clip to finish and dc
         while voice_client.is_playing():
             await asyncio.sleep(1)
+
+        print("DISCONNECTING")
         await voice_client.disconnect()
 
     @discord.ui.button(label="CC")

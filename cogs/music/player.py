@@ -1,12 +1,13 @@
 """Holds the queue class for the music player."""
 import os
-
+import asyncio
 import discord
-from discord.ui import View
 
 from .components import *
 from .song import Song
 import common.utils as utils
+
+from functools import partial
 
 FFMPEG_OPTS = {
     "executable": os.getenv("FFMPEG_PATH"),
@@ -28,6 +29,7 @@ class MusicPlayer():
         self.current_page = 1
         self.queue_displayed = False
         self.last_action: str = "TODO"
+        self.history: set[str] = set()
         self.songlist: list[Song] = []
 
     @property
@@ -46,42 +48,14 @@ class MusicPlayer():
     @property
     def embed(self) -> discord.Embed:
         """Generates a discord Embed object based on music player state."""
+        # Nothing playing embed
         if not self.current:
             return discord.Embed(
                 title="No Songs Playing",
                 description="Hint: Hit the big + button"
             )
 
-        return self.queue
-
-    @property
-    def controller(self) -> discord.ui.View:
-        """Generates the buttons for the music player based on music player state."""
-        play_button = PlayButton(self) if self.paused else PauseButton(self)
-        rewind_button = RewindButton(self)
-        skip_button = SkipButton(self)
-
-        # Handle displaying the repeat button
-        if self.repeat_type == RepeatType.REPEAT:
-            repeat_button = RepeatButton(self)
-        elif self.repeat_type == RepeatType.REPEATONE:
-            repeat_button = RepeatOneButton(self)
-        else:
-            repeat_button = RepeatOffButton(self)
-
-        left_button = LeftButton(self)
-        add_button = AddButton(self)
-        right_button = RightButton(self)
-
-        return View(
-            repeat_button, play_button, rewind_button, skip_button,
-            left_button, add_button, right_button,
-            timeout=None
-        )
-
-    @property
-    def queue(self) -> discord.Embed:
-        """Generates the song queue discord Embed based on the songlist and state of the player."""
+        # Generate main player embed
         embed = discord.Embed(
             title="GumBOTchi's Jukebox",
             description=f"*{self.last_action}*\n"
@@ -106,6 +80,50 @@ class MusicPlayer():
 
         return embed
 
+    @property
+    def controller(self) -> discord.ui.View:
+        """Generates the buttons for the music player based on music player state."""
+        return MusicControls(self)
+
+    def _synchronous_playnext(self, loop, error):
+        asyncio.run_coroutine_threadsafe(self.play_next(), loop)
+
+    async def play_next(self, error=None):
+        """Will begin the next song based on the repeat configuration."""
+
+        # only disconnect if not repeatone because repeat one doesnt need to pop queue
+        if self.empty and self.repeat_type == RepeatType.REPEATOFF:
+            self.history.add(self.current.title)
+            self.current = None
+            self.paused = True
+            await self.update()
+            return await self.guild.voice_client.disconnect()
+
+        # Repeat should loop the entire list
+        if self.repeat_type == RepeatType.REPEAT:
+            self.songlist.append(self.current)
+            self.current = self.songlist.pop(0)
+
+        # Repeat off should just burn through the songs
+        elif self.repeat_type == RepeatType.REPEATOFF:
+
+            # Add song to history
+            if self.current != None:
+                self.history.add(self.current.title)
+
+            self.current = self.songlist.pop(0)
+
+        # Play the song
+        audio = discord.FFmpegPCMAudio(self.current.url, **FFMPEG_OPTS)
+        voice_client = self.guild.voice_client
+        voice_client.play(
+            source=audio,
+            after=partial(self._synchronous_playnext, voice_client.loop)
+        )
+        self.paused = False
+
+        await self.update()
+
     async def set_message(self, message: discord.Message):
         """Replace the active jukebox under the hood"""
         if self.message != None:
@@ -122,32 +140,9 @@ class MusicPlayer():
         if person:
             self.last_action = f"{person.name} queued {song.title}"
 
-    async def play_next(self):
-        """Will begin the next song based on the repeat configuration."""
-
-        # only disconnect if not repeatone because repeat one doesnt need to pop queue
-        if self.empty and self.repeat_type == RepeatType.REPEATOFF:
-            self.current = None
-            self.paused = True
-            await self.update()
-            return await self.guild.voice_client.disconnect()
-
-        # Repeat should loop the entire list
-        if self.repeat_type == RepeatType.REPEAT:
-            self.songlist.append(self.current)
-            self.current = self.songlist.pop(0)
-
-        # Repeat off should just burn through the songs
-        elif self.repeat_type == RepeatType.REPEATOFF:
-            self.current = self.songlist.pop(0)
-
-        # Play the song
-        audio = discord.FFmpegPCMAudio(self.current.url, **FFMPEG_OPTS)
-        self.guild.voice_client.play(audio)
-        self.paused = False
-
     async def update(self):
         """Attempt to update the active player message."""
+
         # Need to handle natural page reduction from playing songs
         if self.current_page > self.total_pages:
             self.current_page = self.total_pages
@@ -159,28 +154,29 @@ class MusicPlayer():
                 pass
 
     def resume(self, person: discord.User = None):
-        if person:
+        if person and self.current:
             self.last_action = f"{person.name} resumed {self.current.title}"
         self.paused = False
         self.guild.voice_client.resume()
 
     def pause(self, person: discord.User = None):
-        if person:
+        if person and self.current:
             self.last_action = f"{person.name} paused {self.current.title}"
         self.paused = True
         self.guild.voice_client.pause()
 
     async def rewind(self, person: discord.User = None):
-        if person:
+        if person and self.current:
             self.last_action = f"{person.name} rewound {self.current.title}"
-        rtype = self.repeat_type
-        self.repeat_type = RepeatType.REPEATONE
+
+        self.songlist.insert(0, self.current)
+
+        # stopping the voice client will trigger playnext automatically
         self.guild.voice_client.stop()
-        await self.play_next()
-        self.repeat_type = rtype
 
     async def skip(self, person: discord.User = None):
-        if person:
+        if person and self.current:
             self.last_action = f"{person.name} skipped {self.current.title}"
+
+        # stopping the voice client will trigger play next automatically
         self.guild.voice_client.stop()
-        await self.play_next()
