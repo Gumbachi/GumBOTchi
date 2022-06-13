@@ -1,5 +1,6 @@
 """Runs the discord bot"""
 import os
+
 import discord
 
 # Create the bot
@@ -11,7 +12,7 @@ bot = discord.Bot(
     ),
     status=discord.Status.dnd,
     owner_id=128595549975871488,
-    debug_guilds=[565257922356051973],  # uncomment this line when testing
+    # debug_guilds=[565257922356051973],  # uncomment this line when testing
     intents=discord.Intents.all()
 )
 
