@@ -1,8 +1,9 @@
 import itertools
+
 import discord
 from discord import Activity
-from discord.enums import Status
 from discord import ActivityType as ActType
+from discord.enums import Status
 
 
 class Vip:
@@ -40,9 +41,11 @@ activities = itertools.cycle([
     Activity(name="your cries for help", type=ActType.listening),
     Activity(name="Salm's color change", type=ActType.watching),
     Activity(name="18 poggers gifs at once", type=ActType.watching),
+    Activity(name="nonstop vibes", type=ActType.listening),
     Activity(name="XPEV's Downfall", type=ActType.watching),
     Activity(name="The Poggers Olympics", type=ActType.competing),
     Activity(name="Derk try to craigslist", type=ActType.watching),
+    Activity(name="bangers only", type=ActType.playing),
     Activity(name="Salmon kill the economy", type=ActType.watching),
     Activity(name="Roses 50 times in one day", type=ActType.listening),
     Activity(name="hard to get", type=ActType.playing),
@@ -50,6 +53,7 @@ activities = itertools.cycle([
     Activity(name="THREES?!?!?!", type=ActType.playing),
     Activity(name="for LGMA Esports", type=ActType.playing),
     Activity(name="4D Quantum Chess", type=ActType.playing),
+
 ])
 
 poggers_activation_phrases = {
