@@ -1,182 +1,143 @@
 """Holds the queue class for the music player."""
-import os
 import asyncio
-import discord
+from dataclasses import dataclass, field
 
-from .components import *
-from .song import Song
 import common.utils as utils
+import discord
+from cogs.music.music_errors import NoVoiceClient
+from cogs.music.pager import Pager
 
-from functools import partial
-
-FFMPEG_OPTS = {
-    "executable": os.getenv("FFMPEG_PATH"),
-    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-    "options": "-vn",
-}
+from .components import MusicControls, RepeatType
+from .song import Song
 
 
-class MusicPlayer():
-    """A player class with only 1 belonging to each guild."""
-    PAGESIZE = 3
+@dataclass
+class MusicPlayer:
+    message: discord.Message  # The message holding the music player
 
-    def __init__(self, guild: discord.Guild):
-        self.guild: discord.Guild = guild
-        self.message: discord.Message = None
-        self.repeat_type: RepeatType = RepeatType.REPEATOFF
-        self.paused = True
-        self.current: Song = None
-        self.current_page = 1
-        self.queue_displayed = False
-        self.last_action: str = "TODO"
-        self.history: set[str] = set()
-        self.songlist: list[Song] = []
+    # Song Queue
+    repeat: RepeatType = RepeatType.REPEATOFF
+    current: Song | None = None
+    history: set[str] = field(default_factory=set)
+    songlist: list[Song] = field(default_factory=list)
 
-    @property
-    def playing(self):
-        return not self.paused
+    # Display
+    pager: Pager = Pager()
+    description: str = ""
+    footer: str = ""
+
+    def __repr__(self):
+        return f"MusicPlayer(current={self.current}, songlist={self.songlist}, history={self.history})"
 
     @property
-    def empty(self):
-        return len(self.songlist) == 0
+    def voice_client(self) -> discord.VoiceClient:
+        """Fetch the voice client for the guild associated with the player."""
+        if self.message.guild and self.message.guild.voice_client:
+            if isinstance(self.message.guild.voice_client, discord.VoiceClient):
+                return self.message.guild.voice_client
+
+        raise NoVoiceClient("Voice Client Not Found")
 
     @property
-    def total_pages(self):
-        amount = len(utils.chunk(self.songlist, self.PAGESIZE))
-        return 1 if amount == 0 else amount
+    def _nothing_playing_embed(self):
+        embed = discord.Embed(
+            title="No Songs Playing", description=f"Hint: Hit the big **+** button"
+        )
+        embed.set_footer(text=utils.ellipsize(self.footer))
+        return embed
 
     @property
     def embed(self) -> discord.Embed:
         """Generates a discord Embed object based on music player state."""
-        # Nothing playing embed
-        if not self.current:
-            return discord.Embed(
-                title="No Songs Playing",
-                description="Hint: Hit the big + button"
-            )
 
-        # Generate main player embed
+        if not self.current:
+            return self._nothing_playing_embed
+
         embed = discord.Embed(
-            title="GumBOTchi's Jukebox",
-            description=f"*{self.last_action}*\n"
+            title="GumBOTchi's Jukebox", description=f"*{self.description}*\n"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
+        embed.set_footer(text=utils.ellipsize(self.footer))
         embed.add_field(
             name="NOW PLAYING",
             value=f"[{self.current.title}]({self.current.webpage_url})\n",
-            inline=False
+            inline=False,
         )
 
         if self.songlist:
-
-            song_chunks = utils.chunk(self.songlist, self.PAGESIZE)
-
+            song_chunks = utils.chunk(self.songlist, self.pager.page_size)
             embed.add_field(
-                name=f"UP NEXT  •  {len(self.songlist)} Songs  •  Page {self.current_page}/{self.total_pages}",
+                name=f"UP NEXT  •  {len(self.songlist)} Songs  •  Page {self.pager.page}/{self.pager.total_pages(self.songlist)}",
                 value="\n\n".join(
-                    [song.embed_format for song in song_chunks[self.current_page-1]]),
-                inline=False
+                    [str(song) for song in song_chunks[self.pager.page - 1]]
+                ),
+                inline=False,
             )
-
         return embed
 
     @property
-    def controller(self) -> discord.ui.View:
+    def controls(self) -> discord.ui.View:
         """Generates the buttons for the music player based on music player state."""
-        return MusicControls(self)
+        return MusicControls(player=self)
 
-    def _synchronous_playnext(self, loop, error):
-        asyncio.run_coroutine_threadsafe(self.play_next(), loop)
+    async def replace_message(self, new_message: discord.Message):
+        """Replace the holder message for the player"""
+        old_message = self.message
+        self.message = new_message
 
-    async def play_next(self, error=None):
-        """Will begin the next song based on the repeat configuration."""
+        try:
+            await old_message.delete()
+        except discord.NotFound:
+            pass
 
-        # only disconnect if not repeatone because repeat one doesnt need to pop queue
-        if self.empty and self.repeat_type == RepeatType.REPEATOFF:
-            self.history.add(self.current.title)
-            self.current = None
-            self.paused = True
-            await self.update()
-            return await self.guild.voice_client.disconnect()
+    # MUSIC PLAYER ACTIONS
 
-        # Repeat should loop the entire list
-        if self.repeat_type == RepeatType.REPEAT:
-            self.songlist.append(self.current)
-            self.current = self.songlist.pop(0)
-
-        # Repeat off should just burn through the songs
-        elif self.repeat_type == RepeatType.REPEATOFF:
-
-            # Add song to history
-            if self.current != None:
-                self.history.add(self.current.title)
-
-            self.current = self.songlist.pop(0)
-
-        # Play the song
-        audio = discord.FFmpegPCMAudio(self.current.url, **FFMPEG_OPTS)
-        voice_client = self.guild.voice_client
-        voice_client.play(
-            source=audio,
-            after=partial(self._synchronous_playnext, voice_client.loop)
-        )
-        self.paused = False
-
-        await self.update()
-
-    async def set_message(self, message: discord.Message):
-        """Replace the active jukebox under the hood"""
-        if self.message != None:
-            try:
-                await self.message.delete()
-            except discord.NotFound:
-                pass
-
-        self.message = message
-
-    async def enqueue(self, song: Song, person: discord.User = None):
+    def enqueue(self, song: Song, person: discord.User | discord.Member | None):
         """Add a song to the music player's queue."""
         self.songlist.append(song)
+
         if person:
-            self.last_action = f"{person.name} queued {song.title}"
+            self.description = f"{person.name} queued {song.title}"
 
-    async def update(self):
-        """Attempt to update the active player message."""
+    def play(self, song: Song):
+        """Play the provided song"""
+        if self.voice_client.is_playing():
+            self.voice_client.source = song
+        else:
+            self.voice_client.play(source=song, after=self.play_next)
 
-        # Need to handle natural page reduction from playing songs
-        if self.current_page > self.total_pages:
-            self.current_page = self.total_pages
+    def load_next_song(self):
+        """Load the next song into the current song based on repeat type"""
 
-        if self.message:
-            try:
-                await self.message.edit(embed=self.embed, view=self.controller)
-            except discord.NotFound:
-                pass
+        if self.current:
+            self.history.add(self.current.title)
 
-    def resume(self, person: discord.User = None):
-        if person and self.current:
-            self.last_action = f"{person.name} resumed {self.current.title}"
-        self.paused = False
-        self.guild.voice_client.resume()
+        match self.repeat:
+            case RepeatType.REPEATOFF:
+                if not self.songlist:
+                    self.current = None
+                else:
+                    self.current = self.songlist.pop(0)
+            case RepeatType.REPEAT:
+                self.songlist.append(self.current.copy())
+                self.current = self.songlist.pop(0)
+            case RepeatType.REPEATONE:
+                if self.current is not None:
+                    self.current = self.current.copy()
 
-    def pause(self, person: discord.User = None):
-        if person and self.current:
-            self.last_action = f"{person.name} paused {self.current.title}"
-        self.paused = True
-        self.guild.voice_client.pause()
+    def play_next(self, error: Exception | None = None):
+        """Will begin the next song based on the repeat configuration."""
 
-    async def rewind(self, person: discord.User = None):
-        if person and self.current:
-            self.last_action = f"{person.name} rewound {self.current.title}"
+        if error:
+            print(f"PROBLEM PLAYING SONG: {error}")
 
-        self.songlist.insert(0, self.current)
+        self.load_next_song()
 
-        # stopping the voice client will trigger playnext automatically
-        self.guild.voice_client.stop()
+        # disconnect if needed
+        if self.current == None:
+            self.voice_client.loop.create_task(self.voice_client.disconnect())
+            return
+        else:
+            self.play(self.current)
 
-    async def skip(self, person: discord.User = None):
-        if person and self.current:
-            self.last_action = f"{person.name} skipped {self.current.title}"
-
-        # stopping the voice client will trigger play next automatically
-        self.guild.voice_client.stop()
+        self.voice_client.loop.create_task(self.message.edit(embed=self.embed))
