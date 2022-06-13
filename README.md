@@ -38,7 +38,10 @@ Songs can be controlled and managed with the provided buttons
  - Play/Pause button to pause/resume the current song
  - Add button to add a song to the queue
  - Skip/Rewind to move to the next song or to reset the current song
- - Queue is paginated and can be navigated using the left/right buttons  
+ - Queue is paginated and can be navigated using the left/right buttons 
+
+You can also queue previously played songs using the history select box.  
+Just click one of the songs in the list and it will be requeued.  
 
 ![GumBOTchi's Jukebox](res/img/showcase/jukeboxshowcase.png) 
 
