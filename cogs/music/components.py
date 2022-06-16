@@ -4,15 +4,16 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 import discord
-from cogs.music.music_errors import NoVoiceClient
-from cogs.music.song import Song
 from common.cfg import Tenor
 from discord import Interaction, SelectOption
 from discord.enums import ButtonStyle
-from discord.ui import Button, InputText, Modal, View
+from discord.ui import Button, InputText, Modal
+
+from .errors import NoVoiceClient
+from .song import Song
 
 if TYPE_CHECKING:
-    from cogs.music.player import MusicPlayer
+    from .player import MusicPlayer
 
 
 class RepeatType(Enum):
@@ -65,7 +66,12 @@ class MusicControls(discord.ui.View):
         if interaction.custom_id in ("HISTORY", "ADD"):
             return True
 
-        if interaction.user.voice.channel != self.player.voice_client.channel:
+        try:
+            vcc = self.player.voice_client
+        except NoVoiceClient:
+            return False
+
+        if interaction.user.voice.channel != vcc.channel:
             print("User is not in same channel as bot")
             return False
 
@@ -170,11 +176,14 @@ class RewindButton(Button):
 class LeftButton(Button):
     def __init__(self, player: "MusicPlayer"):
         super().__init__(emoji=Emoji.LEFT, row=2)
-        self.disabled = player.pager.page == 1
         self.player = player
 
     async def callback(self, interaction: Interaction):
-        self.player.pager.page -= 1
+        if self.player.page == 1:
+            self.player.page = self.player.total_pages
+        else:
+            self.player.page -= 1
+
         await interaction.response.edit_message(
             embed=self.player.embed, view=self.player.controls
         )
@@ -195,12 +204,13 @@ class RightButton(Button):
     def __init__(self, player: "MusicPlayer"):
         self.player = player
         super().__init__(emoji=Emoji.RIGHT, row=2)
-        self.disabled = player.pager.page >= player.pager.total_pages(
-            self.player.songlist
-        )
 
     async def callback(self, interaction: Interaction):
-        self.player.pager.page += 1
+        if self.player.page == self.player.total_pages:
+            self.player.page = 1
+        else:
+            self.player.page += 1
+
         await interaction.response.edit_message(
             embed=self.player.embed, view=self.player.controls
         )

@@ -16,8 +16,6 @@ class Music(discord.Cog):
     @slash_command(name="jukebox")
     async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
-        if not ctx.guild:
-            return
 
         message = await ctx.send("*Inserting Quarters*")
 
@@ -27,28 +25,13 @@ class Music(discord.Cog):
             await player.replace_message(new_message=message)
         else:
             player = MusicPlayer(message=message)
+            self.players[ctx.guild.id] = player
 
         # finalize jukebox
         await player.message.edit(
             content=None, embed=player.embed, view=player.controls
         )
         await ctx.respond("Vibe Established 🎧")
-
-    @discord.Cog.listener(name="on_message_delete")
-    async def player_delete_listener(self, message: discord.Message):
-        """Check if the player message was deleted so it can destroy the player."""
-        if not message.guild:
-            return
-
-        # guild message is from doesn't have a player
-        if message.guild.id not in self.players:
-            return
-
-        player = self.players[message.guild.id]
-        if message.id == player.message.id:
-            player = self.players[message.guild.id]
-            await player.message.delete()
-            del self.players[message.guild.id]
 
 
 def setup(bot: discord.Bot):
