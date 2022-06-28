@@ -1,3 +1,4 @@
+from email.policy import default
 from pathlib import Path
 
 import discord
@@ -13,26 +14,31 @@ class Craigslister(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.craig = Craigs()
-        self.lookup_queries.start()
         self.craig.update()
+        self.lookup_queries.start()
 
     @slash_command(name="craigslistmedaddy")
     async def craigslistme(
         self, ctx: ApplicationContext,
-        zip: Option(int, "Zip code to search"),
-        state: Option(str, "State to search"),
-        site: Option(str, "Location to search"),
-        budget: Option(float, "Maximum price you will pay"),
-        distance: Option(int, "Maximum distance in miles"),
-        keywords: Option(str, "Keywords to search for"),
-        has_image: Option(bool, "Only show listings with image"),
-        spam_tolerance: Option(int, "The higher the number the more relaxed the spam check is"),
-        ping: Option(bool, "If you want to be pinged or not (defaults to yes)"),
-        category: Option(str, "CL Code to search"),
+        zip: Option(int, "Zip code to search (eg. 20815)"),
+        state: Option(str, "State to search (eg. MD)"),
+        site: Option(str, "Get from your local site. Eg: https://<washingtondc>.craigslist.org/ would be washingtondc"),
+        budget: Option(int, "Maximum price you will pay"),
+        keywords: Option(str, "Keywords to search for, separate each keyword with a comma. Eg. Desk, Office Desk, Wood Desk"),
+        distance: Option(int, "Maximum distance in miles", default=20),
+        has_image: Option(bool, "Only show listings with image", default=True),
+        spam_tolerance: Option(int, "How many spam words are allowed before the listing is filtered? Default is 1.", default=1),
+        ping: Option(bool, "If you want to be pinged or not (defaults to yes)", default=True),
+        category: Option(str, "CL Code to search (Advanced: don't touch unless you know what you're doing)", default="sss"),
     ):
         """Treat yo self to a craigslist query"""
-        new_query = CLQuery(
-                            uid= ctx.user.id, zip_code=zip, state=state, channel=ctx.channel.id, site = site, keywords=keywords, spam_tolerance=spam_tolerance, budget=budget, distance=distance, category=category, has_image=has_image, ping=ping)
+        new_query = CLQuery(uid= ctx.user.id, zip_code=zip, state=state, channel=ctx.channel.id, site = site, keywords=keywords, spam_tolerance=spam_tolerance, budget=budget, distance=distance, category=category, has_image=has_image, ping=ping)
+        try:
+            new_query.search()
+        except:
+            return await ctx.respond("You created an invalid query please double check your parameters")
+
+
         result = db.insert_query(new_query)
 
         if result:
@@ -81,8 +87,8 @@ class Craigslister(discord.Cog):
     @tasks.loop(seconds=300)
     async def lookup_queries(self):
         print("Checking CL", datetime.now())
-        for query in self.craig.active_queries:
-            await self.craig.process_query(bot=self.bot, query=query)
+        await self.craig.check_queries(self.bot)
+        
 
     @lookup_queries.before_loop
     async def before_loop(self):
