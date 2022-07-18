@@ -34,7 +34,8 @@ cogs = [
     "cogs.games.connectfour.connectfour",
     "cogs.craigslister.craigslister",
     "cogs.emojifier.emojifier",
-    "cogs.soundboard.soundboard"
+    "cogs.soundboard.soundboard",
+    "cogs.polls.polls",
 ]
 
 if __name__ == '__main__':
