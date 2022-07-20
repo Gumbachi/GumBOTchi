@@ -10,7 +10,7 @@ from discord.ext import tasks
 class GeneralCommands(discord.Cog):
     """Handles simple commands and listeners."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: discord.Bot):
         self.bot = bot
         self.activity_cycler.start()
 
@@ -30,14 +30,14 @@ class GeneralCommands(discord.Cog):
         await ctx.defer()
 
         if target:
-            await ctx.channel.purge(
+            messages = await ctx.channel.purge(
                 limit=amount,
                 check=lambda x: x.author == target
             )
-            return await ctx.respond(f"purged {amount} messages")
+            return await ctx.respond(f"purged {len(messages)} messages")
 
-        await ctx.channel.purge(limit=amount + 1)
-        await ctx.respond(f"purged messages")
+        messages = await ctx.channel.purge(limit=amount + 1)
+        await ctx.respond(f"purged {len(messages)} messages")
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -69,6 +69,6 @@ class GeneralCommands(discord.Cog):
         await self.bot.wait_until_ready()
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     """Entry point for loading cogs."""
     bot.add_cog(GeneralCommands(bot))
