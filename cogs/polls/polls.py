@@ -27,5 +27,4 @@ class Polls(discord.Cog):
 
 
 def setup(bot: discord.Bot):
-    print("Setting up")
     bot.add_cog(Polls(bot))

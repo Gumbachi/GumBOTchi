@@ -76,7 +76,6 @@ class Poll(View):
         return embed
 
     async def on_timeout(self) -> None:
-        print(self.voters)
         self.last_action = "Time's up. Poll's closed"
         self.close()
         await self.interaction.edit_original_message(embed=self.embed, view=None)

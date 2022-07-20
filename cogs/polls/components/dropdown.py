@@ -1,12 +1,15 @@
+from typing import TYPE_CHECKING
+
 import discord
 from discord import SelectOption
 from discord.ui import Select
 
-from .poll import Poll
+if TYPE_CHECKING:
+    from .poll import Poll
 
 
 class OptionsDropdown(Select):
-    def __init__(self, poll: Poll):
+    def __init__(self, poll: 'Poll'):
         self.poll = poll
 
         super().__init__(
