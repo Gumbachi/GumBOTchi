@@ -1,7 +1,7 @@
 import os
 
 import discord
-from discord import slash_command
+from discord import guild_only, slash_command
 
 from .player import MusicPlayer
 
@@ -14,31 +14,30 @@ class Music(discord.Cog):
         self.players: dict[int, MusicPlayer] = {}
 
     @slash_command(name="jukebox")
+    @guild_only()
     async def send_player(self, ctx: discord.ApplicationContext):
         """Get the music player and its buttons."""
-
-        message = await ctx.send("*Inserting Quarters*")
 
         # Fetch the music player or create new one if needed
         if ctx.guild.id in self.players:
             player = self.players[ctx.guild.id]
-            await player.replace_message(new_message=message)
+            if player.message:
+                try:
+                    await player.message.delete()
+                except discord.NotFound:
+                    pass
         else:
-            player = MusicPlayer(message=message)
+            player = MusicPlayer(ctx.guild)
             self.players[ctx.guild.id] = player
 
-        # finalize jukebox
-        await player.message.edit(
-            content=None, embed=player.embed, view=player.controls
-        )
-        await ctx.respond("Vibe Established 🎧")
+        interaction = await ctx.respond(embed=player.embed, view=player.controls)
+        player.message = await interaction.original_message()
 
 
 def setup(bot: discord.Bot):
     """Entry point for loading cogs. Required for all cogs"""
-    if os.getenv("FFMPEG_PATH") != "ffmpeg" and not os.path.isfile(
-        os.getenv("FFMPEG_PATH", default="")
-    ):
+    ffmpeg_path = os.getenv("FFMPEG_PATH") or ""
+    if ffmpeg_path != "ffmpeg" and not os.path.isfile(ffmpeg_path):
         raise FileNotFoundError("Couldn't locate FFMPEG executable")
 
     bot.add_cog(Music(bot))

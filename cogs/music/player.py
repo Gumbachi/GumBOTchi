@@ -3,37 +3,71 @@ from dataclasses import dataclass, field
 
 import common.utils as utils
 import discord
+from cogs.music.components.history_dropdown import HistoryDropdown
 
-from .components import MusicControls, RepeatType
+from .components.music_controls import MusicControls
+from .enums import RepeatType
 from .errors import NoVoiceClient
 from .song import Song
 
 
-@dataclass
+@dataclass(slots=True)
 class MusicPlayer:
-    message: discord.Message  # The message holding the music player
+    guild: discord.Guild
+    message: discord.Message = None
+    view: discord.ui.View = None
 
     # Song Queue
     repeat: RepeatType = RepeatType.REPEATOFF
-    current: Song | None = None
+    _current: Song | None = None
     history: set[str] = field(default_factory=set)
     songlist: list[Song] = field(default_factory=list)
 
     # Display
-    page: int = 1
+    _page: int = 1
     pagesize: int = 3
     description: str = ""
     footer: str = ""
 
-    def __repr__(self):
-        return f"MusicPlayer(current={self.current}, songlist={self.songlist}, history={self.history})"
+    @property
+    def page(self):
+        if self._page > self.total_pages:
+            self._page = self.total_pages
+        return self._page
+
+    @page.setter
+    def page(self, page: int):
+        if page > self.total_pages:
+            self._page = self.total_pages
+        elif page < 1:
+            self._page = 1
+        else:
+            self._page = page
+
+    @property
+    def current(self):
+        return self._current
+
+    @current.setter
+    def current(self, new: Song | None):
+        self._current = new
+
+        if new is None:
+            self.voice_client.stop()
+            return
+
+        if self.voice_client.is_playing() or self.voice_client.is_paused():
+            self.voice_client.source = new
+        else:
+            self.voice_client.play(new, after=self.load_next_song)
 
     @property
     def voice_client(self) -> discord.VoiceClient:
         """Fetch the voice client for the guild associated with the player."""
-        if self.message.guild and self.message.guild.voice_client:
-            if isinstance(self.message.guild.voice_client, discord.VoiceClient):
-                return self.message.guild.voice_client
+        vcc = self.guild.voice_client
+        if vcc:
+            if isinstance(vcc, discord.VoiceClient):
+                return vcc
 
         raise NoVoiceClient("Voice Client Not Found")
 
@@ -45,7 +79,8 @@ class MusicPlayer:
     @property
     def _nothing_playing_embed(self):
         embed = discord.Embed(
-            title="No Songs Playing", description=f"Hint: Hit the big **+** button"
+            title="No Songs Playing",
+            description=f"Hint: Hit the big **+** button"
         )
         embed.set_footer(text="Buttons won't work until the bot is singing")
         return embed
@@ -58,7 +93,8 @@ class MusicPlayer:
             return self._nothing_playing_embed
 
         embed = discord.Embed(
-            title="GumBOTchi's Jukebox", description=f"*{self.description}*\n"
+            title="GumBOTchi's Jukebox",
+            description=f"*{self.description}*\n"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
         embed.set_footer(text=utils.ellipsize(self.footer))
@@ -72,9 +108,7 @@ class MusicPlayer:
             song_chunks = utils.chunk(self.songlist, self.pagesize)
             embed.add_field(
                 name=f"UP NEXT  •  {len(self.songlist)} Songs  •  Page {self.page}/{self.total_pages}",
-                value="\n\n".join(
-                    [str(song) for song in song_chunks[self.page - 1]]
-                ),
+                value="\n\n".join([str(song) for song in song_chunks[self.page - 1]]),
                 inline=False,
             )
         return embed
@@ -82,47 +116,32 @@ class MusicPlayer:
     @property
     def controls(self) -> discord.ui.View:
         """Generates the buttons for the music player based on music player state."""
-        return MusicControls(player=self)
+        self.view = MusicControls(player=self)
+        return self.view
 
-    async def replace_message(self, new_message: discord.Message):
-        """Replace the holder message for the player"""
-        old_message = self.message
-
-        try:
-            await old_message.delete()
-        except discord.NotFound:
-            pass  # message was probably deleted which is fine
-
-        self.message = new_message
-
-    # MUSIC PLAYER ACTIONS
-
-    def enqueue(self, song: Song, person: discord.User | discord.Member | None):
+    def enqueue(self, song: Song, person: discord.Member):
         """Add a song to the music player's queue."""
         self.songlist.append(song)
-
-        if person:
-            self.description = f"{person.name} queued {song.title}"
+        self.description = f"{person.nick or person.name} queued {song.title}"
 
     def play(self, song: Song):
         """Play the provided song"""
-        if self.voice_client.is_playing():
-            self.voice_client.source = song
-        else:
-            self.voice_client.play(source=song, after=self.play_next)
+        self.current = song
 
-    def load_next_song(self):
+    def load_next_song(self, error: Exception | None = None):
         """Load the next song into the current song based on repeat type"""
 
-        if self.current:
+        if self.current != None:
             self.history.add(self.current.title)
 
         match self.repeat:
             case RepeatType.REPEATOFF:
-                if not self.songlist:
-                    self.current = None
-                else:
+                if self.songlist:
                     self.current = self.songlist.pop(0)
+                else:
+                    self.current = None
+                    self.voice_client.loop.create_task(self.voice_client.disconnect())
+
             case RepeatType.REPEAT:
                 self.songlist.append(self.current.copy())
                 self.current = self.songlist.pop(0)
@@ -130,25 +149,14 @@ class MusicPlayer:
                 if self.current is not None:
                     self.current = self.current.copy()
 
-    def play_next(self, error: Exception | None = None):
-        """Will begin the next song based on the repeat configuration."""
+        # Needs to update the history. NO TOUCHY i spent days on this
+        if self.message:
+            if len(self.view.children) == 8 and self.history:
+                self.view.add_item(HistoryDropdown(self))
+            elif self.history:
+                self.view.remove_item(self.view.children[0])
+                self.view.add_item(HistoryDropdown(self))
 
-        if error:
-            print(f"PROBLEM PLAYING SONG: {error}")
-
-        self.load_next_song()
-
-        if self.page > self.total_pages:
-            self.page -= 1
-
-        # disconnect if needed
-        if self.current == None:
             self.voice_client.loop.create_task(
-                self.message.edit(embed=self.embed)
+                self.message.edit(embed=self.embed, view=self.view)
             )
-            self.voice_client.loop.create_task(self.voice_client.disconnect())
-            return
-        else:
-            self.play(self.current)
-
-        self.voice_client.loop.create_task(self.message.edit(embed=self.embed))

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import discord
 from common.cfg import Role, Tenor, Vip, activities
-from discord.commands import slash_command, Option
+from discord.commands import Option, slash_command
 from discord.ext import tasks
 
 
