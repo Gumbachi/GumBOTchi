@@ -24,19 +24,18 @@ async def on_ready():
 
 # .py files to load up
 cogs = [
-    # "cogs.general",
+    "cogs.general",
     "cogs.music.music",
-    # "cogs.pog",
-    # "cogs.roast",
-    # "cogs.sbonks.sbonks",
-    # "cogs.games.rps.rps",
-    # "cogs.games.tictactoe.tictactoe",
-    # "cogs.games.connectfour.connectfour",
-    # "cogs.craigslister.craigslister",
-    # "cogs.emojifier.emojifier",
-    # "cogs.soundboard.soundboard",
-    # "cogs.polls.polls",
-    # "cogs.testing.testing"
+    "cogs.pog",
+    "cogs.roast",
+    "cogs.sbonks.sbonks",
+    "cogs.games.rps.rps",
+    "cogs.games.tictactoe.tictactoe",
+    "cogs.games.connectfour.connectfour",
+    "cogs.craigslister.craigslister",
+    "cogs.emojifier.emojifier",
+    "cogs.soundboard.soundboard",
+    "cogs.polls.polls",
 ]
 
 if __name__ == '__main__':
