@@ -15,7 +15,7 @@ from .song import Song
 class MusicPlayer:
     guild: discord.Guild
     message: discord.Message = None
-    view: discord.ui.View = None
+    view: MusicControls = None
 
     # Song Queue
     repeat: RepeatType = RepeatType.REPEATOFF
@@ -140,7 +140,6 @@ class MusicPlayer:
                     self.current = self.songlist.pop(0)
                 else:
                     self.current = None
-                    self.voice_client.loop.create_task(self.voice_client.disconnect())
 
             case RepeatType.REPEAT:
                 self.songlist.append(self.current.copy())
@@ -151,12 +150,15 @@ class MusicPlayer:
 
         # Needs to update the history. NO TOUCHY i spent days on this
         if self.message:
+
             if len(self.view.children) == 8 and self.history:
-                self.view.add_item(HistoryDropdown(self))
-            elif self.history:
-                self.view.remove_item(self.view.children[0])
+                print("DROPDOWN ADDED")
                 self.view.add_item(HistoryDropdown(self))
 
             self.voice_client.loop.create_task(
                 self.message.edit(embed=self.embed, view=self.view)
             )
+
+        # disconnect if needed
+        if self.current is None:
+            self.voice_client.loop.create_task(self.voice_client.disconnect())

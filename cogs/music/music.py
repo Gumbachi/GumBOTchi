@@ -30,8 +30,8 @@ class Music(discord.Cog):
             player = MusicPlayer(ctx.guild)
             self.players[ctx.guild.id] = player
 
-        interaction = await ctx.respond(embed=player.embed, view=player.controls)
-        player.message = await interaction.original_message()
+        await ctx.respond("Vibe Established 🎧")
+        player.message = await ctx.send(embed=player.embed, view=player.controls)
 
 
 def setup(bot: discord.Bot):

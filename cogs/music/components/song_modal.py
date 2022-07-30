@@ -44,9 +44,7 @@ class SongModal(Modal):
         try:
             song = await Song.from_query(query, loop=self.player.voice_client.loop)
         except ValueError:
-            self.player.description = f"{interaction.user.name} tried to queue a song and failed"
-            await interaction.delete_original_message()
-            return await interaction.message.edit(embed=self.player.embed, view=self.player.controls)
+            return await interaction.followup.send(f"Failed to queue song", ephemeral=True)
 
         if self.player.current is None:
             self.player.current = song
@@ -54,5 +52,5 @@ class SongModal(Modal):
         else:
             self.player.enqueue(song, interaction.user)
 
-        await interaction.delete_original_message()
+        await interaction.followup.send(f"Added {song.title}", delete_after=1)
         await interaction.message.edit(embed=self.player.embed, view=self.player.controls)

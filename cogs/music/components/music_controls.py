@@ -34,6 +34,21 @@ class MusicControls(discord.ui.View):
         if player.history:
             self.add_item(HistoryDropdown(player))
 
+    def update(self):
+        """Recreate all of the components for a fresh view"""
+        self.clear_items()
+        self.add_item(RepeatButton(self.player))
+        self.add_item(PlayPauseButton(self.player))
+        self.add_item(RewindButton(self.player))
+        self.add_item(SkipButton(self.player))
+        self.add_item(LeftButton(self.player))
+        self.add_item(AddButton(self.player))
+        self.add_item(RightButton(self.player))
+        self.add_item(RefreshButton(self.player))
+
+        if self.player.history:
+            self.add_item(HistoryDropdown(self.player))
+
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
 
         if not isinstance(interaction.user, discord.Member):
@@ -55,7 +70,10 @@ class MusicControls(discord.ui.View):
             return False
 
         if interaction.user.voice.channel != vcc.channel:
-            print("User is not in same channel as bot")
+            await interaction.response.send_message(
+                content="Trying to steal the bot are we?",
+                ephemeral=True
+            )
             return False
 
         return True

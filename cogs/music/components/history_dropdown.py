@@ -24,6 +24,10 @@ class HistoryDropdown(discord.ui.Select):
             options=options,
         )
 
+    def update(self):
+        """Adds unadded songs to the history in place"""
+        self.options = [discord.SelectOption(label=songname) for songname in self.player.history]
+
     async def callback(self, interaction: discord.Interaction):
 
         await interaction.response.defer()
