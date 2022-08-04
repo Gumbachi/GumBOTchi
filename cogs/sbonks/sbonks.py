@@ -2,18 +2,16 @@
 import re
 
 import discord
-from discord import Option, slash_command, ApplicationContext
 from cogs.sbonks.components import ApiKeyModal
 from cogs.sbonks.iexapi import IEXAPI, IEXAPIError
-
-from common.cfg import Tenor, Emoji
-from common.database import db
+from common.cfg import Emoji, Tenor
+from discord import guild_only, option, slash_command
 
 
 class SbonkCommands(discord.Cog):
     """Holds all sbonk related commands/listeners."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: discord.Bot):
         self.bot = bot
 
     @staticmethod
@@ -21,30 +19,36 @@ class SbonkCommands(discord.Cog):
         """Extract valid symbols from a string."""
         string += " "  # needed because ticker must be followed by non alpha
         pattern = r"[$][a-zA-Z]{1,4}[^a-zA-Z]"
-        prefixed_symbols = re.findall(pattern, string)
+        prefixed_symbols: list[str] = re.findall(pattern, string)
 
         # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
         return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
 
     @slash_command(name="set-sbonks-apikey")
     @discord.default_permissions(administrator=True)
-    async def set_sbonks_apikey(self, ctx: ApplicationContext):
+    @guild_only()
+    async def set_sbonks_apikey(self, ctx: discord.ApplicationContext):
         """Set your publishable IEX Cloud API key to enable sbonks."""
         modal = ApiKeyModal()
         await ctx.send_modal(modal)
 
     @slash_command(name="sbonk")
+    @option("symbol", description="The symbol to search for")
+    @option(
+        "timeframe",
+        description="This one is pretty self-explanatory",
+        choices=["1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "MAX"],
+        default="1D"
+    )
+    @option("message", description="Because weed is the future", default=None)
+    @option("mock", description="bEcAuSe WeEd Is ThE fUtuRe", default=False)
+    @guild_only()
     async def get_sbonk_chart(
-        self, ctx: ApplicationContext,
-        symbol: Option(str, "The symbol to search for"),
-        timeframe: Option(
-            str,
-            description="Choose how hard you want to hit our allowance",
-            choices=["1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "MAX"],
-            default="1D"
-        ),
-        message: Option(str, "Because weed is the future") = None,
-        mock: Option(bool, "bEcAuSe WeEd Is ThE fUtuRe") = False
+        self, ctx: discord.ApplicationContext,
+        symbol: str,
+        timeframe: str,
+        message: str,
+        mock: bool
     ):
         """Show a sbonk chart for a specific timeframe"""
 
@@ -125,7 +129,7 @@ class SbonkCommands(discord.Cog):
     @discord.Cog.listener("on_message")
     async def parse_symbols(self, message: discord.Message):
         """Listens for sbonks."""
-        if message.author.bot:
+        if message.author.bot or message.guild is None:
             return
 
         # Parse symbols from message and check if there are any
@@ -153,5 +157,5 @@ class SbonkCommands(discord.Cog):
             await message.reply(files=[symbol.graph() for symbol in data])
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(SbonkCommands(bot))

@@ -43,6 +43,10 @@ class IEXAPI:
             quote = iex_response[symbol]["quote"]
             intraday = iex_response[symbol]["intraday-prices"]
 
+            # symbol exists but has no data attached
+            if quote == None:
+                continue
+
             symbol_data = SymbolData(
                 symbol=symbol,
                 previous_close=quote["previousClose"],

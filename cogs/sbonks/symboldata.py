@@ -1,5 +1,6 @@
 import io
 import random
+from dataclasses import dataclass
 
 import discord
 import matplotlib.font_manager as font_manager
@@ -11,32 +12,19 @@ for font in font_manager.findSystemFonts(['./res/fonts']):
     font_manager.fontManager.addfont(path=font)
 
 
+@dataclass(slots=True)
 class SymbolData:
     """Class representing data for one symbol."""
-
-    def __init__(
-        self,
-        symbol: str,
-        price: float,
-        change: float,
-        change_percent: float,
-        extended_price: float | None,
-        datapoints: list[float],
-        previous_close: float | None = None,
-        datalength: int = 390,  # What is the max amount of data points
-        timeframe: str = "1D",
-        style: str = "./cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
-    ) -> None:
-        self.symbol = symbol
-        self.previous_close = previous_close
-        self.price = price
-        self.change = change
-        self.change_percent = change_percent
-        self.extended_price = extended_price
-        self.datapoints = datapoints
-        self.datalength = datalength
-        self.timeframe = timeframe
-        self.style = style
+    symbol: str
+    price: float
+    change: float
+    change_percent: float
+    extended_price: float | None
+    datapoints: list[float]
+    previous_close: float | None = None
+    datalength: int = 390  # What is the max amount of data points
+    timeframe: str = "1D"
+    style: str = "./cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
 
     @property
     def color(self):
