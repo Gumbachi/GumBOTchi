@@ -30,5 +30,10 @@ class ResendPollButton(Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Delete old message and send new message at bottom of channel."""
-        message = await interaction.channel.send(embed=self.poll.embed, view=self.poll)
-        await interaction.response.edit_message(content=message.jump_url, embed=None, view=None)
+
+        if interaction.user != self.poll.owner:
+            self.poll.last_action = f"{interaction.user.name} tried to grief but failed"
+            await interaction.response.edit_message(embed=self.poll.embed, view=self.poll)
+        else:
+            message = await interaction.channel.send(embed=self.poll.embed, view=self.poll)
+            await interaction.response.edit_message(content=message.jump_url, embed=None, view=None)
