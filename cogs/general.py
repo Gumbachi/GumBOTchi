@@ -3,21 +3,41 @@ from pathlib import Path
 
 import discord
 from common.cfg import Role, Tenor, Vip, activities
-from discord.commands import slash_command
+from discord.commands import Option, slash_command
 from discord.ext import tasks
 
 
 class GeneralCommands(discord.Cog):
     """Handles simple commands and listeners."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: discord.Bot):
         self.bot = bot
         self.activity_cycler.start()
 
     @slash_command(name="howdy")
-    async def howdy(self, ctx):
+    async def howdy(self, ctx: discord.ApplicationContext):
         """Command to check if bot is alive or if you need a friend."""
         await ctx.respond(f"Howdy {ctx.author.mention}!")
+
+    @slash_command(name="purge")
+    @discord.default_permissions(administrator=True)
+    async def purge(
+        self, ctx: discord.ApplicationContext,
+        amount: Option(int, "The amount of messages to purge"),
+        target: Option(discord.Member, "We all know who this is for") = None
+    ):
+        """purge a specific amount of messages"""
+        await ctx.defer()
+
+        if target:
+            messages = await ctx.channel.purge(
+                limit=amount,
+                check=lambda x: x.author == target
+            )
+            return await ctx.respond(f"purged {len(messages)} messages")
+
+        messages = await ctx.channel.purge(limit=amount + 1)
+        await ctx.respond(f"purged {len(messages)} messages")
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -49,6 +69,6 @@ class GeneralCommands(discord.Cog):
         await self.bot.wait_until_ready()
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     """Entry point for loading cogs."""
     bot.add_cog(GeneralCommands(bot))

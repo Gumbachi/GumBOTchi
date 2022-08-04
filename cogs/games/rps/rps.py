@@ -1,20 +1,15 @@
 import discord
-from discord.commands import slash_command, Option
+from discord.commands import user_command
 
-from common.cfg import devguilds
 from .game import Game
 
 
 class RPS(discord.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: discord.Bot):
         self.bot = bot
 
-    @slash_command(name="rps")
-    async def startgame(
-        self,
-        ctx: discord.ApplicationContext,
-        opponent: Option(discord.Member, "Select Player 2")
-    ):
+    @user_command(name="Rock Paper Scissors")
+    async def userrps(self, ctx: discord.ApplicationContext, opponent: discord.Member):
         """Rock Paper Scissors"""
         game = Game(ctx.author, opponent)
         await ctx.respond(embed=game.embed, view=game.view)

@@ -1,26 +1,19 @@
 import discord
-from common.cfg import devguilds
-from discord.commands import slash_command
+from discord.commands import slash_command, user_command, Option
 from .game import Game
-from discord.commands import Option
 
 
 class TicTacToe(discord.Cog):
-    instances = {}
 
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="tictactoe")
-    async def startGame(
-        self, ctx: discord.ApplicationContext,
-        opponent: Option(discord.Member, "Select Player 2")
-    ):
-        """Play a game of tic-tac-toe"""
+    @user_command(name="Tic-Tac-Toe")
+    async def user_tictactoe(self, ctx: discord.ApplicationContext, opponent: discord.Member):
+        """Context menu Rock Paper Scissors"""
         game = Game(ctx.author, opponent)
-        self.instances[(ctx.author.id, opponent.id)] = game
         await ctx.respond(embed=game.embed, view=game.view)
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(TicTacToe(bot))

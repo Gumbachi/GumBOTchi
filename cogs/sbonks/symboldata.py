@@ -1,8 +1,14 @@
 import io
-import numpy as np
 import random
-import matplotlib.pyplot as plt
+
 import discord
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load matplotlib font
+for font in font_manager.findSystemFonts(['./res/fonts']):
+    font_manager.fontManager.addfont(path=font)
 
 
 class SymbolData:
@@ -42,6 +48,11 @@ class SymbolData:
         "UP/DOWN arrow determining if mooning or sinking"
         return "▲" if self.price >= self.previous_close else "▼"
 
+    @staticmethod
+    def mock(text: str) -> str:
+        mocked = [random.choice((c.upper(), c.lower())) for c in text]
+        return "".join(mocked)
+
     def get_interpolated_data(self, precision: int = 5) -> list[float]:
         """Fill in the gaps in the data with previous data found."""
         def find_last(i):
@@ -54,7 +65,7 @@ class SymbolData:
         interpolated += [np.nan] * (self.datalength - len(interpolated))
         return interpolated[::precision]
 
-    def graph(self, precision: int = 5, description: str | None = None) -> discord.File:
+    def graph(self, precision: int = 5, description: str | None = None, mock: bool = False) -> discord.File:
         """Draw chart representing the symboldata"""
         prices = self.get_interpolated_data(precision=precision)
 
@@ -84,7 +95,8 @@ class SymbolData:
 
         # Draw special message
         if description:
-            plt.text(x=0, y=0, s=description, va="top", ha="left",
+            message = description if not mock else self.mock(description)
+            plt.text(x=0, y=0, s=message, va="top", ha="left",
                      size=20, c="gray", transform=ax.transAxes)
 
         # convert the chart to a discord.File
@@ -95,8 +107,3 @@ class SymbolData:
             fp=io.BytesIO(buffer),
             filename=f"{self.symbol}.png"
         )
-
-
-def mock(text):
-    mocked_letters = [random.choice((c.upper(), c.lower())) for c in text]
-    return "".join(mocked_letters)

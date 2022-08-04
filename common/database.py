@@ -1,4 +1,5 @@
 import os
+
 import pymongo
 
 # database connection setup
@@ -70,7 +71,7 @@ class DB:
 
         return response.modified_count != 0
 
-    def get_pogresponses(self, id: int):
+    def get_pogresponses(self, id: int) -> list[str]:
         """Retrieve the list of pog responses."""
         response = self._guilds.find_one(
             filter={"_id": id},
@@ -82,16 +83,39 @@ class DB:
 
         return response.get("pogresponses") or []
 
+    def set_sbonk_key(self, id: int, key: str):
+        """Retrieve the publishable API key set for the guild."""
+        response = self._guilds.update_one(
+            filter={"_id": id},
+            update={"$set": {"iexkey": key}},
+            upsert=True
+        )
+
+        return response.modified_count != 0
+
+    def get_sbonk_key(self, id: int) -> str | None:
+        """Retrieve the publishable API key set for the guild."""
+        response = self._guilds.find_one(
+            filter={"_id": id},
+            projection={"_id": 0, "iexkey": 1}
+        )
+
+        if not response:
+            response = self.insert_guild(id=id)
+
+        return response.get("iexkey")
+
     def insert_query(self, query):
         response = self._queries.insert_one(query.to_db())
         return response.acknowledged
-    
+
     def delete_query(self, query):
         response = self._queries.delete_one(query.to_db())
         return response.acknowledged
 
     def get_queries(self):
         return self._queries.find({})
-    
+
+
 db = DB(connection)
 print("Connected to DB")

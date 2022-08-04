@@ -1,13 +1,13 @@
 """Draws sbonks for the people. Styling found is res/sbonks.mplstyle ."""
 import re
-from time import time
 
 import discord
 from discord import Option, slash_command, ApplicationContext
-from numpy import extract
+from cogs.sbonks.components import ApiKeyModal
 from cogs.sbonks.iexapi import IEXAPI, IEXAPIError
 
 from common.cfg import Tenor, Emoji
+from common.database import db
 
 
 class SbonkCommands(discord.Cog):
@@ -15,7 +15,6 @@ class SbonkCommands(discord.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.IEXAPI = IEXAPI()
 
     @staticmethod
     def extract_symbols(string: str):
@@ -27,16 +26,12 @@ class SbonkCommands(discord.Cog):
         # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
         return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
 
-    @slash_command(name="credits")
-    async def get_credits(self, ctx: ApplicationContext):
-        "Display the amount of credits used for this month"
-        usage = await self.IEXAPI.get_credits()
-        usage_percent = usage/50000 * 100
-        await ctx.respond(embed=discord.Embed(
-            title=f"{usage_percent:.2f}%",
-            description=f"({usage}/50,000)",
-            color=discord.Color.green() if usage < 50000 else discord.Color.red()
-        ))
+    @slash_command(name="set-sbonks-apikey")
+    @discord.default_permissions(administrator=True)
+    async def set_sbonks_apikey(self, ctx: ApplicationContext):
+        """Set your publishable IEX Cloud API key to enable sbonks."""
+        modal = ApiKeyModal()
+        await ctx.send_modal(modal)
 
     @slash_command(name="sbonk")
     async def get_sbonk_chart(
@@ -48,48 +43,57 @@ class SbonkCommands(discord.Cog):
             choices=["1D", "1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "MAX"],
             default="1D"
         ),
-        message: Option(str, "Because weed is the future") = None
+        message: Option(str, "Because weed is the future") = None,
+        mock: Option(bool, "bEcAuSe WeEd Is ThE fUtuRe") = False
     ):
         """Show a sbonk chart for a specific timeframe"""
 
         symbol = symbol.upper().replace("$", "")
 
+        await ctx.defer()
+
+        # Fetch data from iex and check if there is any
+        try:
+            api = IEXAPI(ctx.guild.id)
+        except IEXAPIError:
+            return await ctx.respond("No API Key set. You should fix that with `/set-sbonks-apikey` if you want sbonks.")
+
         try:
             if timeframe == "1D":
-                data = await self.IEXAPI.get_intraday([symbol])
+                data = await api.get_intraday([symbol])
                 data = data[0]
                 precision = 5
 
             elif timeframe == "1W":
-                data = await self.IEXAPI.get_week(symbol=symbol)
+                data = await api.get_week(symbol=symbol)
                 precision = 1
 
             elif timeframe == "1M":
-                data = await self.IEXAPI.get_month(symbol=symbol)
+                data = await api.get_month(symbol=symbol)
                 precision = 1
 
             elif timeframe == "3M":
-                data = await self.IEXAPI.get_three_month(symbol=symbol)
+                data = await api.get_three_month(symbol=symbol)
                 precision = 1
 
             elif timeframe == "6M":
-                data = await self.IEXAPI.get_six_month(symbol=symbol)
+                data = await api.get_six_month(symbol=symbol)
                 precision = 1
 
             elif timeframe == "1Y":
-                data = await self.IEXAPI.get_year(symbol=symbol)
+                data = await api.get_year(symbol=symbol)
                 precision = 1
 
             elif timeframe == "2Y":
-                data = await self.IEXAPI.get_two_year(symbol=symbol)
+                data = await api.get_two_year(symbol=symbol)
                 precision = 1
 
             elif timeframe == "5Y":
-                data = await self.IEXAPI.get_five_year(symbol=symbol)
+                data = await api.get_five_year(symbol=symbol)
                 precision = 1
 
             elif timeframe == "MAX":
-                data = await self.IEXAPI.get_max(symbol=symbol)
+                data = await api.get_max(symbol=symbol)
                 precision = 1
 
         except IEXAPIError:
@@ -98,11 +102,10 @@ class SbonkCommands(discord.Cog):
         if not data:
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
-        async with ctx.channel.typing():
-            await ctx.respond(file=data.graph(precision, message))
+        await ctx.respond(file=data.graph(precision, message, mock))
 
     @discord.Cog.listener("on_message")
-    async def quick_responses(self, message: discord.Message):
+    async def sbonks_quick_responses(self, message: discord.Message):
         """Process quick responses."""
         if message.author.bot:
             return
@@ -128,10 +131,21 @@ class SbonkCommands(discord.Cog):
         # Parse symbols from message and check if there are any
         symbols = self.extract_symbols(message.content)
         if not symbols:
-            return
+
+            # $Braided listener
+            if message.content.lower() == "$braided":
+                symbols = ["AMD", "NVDA"]
+
+            else:
+                return
 
         # Fetch data from iex and check if there is any
-        data = await self.IEXAPI.get_intraday(symbols)
+        try:
+            api = IEXAPI(message.guild.id)
+        except IEXAPIError:
+            return  # ignore implicit sbonks call if key is not set
+
+        data = await api.get_intraday(symbols)
         if not data:
             return await message.channel.send(Emoji.WEIRDCHAMP)
 

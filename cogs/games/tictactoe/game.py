@@ -1,5 +1,13 @@
 import random
 import discord
+import enum
+
+
+class State(enum.Enum):
+    P1WIN = 0
+    P2WIN = 1
+    TIE = 2
+    ONGOING = 3
 
 
 class Game:
@@ -7,18 +15,25 @@ class Game:
         self.p1 = p1
         self.p2 = p2
         self.turn = p1
-        self.winner = None
+        self.state = State.ONGOING
+        self.tie = True
         self.board = [TicTacToeButton(i, self) for i in range(9)]
 
     @property
     def headline(self):
-        if self.winner:
-            return f"{self.winner.nick or self.winner.name} Wins"
-        return f"{self.p1.nick or self.p1.name} VS {self.p2.nick or self.p2.name}"
+        match self.state:
+            case State.P1WIN:
+                return f"{self.p1.nick or self.p1.name} Wins"
+            case State.P2WIN:
+                return f"{self.p2.nick or self.p2.name} Wins"
+            case State.TIE:
+                return f"Wow. Looks like you both lost"
+            case _:
+                return f"{self.p1.nick or self.p1.name} VS {self.p2.nick or self.p2.name}"
 
     @property
     def subline(self):
-        if not self.winner:
+        if self.state == State.ONGOING:
             return f"({self.currentlabel}) {self.turn.nick or self.turn.name}'s Turn"
 
     @property
@@ -31,7 +46,7 @@ class Game:
 
     @property
     def view(self):
-        return discord.ui.View(*self.board, timeout=360)
+        return discord.ui.View(*self.board, timeout=None)
 
     @property
     def currentlabel(self):
@@ -55,42 +70,43 @@ class Game:
     def checkwin(self):
         """Checks to see if there is a winner. Sets winner and highlights path as needed."""
         board = [btn.owner for btn in self.board]
-        winner = None
 
         # Horizontals
         for i in [0, 3, 6]:
             if all(player == self.p1 for player in [board[0+i], board[1+i], board[2+i]]):
-                winner = self.p1
+                self.state = State.P1WIN
                 self.highlight(0+i, 1+i, 2+i)
             elif all(player == self.p2 for player in [board[0+i], board[1+i], board[2+i]]):
-                winner = self.p2
+                self.state = State.P2WIN
                 self.highlight(0+i, 1+i, 2+i)
 
         # Verticals
         for i in range(3):
             if all(player == self.p1 for player in [board[0+i], board[3+i], board[6+i]]):
-                winner = self.p1
+                self.state = State.P1WIN
                 self.highlight(0+i, 3+i, 6+i)
             elif all(player == self.p2 for player in [board[0+i], board[3+i], board[6+i]]):
-                winner = self.p2
+                self.state = State.P2WIN
                 self.highlight(0+i, 3+i, 6+i)
 
         # Diagonals
         if all(player == self.p1 for player in [board[0], board[4], board[8]]):
-            winner = self.p1
+            self.state = State.P1WIN
             self.highlight(0, 4, 8)
         elif all(player == self.p2 for player in [board[0], board[4], board[8]]):
-            winner = self.p2
+            self.state = State.P2WIN
             self.highlight(0, 4, 8)
 
         if all(player == self.p1 for player in [board[2], board[4], board[6]]):
-            winner = self.p1
+            self.state = State.P1WIN
             self.highlight(2, 4, 6)
         elif all(player == self.p2 for player in [board[2], board[4], board[6]]):
-            winner = self.p2
+            self.state = State.P2WIN
             self.highlight(2, 4, 6)
 
-        self.winner = winner
+        # Check for tie
+        if self.state == State.ONGOING and all(board):
+            self.state = State.TIE
 
     def automove(self):
         """The function called to make the bot move"""
@@ -111,7 +127,7 @@ class Game:
         if self.turn.bot:
             # Winner must be checked so bot doesnt move after a win
             self.checkwin()
-            if not self.winner:
+            if self.state == State.ONGOING:
                 self.automove()
 
     def end(self):
@@ -133,7 +149,7 @@ class TicTacToeButton(discord.ui.Button):
         self.game.makemove(self.index)
         self.game.checkwin()
 
-        if self.game.winner:
+        if self.game.state != State.ONGOING:
             self.game.end()
 
         await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)

@@ -1,153 +1,164 @@
 """Holds the queue class for the music player."""
-import os
+from dataclasses import dataclass, field
 
+import common.utils as utils
 import discord
-from discord.ui import View
-from discord.enums import ButtonStyle
+from cogs.music.components.history_dropdown import HistoryDropdown
 
-from .buttons import *
+from .components.music_controls import MusicControls
+from .enums import RepeatType
+from .errors import NoVoiceClient
 from .song import Song
 
-FFMPEG_OPTS = {
-    "executable": os.getenv("FFMPEG_PATH"),
-    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-    "options": "-vn",
-}
 
+@dataclass(slots=True)
+class MusicPlayer:
+    guild: discord.Guild
+    message: discord.Message = None
+    view: MusicControls = None
 
-class MusicPlayer():
-    """A player class with only 1 belonging to each guild."""
+    # Song Queue
+    repeat: RepeatType = RepeatType.REPEATOFF
+    _current: Song | None = None
+    history: set[str] = field(default_factory=set)
+    songlist: list[Song] = field(default_factory=list)
 
-    def __init__(self, guild: discord.Guild):
-        self.guild: discord.Guild = guild
-        self.message: discord.Message = None
-        self.repeat_type: RepeatType = RepeatType.REPEATOFF
-        self.paused = False
-        self.current: Song = None
-        self.queue_displayed = False
-        self.songlist: list[Song] = []
-
-    @property
-    def playing(self):
-        return not self.paused
+    # Display
+    _page: int = 1
+    pagesize: int = 3
+    description: str = ""
+    footer: str = ""
 
     @property
-    def empty(self):
-        return len(self.songlist) == 0
+    def page(self):
+        if self._page > self.total_pages:
+            self._page = self.total_pages
+        return self._page
+
+    @page.setter
+    def page(self, page: int):
+        if page > self.total_pages:
+            self._page = self.total_pages
+        elif page < 1:
+            self._page = 1
+        else:
+            self._page = page
+
+    @property
+    def current(self):
+        return self._current
+
+    @current.setter
+    def current(self, new: Song | None):
+        self._current = new
+
+        if new is None:
+            self.voice_client.stop()
+            return
+
+        if self.voice_client.is_playing() or self.voice_client.is_paused():
+            self.voice_client.source = new
+        else:
+            self.voice_client.play(new, after=self.load_next_song)
+
+    @property
+    def voice_client(self) -> discord.VoiceClient:
+        """Fetch the voice client for the guild associated with the player."""
+        vcc = self.guild.voice_client
+        if vcc:
+            if isinstance(vcc, discord.VoiceClient):
+                return vcc
+
+        raise NoVoiceClient("Voice Client Not Found")
+
+    @property
+    def total_pages(self):
+        amount = len(utils.chunk(self.songlist, self.pagesize))
+        return 1 if amount == 0 else amount
+
+    @property
+    def _nothing_playing_embed(self):
+        embed = discord.Embed(
+            title="No Songs Playing",
+            description=f"Hint: Hit the big **+** button"
+        )
+        embed.set_footer(text="Buttons won't work until the bot is singing")
+        return embed
 
     @property
     def embed(self) -> discord.Embed:
         """Generates a discord Embed object based on music player state."""
+
         if not self.current:
-            return discord.Embed(
-                title="No Songs Playing",
-                description="`/play` is the solution"
-            )
-
-        if self.queue_displayed:
-            return self.queue
+            return self._nothing_playing_embed
 
         embed = discord.Embed(
-            title="NOW PLAYING",
-            description=f"[{self.current.title}]({self.current.webpage_url})\n{self.current.duration}",
-            color=discord.Color.blue()
+            title="GumBOTchi's Jukebox",
+            description=f"*{self.description}*\n"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
-        return embed
-
-    @property
-    def controller(self) -> discord.ui.View:
-        """Generates the buttons for the music player based on music player state."""
-        play_button = PlayButton(self) if self.paused else PauseButton(self)
-        skip_button = SkipButton(self)
-
-        # Handle displaying the repeat button
-        if self.repeat_type == RepeatType.REPEAT:
-            repeat_button = RepeatButton(self)
-        elif self.repeat_type == RepeatType.REPEATONE:
-            repeat_button = RepeatOneButton(self)
-        else:
-            repeat_button = RepeatOffButton(self)
-
-        # Handle displaying the queue button
-        if self.queue_displayed:
-            queue_button = QueueButton(self, style=ButtonStyle.green)
-        else:
-            queue_button = QueueButton(self)
-
-        return View(repeat_button, play_button, skip_button, queue_button, timeout=None)
-
-    @property
-    def queue(self) -> discord.Embed:
-        """Generates the song queue discord Embed based on the songlist and state of the player."""
-        embed = discord.Embed(
-            title="QUEUEUEUEUEUE",
-            description=f"**NOW PLAYING**\n[{self.current.title}]({self.current.webpage_url})\n"
+        embed.set_footer(text=utils.ellipsize(self.footer))
+        embed.add_field(
+            name="NOW PLAYING",
+            value=f"[{self.current.title}]({self.current.webpage_url})\n",
+            inline=False,
         )
-        embed.set_thumbnail(url=self.current.thumbnail)
-        embed.set_footer(
-            text=f"Shows up to 5 songs. Hidden: {max(0, len(self.songlist) - 5)}")
 
         if self.songlist:
+            song_chunks = utils.chunk(self.songlist, self.pagesize)
             embed.add_field(
-                name="UP NEXT",
-                value="\n\n".join(
-                    [f"[{song.title}]({song.webpage_url})\n{song.duration}" for song in self.songlist])
+                name=f"UP NEXT  •  {len(self.songlist)} Songs  •  Page {self.page}/{self.total_pages}",
+                value="\n\n".join([str(song) for song in song_chunks[self.page - 1]]),
+                inline=False,
             )
-
-            # for i, song in enumerate(self.songlist[:5], 1):
-            #     embed.add_field(
-            #         name=f"[{song.title}]({song.webpage_url})\n{song.duration}",
-            #         value=f"",
-            #         inline=False
-            #     )
-
         return embed
 
-    def enqueue(self, song: Song):
+    @property
+    def controls(self) -> discord.ui.View:
+        """Generates the buttons for the music player based on music player state."""
+        self.view = MusicControls(player=self)
+        return self.view
+
+    def enqueue(self, song: Song, person: discord.Member):
         """Add a song to the music player's queue."""
         self.songlist.append(song)
+        self.description = f"{person.nick or person.name} queued {song.title}"
 
-    async def play_next(self):
-        """Will begin the next song based on the repeat configuration."""
+    def play(self, song: Song):
+        """Play the provided song"""
+        self.current = song
 
-        # only disconnect if not repeatone because repeat one doesnt need to pop queue
-        if self.empty and self.repeat_type == RepeatType.REPEATOFF:
-            return await self.guild.voice_client.disconnect()
+    def load_next_song(self, error: Exception | None = None):
+        """Load the next song into the current song based on repeat type"""
 
-        # Repeat should loop the entire list
-        if self.repeat_type == RepeatType.REPEAT:
-            self.songlist.append(self.current)
-            self.current = self.songlist.pop(0)
+        if self.current != None:
+            self.history.add(self.current.title)
 
-        # Repeat off should just burn through the songs
-        elif self.repeat_type == RepeatType.REPEATOFF:
-            self.current = self.songlist.pop(0)
+        match self.repeat:
+            case RepeatType.REPEATOFF:
+                if self.songlist:
+                    self.current = self.songlist.pop(0)
+                else:
+                    self.current = None
 
-        # update player message
-        await self.update()
+            case RepeatType.REPEAT:
+                self.songlist.append(self.current.copy())
+                self.current = self.songlist.pop(0)
+            case RepeatType.REPEATONE:
+                if self.current is not None:
+                    self.current = self.current.copy()
 
-        # Play the song
-        audio = discord.FFmpegPCMAudio(self.current.url, **FFMPEG_OPTS)
-        self.guild.voice_client.play(audio)
-        self.paused = False
-
-    async def update(self):
-        """Attempt to update the active player message."""
+        # Needs to update the history. NO TOUCHY i spent days on this
         if self.message:
-            try:
-                await self.message.edit(embed=self.embed, view=self.controller)
-            except discord.NotFound:
-                pass
 
-    def resume(self):
-        self.paused = False
-        self.guild.voice_client.resume()
+            if len(self.view.children) == 8 and self.history:
+                print("DROPDOWN ADDED")
+                self.view.add_item(HistoryDropdown(self))
 
-    def pause(self):
-        self.paused = True
-        self.guild.voice_client.pause()
+            self.voice_client.loop.create_task(
+                self.message.edit(embed=self.embed, view=self.view)
+            )
 
-    async def skip(self):
-        self.guild.voice_client.stop()
-        await self.play_next()
+        # disconnect if needed
+        if self.current is None:
+            self.voice_client.loop.create_task(self.voice_client.disconnect())
