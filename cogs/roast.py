@@ -1,9 +1,8 @@
 """Roast functionality."""
-import discord
-from discord import ApplicationContext as Context
-from discord.commands import Option
 import random
-from discord.commands import slash_command
+
+import discord
+from discord import option, slash_command
 
 
 class Roasts(discord.Cog):
@@ -13,14 +12,15 @@ class Roasts(discord.Cog):
             self.roasts = f.readlines()
 
     @slash_command()
-    async def roast(self, ctx: Context, victim: Option(discord.Member, "The victim of the roast")):
+    @option("victim", description="Delete this man")
+    async def roast(self, ctx: discord.ApplicationContext, victim: discord.Member):
         """Roasts the living shit out of somebody. These roasts are absolutely devastating. Use with caution."""
         roast_embed = discord.Embed(
-            title=f"Hey {victim.name}, {random.choice(self.roasts)}",
+            title=f"Hey {victim.name or victim.nick}, {random.choice(self.roasts)}",
             color=discord.Color.orange()
         )
         await ctx.respond(embed=roast_embed)
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     bot.add_cog(Roasts(bot))
