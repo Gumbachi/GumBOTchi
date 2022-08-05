@@ -1,16 +1,17 @@
 import random
+
+import common.utils as utils
 import discord
-from discord import SlashCommandGroup
 from common.cfg import poggers_activation_phrases
 from common.database import db
-import common.utils as utils
-from discord.ext import pages
+from discord import SlashCommandGroup
+from discord.ext.pages import Paginator
 
 
 class PogCommands(discord.Cog):
     """Handles pog related commands and listeners."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: discord.Bot):
         self.bot = bot
 
     pog = SlashCommandGroup("pog", "Edit the way pog functionality behaves")
@@ -63,11 +64,11 @@ class PogCommands(discord.Cog):
             ) for chunk in utils.chunk(responses, chunksize=8)
         ]
 
-        paginator = pages.Paginator(pages=embeds, show_disabled=False)
+        paginator = Paginator(pages=embeds, show_disabled=False)
         await paginator.respond(ctx.interaction, ephemeral=False)
 
     @discord.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         """Listen to messages."""
         # ignore the bot user
         if message.author.id == self.bot.user.id:
@@ -82,6 +83,6 @@ class PogCommands(discord.Cog):
                 await message.channel.send(random.choice(responses))
 
 
-def setup(bot):
+def setup(bot: discord.Bot):
     """Entry point for loading cogs."""
     bot.add_cog(PogCommands(bot))
