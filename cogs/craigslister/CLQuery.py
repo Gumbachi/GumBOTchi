@@ -1,13 +1,15 @@
-from craigslist import CraigslistForSale
 from dataclasses import dataclass, field
+
 import discord
+from craigslist import CraigslistForSale
 
 spam_words = [
-            'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
-            'Video Games', 'Drones', 'Speakers', 'Cameras',
-            'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
-            'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
-        ]
+    'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
+    'Video Games', 'Drones', 'Speakers', 'Cameras',
+    'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
+    'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
+]
+
 
 @dataclass(slots=True)
 class CLQuery:
@@ -24,7 +26,7 @@ class CLQuery:
     has_image: bool = False
     ping: bool = True
     spam_tolerance = 1
-    sent_listings = field(default_factory=set)
+    sent_listings: set[int] = field(default_factory=set)
 
     def to_db(self):
         final_dic = {}
@@ -81,9 +83,9 @@ class CLQuery:
 
             # Formats and sends the embed
             embed = discord.Embed(
-                                title=f"{listing['price']}, {listing['name']}",
-                                description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
-                                color=discord.Color.blue())
+                title=f"{listing['price']}, {listing['name']}",
+                description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
+                color=discord.Color.blue())
             await channel.send(embed=embed)
 
     def filter_listings(self, listings):
@@ -109,7 +111,7 @@ class CLQuery:
                 if spam > self.spam_tolerance:
                     return True
         return False
-    
+
     def clean_listings(self, listings):
         clean_listings = []
         for listing in listings:

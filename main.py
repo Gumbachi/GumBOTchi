@@ -39,12 +39,6 @@ cogs = [
 ]
 
 if __name__ == '__main__':
-    for cog in cogs:
-        try:
-            bot.load_extension(cog)
-            print(f"LOADED: {cog.split('.')[-1]}")
-
-        except Exception as e:
-            print(f"Couldnt load {cog} because {e}")
+    bot.load_extensions(*cogs)
 
 bot.run(os.getenv("TOKEN"))  # runs the bot
