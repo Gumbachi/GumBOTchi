@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 import discord
 from craigslist import CraigslistForSale
@@ -11,7 +12,7 @@ spam_words = [
 ]
 
 
-@dataclass(slots=True)
+@dataclass
 class CLQuery:
     owner_id: int
     zipcode: int
@@ -25,22 +26,42 @@ class CLQuery:
     category: str = "sss"
     has_image: bool = False
     ping: bool = True
-    spam_tolerance = 1
+    spam_tolerance: int = 1
     sent_listings: set[int] = field(default_factory=set)
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, CLQuery):
+            return False
+        return self.to_db() == __o.to_db()
+
+    @classmethod
+    def from_query(cls, query: dict[str: Any]):
+        return cls(
+            owner_id=query["owner_id"],
+            zipcode=query["zipcode"],
+            state=query["state"],
+            channel=query["channel"],
+            site=query["site"],
+            keywords=query["keywords"],
+            spam_tolerance=query["spam_tolerance"],
+            budget=query["budget"],
+            distance=query["distance"],
+            category=query["category"],
+            has_image=query["has_image"],
+            ping=query["ping"]
+        )
+
     def to_db(self):
-        final_dic = {}
-        for k, v in self.__dict__.items():
-            if k not in ["sent_listings"]:
-                final_dic[k] = v
-        return final_dic
+        dic = self.__dict__
+        dic.pop("sent_listings", None)
+        return dic
 
     def search(self):
         """Uses the query to search CL. 
         Returns a list of ALL matching posts"""
         listings = []
         # Iterate through keywords and search CL
-        for keyword in self.keywords.split(", "):
+        for keyword in self.keywords:
             # Searches CL with the parameters
             generator = CraigslistForSale(
                 site=self.site,
@@ -49,7 +70,7 @@ class CLQuery:
                     'query': keyword,
                     'max_price': self.budget,
                     'has_image': self.has_image,
-                    'zip_code': self.zip_code,
+                    'zip_code': self.zipcode,
                     'search_distance': self.distance,
                     'search_titles': False,
                     'posted_today': True,
@@ -67,7 +88,7 @@ class CLQuery:
                     listings.append(listing)
         return listings
 
-    async def send_listings(self, bot, listings):
+    async def send_listings(self, bot: discord.Bot, listings):
         channel = bot.get_channel(self.channel)
         if self.ping:
             user = bot.get_user(self.owner_id)
