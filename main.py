@@ -5,12 +5,14 @@ import discord
 
 # Create bot based on environment
 if os.getenv("ENV") == "testing":
+    print("DEBUG ENVIRONMENT")
     bot = discord.Bot(
         owner_id=128595549975871488,
         intents=discord.Intents.all(),
         debug_guilds=[565257922356051973]
     )
 else:
+    print("LIVE ENVIRONMENT")
     bot = discord.Bot(
         owner_id=128595549975871488,
         intents=discord.Intents.all(),
