@@ -1,6 +1,6 @@
+import database as db
 import discord
-from discord.ui import Modal, InputText
-from common.database import db
+from discord.ui import InputText, Modal
 
 
 class ApiKeyModal(Modal):
@@ -12,11 +12,6 @@ class ApiKeyModal(Modal):
         ))
 
     async def callback(self, interaction: discord.Interaction):
-
         key = self.children[0].value
-
-        success = db.set_sbonk_key(interaction.guild.id, key)
-        if success:
-            await interaction.response.send_message("Successfully set API key")
-        else:
-            await interaction.response.send_message("Failed to set API key")
+        db.set_iexkey(id=interaction.guild.id, key=key)
+        await interaction.response.send_message("Successfully set API key")

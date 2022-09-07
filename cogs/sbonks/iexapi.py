@@ -1,8 +1,8 @@
 import os
 
 import aiohttp
+import database as db
 from cogs.sbonks.symboldata import SymbolData
-from common.database import db
 
 
 class IEXAPIError(Exception):
@@ -13,7 +13,7 @@ class IEXAPI:
     BASE_URL = "https://cloud.iexapis.com/stable"
 
     def __init__(self, guild_id: int) -> None:
-        self.iexkey = db.get_sbonk_key(guild_id)
+        self.iexkey = db.get_iexkey(id=guild_id)
 
         if self.iexkey is None:
             raise IEXAPIError("Missing IEX KEY")

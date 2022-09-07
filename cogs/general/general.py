@@ -3,8 +3,8 @@ from pathlib import Path
 
 import discord
 from common.cfg import Role, Tenor, Vip, activities
-from discord.commands import Option, slash_command
-from discord.ext import tasks
+from discord.commands import option, slash_command
+from discord.ext.tasks import loop
 
 
 class GeneralCommands(discord.Cog):
@@ -17,15 +17,13 @@ class GeneralCommands(discord.Cog):
     @slash_command(name="howdy")
     async def howdy(self, ctx: discord.ApplicationContext):
         """Command to check if bot is alive or if you need a friend."""
-        await ctx.respond(f"Howdy {ctx.author.mention}!")
+        await ctx.respond(f"Howdy {ctx.author.display_name}!")
 
     @slash_command(name="purge")
     @discord.default_permissions(administrator=True)
-    async def purge(
-        self, ctx: discord.ApplicationContext,
-        amount: Option(int, "The amount of messages to purge"),
-        target: Option(discord.Member, "We all know who this is for") = None
-    ):
+    @option(name="amount", description="The amount of messages to SEARCH THROUGH. If target is not specified this is the amount to delete")
+    @option(name="target", description="We all know who this is for", required=False)
+    async def purge(self, ctx: discord.ApplicationContext, amount: int, target: discord.Member):
         """purge a specific amount of messages"""
         await ctx.defer()
 
@@ -58,7 +56,7 @@ class GeneralCommands(discord.Cog):
                 response = random.choice(list(path.iterdir()))
                 await message.channel.send(file=discord.File(response))
 
-    @tasks.loop(seconds=300)
+    @loop(seconds=300)
     async def activity_cycler(self):
         """Cycle the bot's presence to the next activity."""
         await self.bot.change_presence(activity=next(activities))
