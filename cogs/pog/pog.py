@@ -3,7 +3,8 @@ import random
 import database as db
 import discord
 from common.utils import chunk
-from discord import SlashCommandGroup, option
+from database.errors import PogDatabaseError
+from discord import SlashCommandGroup, message_command, option
 from discord.ext.pages import Paginator
 
 from .responses import *
@@ -90,6 +91,12 @@ class PogCommands(discord.Cog):
         paginator.remove_button("last")
         await paginator.respond(ctx.interaction)
 
+    @message_command(name="Add as Pog Response")
+    async def context_add_pogresponse(self, ctx: discord.ApplicationContext, message: discord.Message):
+        """Add Pog Respond through message context menu command."""
+        db.add_pogresponse(id=ctx.guild.id, response=message.content)
+        await ctx.respond(embed=POGRESPONSE_ADDED)
+
     @activator.command(name="add")
     @option(name="phrase", description="The activator phrase")
     async def add_pogactivator(self, ctx: discord.ApplicationContext, phrase: str):
@@ -120,11 +127,28 @@ class PogCommands(discord.Cog):
             )
         )
 
+    @message_command(name="Add as Pog Activator")
+    async def context_add_pogactivator(self, ctx: discord.ApplicationContext, message: discord.Message):
+        """Add Pog Activator through message context menu command."""
+        db.add_pogactivator(id=ctx.guild.id, activator=message.content)
+        await ctx.respond(embed=POGACTIVATOR_ADDED)
+
+    async def cog_command_error(self, ctx: discord.ApplicationContext, error: Exception):
+        """Cog error handler for Pog related errors."""
+
+        if isinstance(error, discord.ApplicationCommandInvokeError):
+            error = error.original
+
+        if isinstance(error, PogDatabaseError):
+            return await ctx.respond(embed=error.embed)
+
+        raise error
+
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listen to messages."""
         # ignore the bot user
-        if message.author.id == self.bot.user.id:
+        if message.author.id == self.bot.user.id or isinstance(message.channel, discord.DMChannel):
             return
 
         # pog listener

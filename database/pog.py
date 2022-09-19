@@ -1,4 +1,4 @@
-from .errors import DatabaseError
+from .errors import PogDatabaseError
 from .guild import db, insert_guild
 
 response_cache: dict[int, list[str]] = {}
@@ -13,7 +13,7 @@ def get_pogresponses(id: int, from_cache=True) -> list[str]:
         return response_cache[id]
 
     # find guild or use default if not found
-    data = db.Guilds.find_one(
+    data = db["Guilds"].find_one(
         {"_id": id},
         {"_id": False, "pogresponses": True}
     )
@@ -31,16 +31,16 @@ def add_pogresponse(id: int, response: str) -> None:
     """Add a pog response to the db."""
 
     # add guild if missing
-    if id not in response_cache and db.Guilds.find_one({"_id": id}) is None:
+    if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
 
-    result = db.Guilds.update_one(
+    result = db["Guilds"].update_one(
         filter={"_id": id},
-        update={"$push": {"pogresponses": response}}
+        update={"$addToSet": {"pogresponses": response}}
     )
 
     if result.modified_count == 0:
-        raise DatabaseError("Couldn't add pog response")
+        raise PogDatabaseError("Couldn't add pog response", "Typically due to a duplicate response")
 
     # update cache
     if id in response_cache:
@@ -51,16 +51,16 @@ def remove_pogresponse(id: int, response: str):
     """Remove a pog response from the db."""
 
     # add guild if missing
-    if id not in response_cache and db.Guilds.find_one({"_id": id}) is None:
+    if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
 
-    result = db.Guilds.update_one(
+    result = db["Guilds"].update_one(
         filter={"_id": id},
         update={"$pull": {"pogresponses": response}}
     )
 
     if result.modified_count == 0:
-        raise DatabaseError("Couldn't remove pog response")
+        raise PogDatabaseError("Couldn't remove pog response")
 
     # update cache
     if id in response_cache:
@@ -75,7 +75,7 @@ def get_pogactivators(id: int, from_cache=True) -> list[str]:
         return activator_cache[id]
 
     # find guild or use default if not found
-    data = db.Guilds.find_one(
+    data = db["Guilds"].find_one(
         {"_id": id},
         {"_id": False, "pogactivators": True}
     )
@@ -93,16 +93,16 @@ def add_pogactivator(id: int, activator: str) -> None:
     """Add a pog activator to the db."""
 
     # add guild if missing
-    if id not in response_cache and db.Guilds.find_one({"_id": id}) is None:
+    if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
 
-    result = db.Guilds.update_one(
+    result = db["Guilds"].update_one(
         filter={"_id": id},
-        update={"$push": {"pogactivators": activator}}
+        update={"$addToSet": {"pogactivators": activator}}
     )
 
     if result.modified_count == 0:
-        raise DatabaseError("Couldn't add pog activator")
+        raise PogDatabaseError("Couldn't add pog activtor", "Typically due to a duplicate")
 
     # update cache
     if id in activator_cache:
@@ -113,16 +113,16 @@ def remove_pogactivator(id: int, activator: str):
     """Remove a pog activator from the db."""
 
     # add guild if missing
-    if id not in response_cache and db.Guilds.find_one({"_id": id}) is None:
+    if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
 
-    result = db.Guilds.update_one(
+    result = db["Guilds"].update_one(
         filter={"_id": id},
         update={"$pull": {"pogactivators": activator}}
     )
 
     if result.modified_count == 0:
-        raise DatabaseError("Couldn't remove pog activator")
+        raise PogDatabaseError("Couldn't remove pog activator")
 
     # update cache
     if id in activator_cache:

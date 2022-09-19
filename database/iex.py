@@ -6,7 +6,7 @@ def get_iexkey(id: int) -> str | None:
     """Fetch a guilds IEX API key and return it."""
 
     # find guild or use default if not found
-    data = db.Guilds.find_one(
+    data = db["Guilds"].find_one(
         {"_id": id},
         {"_id": False, "iexkey": True}
     )
@@ -21,10 +21,10 @@ def set_iexkey(id: int, key: str):
     """Set the publishable API key set for the guild."""
 
     # add guild if missing
-    if db.Guilds.find_one({"_id": id}) is None:
+    if db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
 
-    response = db.Guilds.update_one(
+    response = db["Guilds"].update_one(
         filter={"_id": id},
         update={"$set": {"iexkey": key}}
     )
