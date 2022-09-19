@@ -6,7 +6,6 @@ from database.errors import PogDatabaseError
 from discord import SlashCommandGroup, message_command
 
 from .components.pog_manager import PogManager
-from .responses import *
 
 
 class PogCommands(discord.Cog):
@@ -33,14 +32,20 @@ class PogCommands(discord.Cog):
     async def context_add_pogresponse(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Add Pog Respond through message context menu command."""
         db.add_pogresponse(id=ctx.guild.id, response=message.content)
-        await ctx.respond(embed=POGRESPONSE_ADDED)
+        await ctx.respond(embed=discord.Embed(
+            title="Response Added",
+            color=discord.Color.green()
+        ))
 
     @message_command(name="Add as Pog Activator")
     @discord.default_permissions(manage_messages=True)
     async def context_add_pogactivator(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Add Pog Activator through message context menu command."""
         db.add_pogactivator(id=ctx.guild.id, activator=message.content)
-        await ctx.respond(embed=POGACTIVATOR_ADDED)
+        await ctx.respond(embed=discord.Embed(
+            title="Activation Phrase Added",
+            color=discord.Color.green()
+        ))
 
     @discord.Cog.listener("on_application_command_error")
     async def on_application_command_error(self, ctx: discord.ApplicationContext, error: Exception):
