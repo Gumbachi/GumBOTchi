@@ -30,6 +30,9 @@ def get_pogresponses(id: int, from_cache=True) -> list[str]:
 def add_pogresponse(id: int, response: str) -> None:
     """Add a pog response to the db."""
 
+    if not isinstance(response, str) or not response:
+        raise PogDatabaseError("Invalid pog response")
+
     # add guild if missing
     if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
         insert_guild(id=id)
@@ -91,6 +94,9 @@ def get_pogactivators(id: int, from_cache=True) -> list[str]:
 
 def add_pogactivator(id: int, activator: str) -> None:
     """Add a pog activator to the db."""
+
+    if not isinstance(activator, str) or not activator:
+        raise PogDatabaseError("Invalid pog activator")
 
     # add guild if missing
     if id not in response_cache and db["Guilds"].find_one({"_id": id}) is None:
