@@ -38,10 +38,14 @@ class SongModal(Modal):
 
         song = await Song.from_query(query)
 
+        print(f"{song=}")
+
         try:
             _ = self.jukebox.voice_client
         except NoVoiceClient:
             await user_vc.connect()
+
+        print(self.jukebox.voice_client)
 
         if self.jukebox.current is None:
             self.jukebox.play(song)

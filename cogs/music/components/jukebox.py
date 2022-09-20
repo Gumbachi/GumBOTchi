@@ -98,6 +98,9 @@ class Jukebox(discord.ui.View):
 
     def stop(self) -> None:
         """Stop the jukebox from playing"""
+
+        print("STOPPING FOR WHATEVER REASON")
+
         self.current = None
         self.voice_client.stop()
         self.update_play_buttons()
@@ -115,7 +118,7 @@ class Jukebox(discord.ui.View):
     def play_next_song(self, error: Exception | None = None):
         """Load the next song into the current song based on repeat type"""
 
-        print("PLAY NEXT ENTERED")
+        print(f"PLAY NEXT ENTERED: {error=}")
 
         if error:
             print(type(error), error)
@@ -132,11 +135,7 @@ class Jukebox(discord.ui.View):
                 if self.queue:
                     self.play(self.queue.pop(0))
                 else:
-                    # Unsure why but this code will still execute even if error is raised
-                    try:
-                        self.stop()
-                    except NoVoiceClient:
-                        pass
+                    self.stop()
             case RepeatType.REPEAT:
                 self.enqueue(self.current.clone())
                 self.play(self.queue.pop(0))
@@ -146,13 +145,9 @@ class Jukebox(discord.ui.View):
 
         self.update_page_buttons()
 
-        # Unsure why but this code will still execute even if error is raised
-        try:
-            self.voice_client.loop.create_task(
-                self.message.edit(embed=self.embed, view=self)
-            )
-        except NoVoiceClient:
-            pass
+        self.voice_client.loop.create_task(
+            self.message.edit(embed=self.embed, view=self)
+        )
 
     @discord.ui.select(
         placeholder="Queue a song from history...",
@@ -233,10 +228,8 @@ class Jukebox(discord.ui.View):
     @discord.ui.button(emoji="⏩", row=1, disabled=True)
     async def skip_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
         """Restarts the song the jukebox is playing."""
+        self.voice_client._player.after = None  # clear the after because play next is called manually
         self.play_next_song()
-
-        if self.current is None:
-            button.disabled = True
 
         await interaction.response.edit_message(embed=self.embed, view=self)
 
