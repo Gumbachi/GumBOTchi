@@ -1,6 +1,3 @@
-import asyncio
-import time
-
 import common.utils as utils
 import discord
 from common.cfg import Tenor
@@ -89,7 +86,7 @@ class Jukebox(discord.ui.View):
 
         raise NoVoiceClient("Voice Client Not Found")
 
-    def play(self, song: Song):
+    def play(self, song: Song) -> None:
         """Play the provided song."""
         self.current = song
 
@@ -99,7 +96,7 @@ class Jukebox(discord.ui.View):
             self.voice_client.play(song, after=self.play_next_song)
             self.update_play_buttons()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the jukebox from playing"""
         self.current = None
         self.voice_client.stop()
@@ -117,6 +114,8 @@ class Jukebox(discord.ui.View):
 
     def play_next_song(self, error: Exception | None = None):
         """Load the next song into the current song based on repeat type"""
+
+        print("PLAY NEXT ENTERED")
 
         if error:
             print(type(error), error)
@@ -174,18 +173,18 @@ class Jukebox(discord.ui.View):
 
         vc = interaction.user.voice.channel
 
-        try:
-            _ = self.voice_client
-        except NoVoiceClient:
-            await vc.connect()
-
         # select the song
         for song in self.history:
             if song.title == select.values[0]:
                 song_to_play = song
                 break
         else:
-            song_to_play = await Song.from_query(select.values[0], loop=self.voice_client.loop)
+            song_to_play = await Song.from_query(select.values[0])
+
+        try:
+            _ = self.voice_client
+        except NoVoiceClient:
+            await vc.connect()
 
         if self.current is None:
             self.play(song_to_play.clone())

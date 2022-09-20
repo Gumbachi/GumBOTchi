@@ -36,12 +36,12 @@ class SongModal(Modal):
 
         await interaction.response.defer()
 
+        song = await Song.from_query(query)
+
         try:
             _ = self.jukebox.voice_client
         except NoVoiceClient:
             await user_vc.connect()
-
-        song = await Song.from_query(query, loop=self.jukebox.voice_client.loop)
 
         if self.jukebox.current is None:
             self.jukebox.play(song)

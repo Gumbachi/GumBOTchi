@@ -29,6 +29,8 @@ class Music(discord.Cog):
             await jukebox.message.delete()
         except KeyError:
             jukebox = Jukebox(ctx.guild)
+        except discord.NotFound:
+            pass  # ignore failed deletion
 
         await ctx.send(embed=jukebox.embed, view=jukebox)
         await interaction.edit_original_message(content="Vibe Established 🎧")
