@@ -4,17 +4,17 @@ import discord
 from common.cfg import Tenor
 from discord.ui import InputText, Modal
 
-from ..errors import NoVoiceClient
+from ..errors import NoVoiceClient, SongError
 from ..song import Song
 
 if TYPE_CHECKING:
-    from ..player import MusicPlayer
+    from .jukebox import Jukebox
 
 
 class SongModal(Modal):
-    def __init__(self, player: "MusicPlayer"):
-        super().__init__(title="Song Search")
-        self.player = player
+    def __init__(self, jukebox: "Jukebox"):
+        super().__init__(title="Coin Inserted")
+        self.jukebox = jukebox
         self.add_item(
             InputText(
                 label="Song Query",
@@ -28,7 +28,7 @@ class SongModal(Modal):
 
         # no user voice state
         if interaction.user.voice == None:
-            return await interaction.response.send_message(Tenor.KERMIT_LOST)
+            return await interaction.response.send_message(Tenor.KERMIT_LOST, ephemeral=True)
 
         user_vc = interaction.user.voice.channel
 
@@ -37,20 +37,25 @@ class SongModal(Modal):
         await interaction.response.defer()
 
         try:
-            _ = self.player.voice_client
+            _ = self.jukebox.voice_client
         except NoVoiceClient:
             await user_vc.connect()
 
-        try:
-            song = await Song.from_query(query, loop=self.player.voice_client.loop)
-        except ValueError:
-            return await interaction.followup.send(f"Failed to queue song", ephemeral=True)
+        song = await Song.from_query(query, loop=self.jukebox.voice_client.loop)
 
-        if self.player.current is None:
-            self.player.current = song
-            self.player.description = f"{interaction.user.name} got this party started with {song.title}"
+        if self.jukebox.current is None:
+            self.jukebox.play(song)
+            self.jukebox.description = f"{interaction.user.display_name} got this party started with {song.title}"
         else:
-            self.player.enqueue(song, interaction.user)
+            self.jukebox.enqueue(song)
+            self.jukebox.description = f"{interaction.user.display_name} queued {song.title}"
 
         await interaction.followup.send(f"Added {song.title}", delete_after=1)
-        await interaction.message.edit(embed=self.player.embed, view=self.player.controls)
+        await interaction.message.edit(embed=self.jukebox.embed, view=self.jukebox)
+
+    async def on_error(self, error: Exception, interaction: discord.Interaction) -> None:
+
+        if isinstance(error, SongError):
+            return await interaction.followup.send("Failed to queue song", ephemeral=True)
+
+        raise error

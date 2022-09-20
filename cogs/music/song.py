@@ -6,6 +6,8 @@ from typing import Any
 import discord
 from yt_dlp import YoutubeDL
 
+from .errors import SongError
+
 YDL_OPTS = {
     "format": "bestaudio/best",
     "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
@@ -51,7 +53,7 @@ class Song(discord.PCMVolumeTransformer):
     def __repr__(self):
         return f"Song(title={self.title})"
 
-    def copy(self):
+    def clone(self):
         """Creates a duplicate discord Song object that hasn't been used."""
         return Song(
             source=discord.FFmpegPCMAudio(self.url, **FFMPEG_OPTS),
@@ -80,4 +82,4 @@ class Song(discord.PCMVolumeTransformer):
                 audio = discord.FFmpegPCMAudio(info["url"], **FFMPEG_OPTS)
                 return cls(source=audio, metadata=info)
             except IndexError:
-                raise ValueError(f"No results found for {query}")
+                raise SongError(f"No results found for {query}")

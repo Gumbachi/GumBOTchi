@@ -1,9 +1,9 @@
 import os
 
 import discord
-from discord import guild_only, slash_command
+from discord import guild_only, option, slash_command
 
-from .player import MusicPlayer
+from .components.jukebox import Jukebox
 
 
 class Music(discord.Cog):
@@ -11,27 +11,27 @@ class Music(discord.Cog):
 
     def __init__(self, bot: discord.Bot):
         self.bot = bot
-        self.players: dict[int, MusicPlayer] = {}
+        self.players: dict[int, discord.Message] = {}
 
     @slash_command(name="jukebox")
     @guild_only()
-    async def send_player(self, ctx: discord.ApplicationContext):
+    @option(name="fresh", description="Start with a brand new jukebox. Deletes the previous", default=False)
+    async def send_jukebox(self, ctx: discord.ApplicationContext, fresh: bool):
         """Get the music player and its buttons."""
+        interaction = await ctx.respond("Establishing Vibe...")
 
-        # Fetch the music player or create new one if needed
-        if ctx.guild.id in self.players:
-            player = self.players[ctx.guild.id]
-            if player.message:
-                try:
-                    await player.message.delete()
-                except discord.NotFound:
-                    pass
-        else:
-            player = MusicPlayer(ctx.guild)
-            self.players[ctx.guild.id] = player
+        if fresh:
+            if (jukebox := Jukebox.instances.pop(ctx.guild.id, None)):
+                jukebox.stop()
 
-        await ctx.respond("Vibe Established 🎧")
-        player.message = await ctx.send(embed=player.embed, view=player.controls)
+        try:
+            jukebox = Jukebox.instances[ctx.guild.id]
+            await jukebox.message.delete()
+        except KeyError:
+            jukebox = Jukebox(ctx.guild)
+
+        await ctx.send(embed=jukebox.embed, view=jukebox)
+        await interaction.edit_original_message(content="Vibe Established 🎧")
 
 
 def setup(bot: discord.Bot):

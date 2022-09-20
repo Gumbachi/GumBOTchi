@@ -43,7 +43,4 @@ cogs = [
 if __name__ == '__main__':
     bot.load_extensions(*cogs)
 
-    for cmd in bot.walk_application_commands():
-        print(cmd)
-
 bot.run(os.getenv("TOKEN"))  # runs the bot
