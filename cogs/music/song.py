@@ -51,7 +51,7 @@ class Song(discord.PCMVolumeTransformer):
         return f"[{self.title}]({self.webpage_url})\n{self.duration}"
 
     def __repr__(self):
-        return f"Song(title={self.title})"
+        return f"Song({self.title=})"
 
     def clone(self):
         """Creates a duplicate discord Song object that hasn't been used."""
