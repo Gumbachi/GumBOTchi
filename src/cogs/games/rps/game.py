@@ -1,143 +1,135 @@
+import random
+
 import discord
-from cogs.games.rps.enums import Move, RPSMove, RPSState
-from cogs.games.rps.player import Player
 
 
-class Game():
+class Game(discord.ui.View):
     """Holds data for a RockPaperScissors Game."""
 
-    def __init__(self, playerone: discord.Member, playertwo: discord.Member):
-        self.p1 = Player(playerone)
-        self.p2 = Player(playertwo)
+    def __init__(self, p1: discord.Member, p2: discord.Member):
+        self.p1 = p1
+        self.p2 = p2
+        self.moves = {p1: None, p2: None}
 
-        self.buttons = [
-            RPSButton(self, RPSMove.ROCK),
-            RPSButton(self, RPSMove.PAPER),
-            RPSButton(self, RPSMove.SCISSORS),
-        ]
-
-        self.state = RPSState.ONGOING
         self.score = [0, 0]
+        self.headline = f"{p1.display_name} VS {p2.display_name}"
+
+        super().__init__(timeout=300)
+
+        self.rock_button: discord.ui.Button = self.children[0]
+        self.paper_button: discord.ui.Button = self.children[1]
+        self.scissors_button: discord.ui.Button = self.children[2]
+        self.rematch_button: discord.ui.Button = self.children[3]
+
+        # Auto Move
+        if self.p2.bot:
+            self.moves[p2] = random.choice(("rock", "paper", "scissors"))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return interaction.user in (self.p1, self.p2)
+
+    @discord.ui.button(emoji="🪨")
+    async def _rock_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Handle a player hitting rock."""
+        self.moves[interaction.user] = "rock"
+        self.check_win()
+        await interaction.response.edit_message(embed=self.embed, view=self)
+
+    @discord.ui.button(label="🧻")
+    async def _paper_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Handle a player hitting paper."""
+        self.moves[interaction.user] = "paper"
+        self.check_win()
+        await interaction.response.edit_message(embed=self.embed, view=self)
+
+    @discord.ui.button(label="✂️")
+    async def _scissors_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Handle a player hitting scissors."""
+        self.moves[interaction.user] = "scissors"
+        self.check_win()
+        await interaction.response.edit_message(embed=self.embed, view=self)
+
+    @discord.ui.button(label="Rematch", disabled=True)
+    async def _rematch_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Handle a player hitting rematch."""
+
+        # Reset buttons
+        self.rock_button.style = discord.ButtonStyle.gray
+        self.paper_button.style = discord.ButtonStyle.gray
+        self.scissors_button.style = discord.ButtonStyle.gray
+        self.rock_button.disabled = False
+        self.paper_button.disabled = False
+        self.scissors_button.disabled = False
+
+        # Reset moves
+        self.moves[self.p1] = None
+        self.moves[self.p2] = random.choice(("rock", "paper", "scissors")) if self.p2.bot else None
+
+        # Reset
+        self.headline = f"{self.p1.display_name} VS {self.p2.display_name}"
+        button.disabled = True
+
+        await interaction.response.edit_message(embed=self.embed, view=self)
 
     @property
     def embed(self):
         return discord.Embed(
-            title=f"{self.headline}  •  {self.scoreline}",
-            description=self.playbyplay,
+            title=f"{self.headline} \u2022 {self.score[0]} - {self.score[1]}",
+            description=self.play_tracker,
             color=discord.Color.blue()
         )
 
     @property
-    def view(self):
-        return discord.ui.View(*self.buttons, ReplayButton(self))
-
-    @property
-    def scoreline(self):
-        return ' - '.join([str(x) for x in self.score])
-
-    @property
-    def headline(self):
-        """Generates the string to be the title of the game embed."""
-        match self.state:
-            case RPSState.PLAYERONEWIN:
-                return f"{self.p1} Wins!"
-            case RPSState.PLAYERTWOWIN:
-                return f"{self.p2} Wins!"
-            case RPSState.TIE:
-                return f"It's a tie :("
+    def play_tracker(self) -> str:
+        """Keeps track of who has moved and who hasn't"""
+        match (self.moves[self.p1], self.moves[self.p2]):
+            case (None, None):
+                return f"🔴 {self.p1.display_name}\n🔴 {self.p2.display_name}"
+            case (None, _):
+                return f"🔴 {self.p1.display_name}\n🟢 {self.p2.display_name}"
+            case (_, None):
+                return f"🟢 {self.p1.display_name}\n🔴 {self.p2.display_name}"
             case _:
-                return f"{self.p1} VS {self.p2}"
-
-    @property
-    def playbyplay(self):
-        """Generates the string that represents the game events."""
-        if self.state != RPSState.ONGOING:
-            return f"{self.p1} plays {self.p1.move}\n{self.p2} counters with {self.p2.move}"
-
-    @property
-    def players(self):
-        return (self.p1, self.p2)
+                return ""
 
     def check_win(self):
         """Check the game status for a win."""
 
-        if self.p1.choice is None or self.p2.choice is None:
+        # Still waiting for everyone
+        if not all(self.moves.values()):
             return
 
-        # Determine game result
-        if self.p1.choice == self.p2.choice:
-            self.state = RPSState.TIE
-        elif self.p1.choice > self.p2.choice:
-            self.state = RPSState.PLAYERONEWIN
-            self.score[0] += 1
-        else:
-            self.state = RPSState.PLAYERTWOWIN
-            self.score[1] += 1
+        match (self.moves[self.p1], self.moves[self.p2]):
+            case ("rock", "scissors") | ("paper", "rock") | ("scissors", "paper"):
+                self.headline = f"{self.p1.display_name} Wins!"
+                self.score[0] += 1
+                self.end(winner=self.p1)
+            case ("scissors", "rock") | ("rock", "paper") | ("paper", "scissors"):
+                self.headline = f"{self.p2.display_name} Wins!"
+                self.score[1] += 1
+                self.end(winner=self.p2)
+            case _:
+                self.headline = f"{self.p2.display_name} copied {self.p1.display_name}'s homework"
+                self.end(winner=None)
 
-        # end game and disable buttons
-        self.end()
+    def end(self, winner: discord.Member | None):
+        """Highlight wining buttons and disable"""
 
-    def end(self):
-        for button in self.buttons:
-            button.disabled = True
+        self.rock_button.disabled = True
+        self.paper_button.disabled = True
+        self.scissors_button.disabled = True
+        self.rematch_button.disabled = False
 
-            # Set buttons to green/red for win loss
-            if self.state == RPSState.PLAYERONEWIN:
-                if button.move == self.p1.move:
-                    button.style = discord.ButtonStyle.green
-                elif button.move == self.p2.move:
-                    button.style = discord.ButtonStyle.red
-            elif self.state == RPSState.PLAYERTWOWIN:
-                if button.move == self.p2.move:
-                    button.style = discord.ButtonStyle.green
-                elif button.move == self.p1.move:
-                    button.style = discord.ButtonStyle.red
-
-    def reset(self):
-        """Reset the game state and player choices"""
-        self.p1.choice = None
-        # player 2 could be bot so reinit player
-        self.p2 = Player(self.p2.user)
-        self.state = RPSState.ONGOING
-
-        # Reset buttons
-        for button in self.buttons:
-            button.disabled = False
-            button.style = discord.ButtonStyle.gray
-
-
-class RPSButton(discord.ui.Button):
-    def __init__(self, game: Game, move: Move):
-        super().__init__(emoji=move.emoji)
-        self.game = game
-        self.move = move
-
-    async def callback(self, interaction: discord.Interaction):
-        if interaction.user not in self.game.players:
+        if not winner:
             return
 
-        # Set the player choice to the move made
-        if self.game.p1 == interaction.user:
-            self.game.p1.choice = self.move
-        else:
-            self.game.p2.choice = self.move
-
-        self.game.check_win()
-        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)
-
-
-class ReplayButton(discord.ui.Button):
-    def __init__(self, game: Game):
-        super().__init__(emoji="🔁")
-        self.game = game
-
-        if self.game.state == RPSState.ONGOING:
-            self.disabled = True
-
-    async def callback(self, interaction: discord.Interaction):
-        if interaction.user not in self.game.players:
-            return
-
-        self.game.reset()
-
-        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)
+        match self.moves[winner]:
+            case "rock":
+                self.rock_button.style = discord.ButtonStyle.green
+                self.scissors_button.style = discord.ButtonStyle.red
+            case "paper":
+                self.paper_button.style = discord.ButtonStyle.green
+                self.rock_button.style = discord.ButtonStyle.red
+            case "scissors":
+                self.scissors_button.style = discord.ButtonStyle.green
+                self.paper_button.style = discord.ButtonStyle.red

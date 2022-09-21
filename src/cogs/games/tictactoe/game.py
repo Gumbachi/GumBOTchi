@@ -1,6 +1,8 @@
-import random
-import discord
 import enum
+import random
+from dataclasses import dataclass
+
+import discord
 
 
 class State(enum.Enum):
@@ -10,7 +12,8 @@ class State(enum.Enum):
     ONGOING = 3
 
 
-class Game:
+@dataclass(kw_only=True, slots=True)
+class Game(discord.ui.View):
     def __init__(self, p1: discord.Member, p2: discord.Member):
         self.p1 = p1
         self.p2 = p2
