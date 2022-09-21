@@ -2,6 +2,9 @@
 import os
 
 import discord
+from dotenv import load_dotenv
+
+print(load_dotenv())
 
 # Create bot based on environment
 if os.getenv("DEBUG", None) is not None:
@@ -26,7 +29,7 @@ async def on_ready():
 
 # .py files to load up
 cogs = [
-    "cogs.general",
+    "cogs.general.general",
     "cogs.music.music",
     "cogs.pog.pog",
     "cogs.roast.roast",
