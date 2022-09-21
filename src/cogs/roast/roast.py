@@ -8,7 +8,7 @@ from discord import user_command
 class Roast(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
-        with open("./cogs/roast/roasts.txt") as f:
+        with open("./src/cogs/roast/roasts.txt") as f:
             self.roasts = f.readlines()
 
     @user_command(name="Roast")
