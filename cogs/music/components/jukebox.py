@@ -93,7 +93,7 @@ class Jukebox(discord.ui.View):
         if self.voice_client.is_playing() or self.voice_client.is_paused():
             self.voice_client.source = song
         else:
-            self.voice_client.play(song, after=self.play_next_song)
+            self.voice_client.play(song, after=None)  # self.play_next_song
             self.update_play_buttons()
 
     def stop(self) -> None:
