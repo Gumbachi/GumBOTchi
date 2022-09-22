@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load matplotlib font
-for font in font_manager.findSystemFonts(['./res/fonts']):
+for font in font_manager.findSystemFonts(['./src/res/fonts']):
     font_manager.fontManager.addfont(path=font)
 
 
@@ -24,7 +24,7 @@ class SymbolData:
     previous_close: float | None = None
     datalength: int = 390  # What is the max amount of data points
     timeframe: str = "1D"
-    style: str = "./cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
+    style: str = "./src/cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
 
     @property
     def color(self):
