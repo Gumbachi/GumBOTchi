@@ -1,155 +1,145 @@
 import random
+from collections.abc import Sequence
+
 import discord
-import enum
 
 
-class State(enum.Enum):
-    P1WIN = 0
-    P2WIN = 1
-    TIE = 2
-    ONGOING = 3
+class TicTacToeButton(discord.ui.Button):
+
+    view: "Game"  # Tell intellisense View is a game obj
+
+    def __init__(self, index: int):
+        super().__init__(label="\u200b", row=index // 3)
+        self.index = index
+        self.owner = None
+
+    def reset(self):
+        """Reset the data the button holds."""
+        self.disabled = False
+        self.style = discord.ButtonStyle.gray
+        self.label = "\u200b"
+
+    async def callback(self, interaction: discord.Interaction):
+        self.owner = interaction.user
+        self.label = self.view.labels[interaction.user]
+
+        winner = self.view.checkwin()
+
+        # Bot Auto Move
+        if not winner and self.view.p2.bot:
+            unused_moves = [b.index for b in self.view.children if not b.owner]
+            if unused_moves:
+                choice = random.choice(unused_moves)
+                self.view.children[choice].owner = self.view.p2
+                self.view.children[choice].label = self.view.labels[self.view.p2]
+
+                winner = self.view.checkwin()
+
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)
 
 
-class Game:
+# class RematchButton(discord.ui.Button):
+
+#     view: "Game"  # Tell intellisense View is a game obj
+
+#     def __init__(self):
+#         super().__init__(label="Rematch", style=discord.ButtonStyle.blurple, row=3)
+
+#     async def callback(self, interaction: discord.Interaction):
+
+#         print("Entering Callback")
+
+#         for button in self.view.children[:-1]:
+#             button.reset()
+
+#         self.view.headline = f"{self.view.p1.display_name} VS {self.view.p2.display_name}"
+#         # self.view.remove_item(self.view.children[-1])
+
+#         print("here")
+
+#         await interaction.response.edit_message(embed=self.view.embed, view=self.view)
+
+
+class Game(discord.ui.View):
+
+    children: list["TicTacToeButton"]
+
     def __init__(self, p1: discord.Member, p2: discord.Member):
         self.p1 = p1
         self.p2 = p2
-        self.turn = p1
-        self.state = State.ONGOING
-        self.tie = True
-        self.board = [TicTacToeButton(i, self) for i in range(9)]
+        self.headline = f"{p1.display_name} VS {p2.display_name}"
+        self.labels = {p1: "X", p2: "O"}
+        self.score = [0, 0]
+
+        super().__init__(*[TicTacToeButton(i) for i in range(9)])
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Only allow the player whose turn it is"""
+        return interaction.user == self.turn
 
     @property
-    def headline(self):
-        match self.state:
-            case State.P1WIN:
-                return f"{self.p1.nick or self.p1.name} Wins"
-            case State.P2WIN:
-                return f"{self.p2.nick or self.p2.name} Wins"
-            case State.TIE:
-                return f"Wow. Looks like you both lost"
-            case _:
-                return f"{self.p1.nick or self.p1.name} VS {self.p2.nick or self.p2.name}"
-
-    @property
-    def subline(self):
-        if self.state == State.ONGOING:
-            return f"({self.currentlabel}) {self.turn.nick or self.turn.name}'s Turn"
+    def turn(self) -> discord.Member:
+        """Calculate who's turn it is."""
+        moves = [0 for b in self.children if isinstance(b, TicTacToeButton) and b.owner].count(0)
+        return self.p2 if moves % 2 else self.p1
 
     @property
     def embed(self):
         return discord.Embed(
-            title=self.headline,
-            description=self.subline,
+            title=f"{self.headline} • {self.score[0]} - {self.score[1]}",
+            description=f"{self.turn.display_name}'s Turn",
             color=discord.Color.blue()
         )
 
-    @property
-    def view(self):
-        return discord.ui.View(*self.board, timeout=None)
-
-    @property
-    def currentlabel(self):
-        """Retrieve the label for the current turn player"""
-        if self.turn == self.p1:
-            return "X"
-        return "O"
-
-    def highlight(self, *indexes):
-        for i in indexes:
-            self.board[i].style = discord.ButtonStyle.green
-
-    def changeturn(self):
-        """Swaps whose turn it is."""
-        if self.turn == self.p1:
-            self.turn = self.p2
-        else:
-            self.turn = self.p1
-
-    # TODO This function could be better by removing duplicate code
-    def checkwin(self):
+    def checkwin(self) -> discord.Member | None:
         """Checks to see if there is a winner. Sets winner and highlights path as needed."""
-        board = [btn.owner for btn in self.board]
+        p1_moves = {b.index for b in self.children if b.owner == self.p1}
+        p2_moves = {b.index for b in self.children if b.owner == self.p2}
+        all_moves = p1_moves.union(p2_moves)
 
-        # Horizontals
-        for i in [0, 3, 6]:
-            if all(player == self.p1 for player in [board[0+i], board[1+i], board[2+i]]):
-                self.state = State.P1WIN
-                self.highlight(0+i, 1+i, 2+i)
-            elif all(player == self.p2 for player in [board[0+i], board[1+i], board[2+i]]):
-                self.state = State.P2WIN
-                self.highlight(0+i, 1+i, 2+i)
+        index_sets = [
+            {0, 1, 2}, {3, 4, 5}, {6, 7, 8},  # Horizontal
+            {0, 3, 6}, {1, 4, 7}, {2, 4, 8},  # Vertical
+            {0, 4, 8}, {2, 4, 6}  # Diagonal
+        ]
 
-        # Verticals
-        for i in range(3):
-            if all(player == self.p1 for player in [board[0+i], board[3+i], board[6+i]]):
-                self.state = State.P1WIN
-                self.highlight(0+i, 3+i, 6+i)
-            elif all(player == self.p2 for player in [board[0+i], board[3+i], board[6+i]]):
-                self.state = State.P2WIN
-                self.highlight(0+i, 3+i, 6+i)
+        for iset in index_sets:
+            if iset.issubset(p1_moves):
+                self.highlight(iset)
+                self.end(winner=self.p1)
+                return self.p1
 
-        # Diagonals
-        if all(player == self.p1 for player in [board[0], board[4], board[8]]):
-            self.state = State.P1WIN
-            self.highlight(0, 4, 8)
-        elif all(player == self.p2 for player in [board[0], board[4], board[8]]):
-            self.state = State.P2WIN
-            self.highlight(0, 4, 8)
+            if iset.issubset(p2_moves):
+                self.highlight(iset)
+                self.end(winner=self.p2)
+                return self.p2
 
-        if all(player == self.p1 for player in [board[2], board[4], board[6]]):
-            self.state = State.P1WIN
-            self.highlight(2, 4, 6)
-        elif all(player == self.p2 for player in [board[2], board[4], board[6]]):
-            self.state = State.P2WIN
-            self.highlight(2, 4, 6)
-
-        # Check for tie
-        if self.state == State.ONGOING and all(board):
-            self.state = State.TIE
-
-    def automove(self):
-        """The function called to make the bot move"""
-        options = [b for b in self.board if not b.owner]
-        choice = random.choice(options)
-        self.makemove(choice.index)
-
-    def makemove(self, index):
-        """Places a move on the board"""
-        button = self.board[index]
-        button.owner = self.turn
-        button.label = self.currentlabel
-        button.disabled = True
-
-        self.changeturn()
-
-        # Bot needs to automove since it cannot click buttons
-        if self.turn.bot:
-            # Winner must be checked so bot doesnt move after a win
-            self.checkwin()
-            if self.state == State.ONGOING:
-                self.automove()
-
-    def end(self):
-        for button in self.board:
-            button.disabled = True
-
-
-class TicTacToeButton(discord.ui.Button):
-    def __init__(self, index: int, game: Game):
-        super().__init__(label="\u200b", row=index // 3)
-        self.game = game
-        self.index = index
-        self.owner = None
-
-    async def callback(self, interaction: discord.Interaction):
-        if interaction.user != self.game.turn:
+        if len(all_moves) == 9:
+            self.highlight(all_moves, discord.ButtonStyle.red)
+            self.end(winner=None)
             return
 
-        self.game.makemove(self.index)
-        self.game.checkwin()
+    def highlight(
+        self, indexes: Sequence[int],
+        style: discord.ButtonStyle = discord.ButtonStyle.green
+    ):
+        """Change the style of the buttons based on index."""
+        for i in indexes:
+            self.children[i].style = style
 
-        if self.game.state != State.ONGOING:
-            self.game.end()
+    def end(self, winner: discord.Member | None):
+        """Wrap up the game and disabled all of the buttons."""
+        match winner:
+            case self.p1:
+                self.headline = f"{self.p1.display_name} Wins!"
+                self.score[0] += 1
+            case self.p2:
+                self.headline = f"{self.p2.display_name} Wins!"
+                self.score[1] += 1
+            case None:
+                self.headline = "It's a Tie :("
 
-        await interaction.response.edit_message(embed=self.game.embed, view=self.game.view)
+        for button in self.children:
+            button.disabled = True
+
+        # self.add_item(RematchButton())
