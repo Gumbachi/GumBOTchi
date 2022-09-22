@@ -168,18 +168,18 @@ class Jukebox(discord.ui.View):
 
         vc = interaction.user.voice.channel
 
+        try:
+            _ = self.voice_client
+        except NoVoiceClient:
+            await vc.connect()
+
         # select the song
         for song in self.history:
             if song.title == select.values[0]:
                 song_to_play = song
                 break
         else:
-            song_to_play = await Song.from_query(select.values[0])
-
-        try:
-            _ = self.voice_client
-        except NoVoiceClient:
-            await vc.connect()
+            song_to_play = await Song.from_query(select.values[0], loop=self.voice_client.loop)
 
         if self.current is None:
             self.play(song_to_play.clone())
