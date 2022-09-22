@@ -231,6 +231,12 @@ class Jukebox(discord.ui.View):
         self.voice_client._player.after = None  # clear the after because play next is called manually
         self.play_next_song()
 
+        try:
+            # reset the after because play next is called manually
+            self.voice_client._player.after = self.play_next_song
+        except NoVoiceClient:
+            print("MISSING VC")
+
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="🖼️", row=1, )
