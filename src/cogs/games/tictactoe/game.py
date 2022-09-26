@@ -18,46 +18,55 @@ class TicTacToeButton(discord.ui.Button):
         self.disabled = False
         self.style = discord.ButtonStyle.gray
         self.label = "\u200b"
+        self.owner = None
 
     async def callback(self, interaction: discord.Interaction):
         self.owner = interaction.user
         self.label = self.view.labels[interaction.user]
 
-        winner = self.view.checkwin()
+        is_finished, _ = self.view.check_win()
 
         # Bot Auto Move
-        if not winner and self.view.p2.bot:
-            unused_moves = [b.index for b in self.view.children if not b.owner]
-            if unused_moves:
-                choice = random.choice(unused_moves)
-                self.view.children[choice].owner = self.view.p2
-                self.view.children[choice].label = self.view.labels[self.view.p2]
+        if not is_finished and self.view.p2.bot:
+            unused_moves = self.view.get_moves(player=None)
+            choice = random.choice(unused_moves)
+            self.view.children[choice].owner = self.view.p2
+            self.view.children[choice].label = self.view.labels[self.view.p2]
 
-                winner = self.view.checkwin()
+        match self.view.check_win():
+            # Tie
+            case (True, None):
+                self.view.highlight(range(9), discord.ButtonStyle.red)
+                self.view.end(winner=None)
+            # Winner
+            case (True, (winner, win_indexes)):
+                self.view.highlight(win_indexes),
+                self.view.end(winner=winner)
+            # Game Continues
+            case _:
+                self.view.description = f"{self.view.turn.display_name}'s Turn"
 
         await interaction.response.edit_message(embed=self.view.embed, view=self.view)
 
 
-# class RematchButton(discord.ui.Button):
+class RematchButton(discord.ui.Button):
 
-#     view: "Game"  # Tell intellisense View is a game obj
+    view: "Game"  # Tell intellisense View is a game obj
 
-#     def __init__(self):
-#         super().__init__(label="Rematch", style=discord.ButtonStyle.blurple, row=3)
+    def __init__(self):
+        super().__init__(label="Rematch", style=discord.ButtonStyle.blurple, row=3)
 
-#     async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction):
 
-#         print("Entering Callback")
+        self.view.remove_item(self.view.children[-1])
 
-#         for button in self.view.children[:-1]:
-#             button.reset()
+        for button in self.view.children:
+            button.reset()
 
-#         self.view.headline = f"{self.view.p1.display_name} VS {self.view.p2.display_name}"
-#         # self.view.remove_item(self.view.children[-1])
+        self.view.headline = f"{self.view.p1.display_name} VS {self.view.p2.display_name}"
+        self.view.description = f"{self.view.turn.display_name}'s Turn"
 
-#         print("here")
-
-#         await interaction.response.edit_message(embed=self.view.embed, view=self.view)
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)
 
 
 class Game(discord.ui.View):
@@ -68,6 +77,7 @@ class Game(discord.ui.View):
         self.p1 = p1
         self.p2 = p2
         self.headline = f"{p1.display_name} VS {p2.display_name}"
+        self.description = f"{self.p1.display_name}'s Turn"
         self.labels = {p1: "X", p2: "O"}
         self.score = [0, 0]
 
@@ -75,49 +85,51 @@ class Game(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Only allow the player whose turn it is"""
+        if len(self.children) > 9:
+            return interaction.user in (self.p1, self.p2)
         return interaction.user == self.turn
 
     @property
     def turn(self) -> discord.Member:
         """Calculate who's turn it is."""
         moves = [0 for b in self.children if isinstance(b, TicTacToeButton) and b.owner].count(0)
-        return self.p2 if moves % 2 else self.p1
+        return self.p2 if moves % 2 != 0 else self.p1
 
     @property
     def embed(self):
         return discord.Embed(
             title=f"{self.headline} • {self.score[0]} - {self.score[1]}",
-            description=f"{self.turn.display_name}'s Turn",
+            description=self.description,
             color=discord.Color.blue()
         )
 
-    def checkwin(self) -> discord.Member | None:
-        """Checks to see if there is a winner. Sets winner and highlights path as needed."""
-        p1_moves = {b.index for b in self.children if b.owner == self.p1}
-        p2_moves = {b.index for b in self.children if b.owner == self.p2}
+    def get_moves(self, player: discord.Member | None) -> list[int]:
+        """Return the moves of a specific player"""
+        return [b.index for b in self.children if isinstance(b, TicTacToeButton) and b.owner == player]
+
+    def check_win(self) -> tuple[bool, tuple[discord.Member, set[int]] | None]:
+        """Checks to see if there is a winner. Returns (is_finished, (winner, win_indexes) or None)"""
+        p1_moves = set(self.get_moves(self.p1))
+        p2_moves = set(self.get_moves(self.p2))
         all_moves = p1_moves.union(p2_moves)
 
         index_sets = [
             {0, 1, 2}, {3, 4, 5}, {6, 7, 8},  # Horizontal
-            {0, 3, 6}, {1, 4, 7}, {2, 4, 8},  # Vertical
+            {0, 3, 6}, {1, 4, 7}, {2, 5, 8},  # Vertical
             {0, 4, 8}, {2, 4, 6}  # Diagonal
         ]
 
         for iset in index_sets:
             if iset.issubset(p1_moves):
-                self.highlight(iset)
-                self.end(winner=self.p1)
-                return self.p1
+                return (True, (self.p1, iset))
 
             if iset.issubset(p2_moves):
-                self.highlight(iset)
-                self.end(winner=self.p2)
-                return self.p2
+                return (True, (self.p2, iset))
 
         if len(all_moves) == 9:
-            self.highlight(all_moves, discord.ButtonStyle.red)
-            self.end(winner=None)
-            return
+            return (True, None)
+
+        return (False, None)
 
     def highlight(
         self, indexes: Sequence[int],
@@ -142,4 +154,6 @@ class Game(discord.ui.View):
         for button in self.children:
             button.disabled = True
 
-        # self.add_item(RematchButton())
+        self.description = ""
+
+        self.add_item(RematchButton())
