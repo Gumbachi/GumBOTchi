@@ -104,7 +104,7 @@ class Game(discord.ui.View):
         )
 
     def get_moves(self, player: discord.Member | None) -> list[int]:
-        """Return the moves of a specific player"""
+        """Return the moves/indexes of a specific player"""
         return [b.index for b in self.children if isinstance(b, TicTacToeButton) and b.owner == player]
 
     def check_win(self) -> tuple[bool, tuple[discord.Member, set[int]] | None]:
