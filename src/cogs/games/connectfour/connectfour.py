@@ -1,5 +1,6 @@
 import discord
 from discord.commands import user_command
+
 from .game import Game
 
 
@@ -11,9 +12,9 @@ class ConnectFour(discord.Cog):
 
     @user_command(name="Connect 4")
     async def user_connectfour(self, ctx: discord.ApplicationContext, opponent: discord.Member):
-        """Context menu Rock Paper Scissors"""
+        """Context menu Connect Four"""
         game = Game(ctx.author, opponent)
-        await ctx.respond(embed=game.embed, view=game.view)
+        await ctx.respond(embed=game.embed, view=game)
 
 
 def setup(bot: discord.Bot):
