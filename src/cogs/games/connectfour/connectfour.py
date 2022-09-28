@@ -13,6 +13,10 @@ class ConnectFour(discord.Cog):
     @user_command(name="Connect 4")
     async def user_connectfour(self, ctx: discord.ApplicationContext, opponent: discord.Member):
         """Context menu Connect Four"""
+
+        if opponent == ctx.author:
+            return await ctx.respond("I get lonely too, that doesnt mean you have to play by yourself. Play against me", ephemeral=True)
+
         game = Game(ctx.author, opponent)
         await ctx.respond(embed=game.embed, view=game)
 
