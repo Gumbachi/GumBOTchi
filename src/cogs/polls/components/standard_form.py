@@ -1,18 +1,17 @@
-"""Holds the form/Modal Dialog used to create a poll."""
+"""Holds the form/Modal Dialog used to create a standard poll."""
 
 import discord
-from discord.ui import InputText, Modal
 
-from .poll import Poll
+from ..standard_poll import StandardPoll
 
 
-class PollCreationForm(Modal):
+class StandardPollForm(discord.ui.Modal):
     def __init__(self, timeout: float, max_votes: int, live: bool):
         self.view_timeout = timeout
         self.max_votes = max_votes
         self.live = live
 
-        question = InputText(
+        question = discord.ui.InputText(
             label="The Question",
             placeholder="Is GumBOTchi the best bot ever made?",
             min_length=2
@@ -26,7 +25,7 @@ class PollCreationForm(Modal):
         ]
 
         options = [
-            InputText(
+            discord.ui.InputText(
                 label=f"Option {i}",
                 placeholder=placeholder,
                 min_length=1,
@@ -42,7 +41,7 @@ class PollCreationForm(Modal):
         question = self.children[0].value
         options = [child.value for child in self.children[1:] if child.value]
 
-        poll = Poll(
+        poll = StandardPoll(
             question=question,
             options=options,
             timeout=self.view_timeout,
@@ -51,5 +50,4 @@ class PollCreationForm(Modal):
             owner=interaction.user
         )
 
-        sent_interaction = await interaction.response.send_message(embed=poll.embed, view=poll)
-        poll.interaction = sent_interaction
+        await interaction.response.send_message(embed=poll.embed, view=poll)

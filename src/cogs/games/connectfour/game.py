@@ -1,4 +1,5 @@
 import random
+from itertools import chain
 
 import discord
 
@@ -48,7 +49,7 @@ class Game(discord.ui.View):
     @property
     def turn(self) -> discord.Member:
         """Calculate whose turn it is to play"""
-        unused_count = len(self.get_moves(Piece.EMPTY))
+        unused_count = self.count_moves(Piece.EMPTY)
         return self.p1 if unused_count % 2 == 0 else self.p2
 
     @property
@@ -66,10 +67,10 @@ class Game(discord.ui.View):
             color=color
         )
 
-    def get_moves(self, piece: str) -> list[tuple[int, int]]:
-        """Return list of tuples representing moves (Row, Col)"""
-        return [(row, col) for row in range(self.ROWS)
-                for col in range(self.COLS) if self.board[row][col] == piece]
+    def count_moves(self, piece: str) -> int:
+        """Count how many moves there are from a specific piece"""
+        flattened = list(chain.from_iterable(self.board))
+        return flattened.count(piece)
 
     def get_column(self, index: int) -> list[str]:
         """Returns a column of the board."""
@@ -110,7 +111,7 @@ class Game(discord.ui.View):
                 if self.column_is_full(index=i):
                     continue
 
-                self.submit_move(i)  # TODO make this i instead of 5
+                self.submit_move(i)
                 break
 
         finished, winner = self.check_win()
@@ -156,7 +157,7 @@ class Game(discord.ui.View):
                     return True, self.players[group[0]]
 
         # Game is a tie check
-        if self.get_moves(piece=Piece.EMPTY) == 0:
+        if self.count_moves(piece=Piece.EMPTY) == 0:
             return True, None
 
         return False, None
