@@ -113,7 +113,7 @@ class IEXAPI:
     async def _get(self, url: str, params: dict | None = None) -> dict:
         """Underlying generic async api get request"""
 
-        params = {} if params == None else params
+        params = params or {}
         params.update({"token": self.iexkey})
 
         # Make web request asynchronously

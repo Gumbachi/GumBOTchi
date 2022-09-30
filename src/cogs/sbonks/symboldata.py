@@ -23,18 +23,8 @@ class SymbolData:
     datapoints: list[float]
     previous_close: float | None = None
     datalength: int = 390  # What is the max amount of data points
-    timeframe: str = "1D"
+    timeframe: str = "1D"  # The timeframe label to use on the graph
     style: str = "./src/cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
-
-    @property
-    def color(self):
-        """What color the graph should be based on prices."""
-        return "lime" if self.price >= self.previous_close else "red"
-
-    @property
-    def arrow(self):
-        "UP/DOWN arrow determining if mooning or sinking"
-        return "▲" if self.price >= self.previous_close else "▼"
 
     @staticmethod
     def mock(text: str) -> str:
@@ -55,6 +45,8 @@ class SymbolData:
 
     def graph(self, precision: int = 5, description: str | None = None, mock: bool = False) -> discord.File:
         """Draw chart representing the symboldata"""
+        arrow = "▲" if self.price >= self.previous_close else "▼"
+        color = "lime" if self.price >= self.previous_close else "red"
         prices = self.get_interpolated_data(precision=precision)
 
         # plot graph
@@ -62,7 +54,7 @@ class SymbolData:
         plt.clf()  # Reset so graphs dont overlap. This must be after plt.style.use
         plt.axis('off')  # disable labels maybe could move this to .mplstyle
         plt.xlim(0, len(prices))
-        plt.plot(list(range(len(prices))), prices, color=self.color)
+        plt.plot(list(range(len(prices))), prices, color=color)
         plt.axhline(y=self.previous_close, color="grey", linestyle="dotted")
         ax = plt.gca()  # get current axes for transform
 
@@ -73,9 +65,9 @@ class SymbolData:
                  size=35, c="white", transform=ax.transAxes)
 
         # add change text
-        change_text = f"{self.arrow} {abs(self.change):.2f} ({self.change_percent:.2f}%)"
+        change_text = f"{arrow} {abs(self.change):.2f} ({self.change_percent:.2f}%)"
         plt.text(x=0, y=1, s=change_text, va="bottom", ha="left",
-                 size=25, c=self.color, transform=ax.transAxes)
+                 size=25, c=color, transform=ax.transAxes)
 
         # Draw timeframe text
         plt.text(x=1, y=1.15, s=self.timeframe, va="bottom", ha="right",
