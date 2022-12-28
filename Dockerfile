@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.10-slim-buster
+FROM python:3.11.1-slim-buster
 
 RUN apt-get update && apt-get install -y ffmpeg gcc g++ --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
