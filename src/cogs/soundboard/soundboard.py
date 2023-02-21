@@ -1,8 +1,10 @@
 import os
 import random
+import shutil
 
 import discord
 from discord.commands import slash_command
+
 from cogs.soundboard.components import SoundboardMenu
 
 
@@ -27,7 +29,7 @@ class SoundBoard(discord.Cog):
 
 def setup(bot: discord.Bot):
     """Entry point for loading cogs. Required for all cogs"""
-    if os.getenv("FFMPEG_PATH") != "ffmpeg" and not os.path.isfile(os.getenv("FFMPEG_PATH")):
-        raise FileNotFoundError("Couldn't locate FFMPEG executable")
+    if shutil.which("ffmpeg") == None:
+        raise FileNotFoundError("FFMPEG is not available. Make sure it's added to path")
 
     bot.add_cog(SoundBoard(bot))

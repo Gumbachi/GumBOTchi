@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import discord
 from discord import guild_only, option, slash_command
@@ -33,13 +34,13 @@ class Music(discord.Cog):
             pass  # ignore failed deletion
 
         await ctx.send(embed=jukebox.embed, view=jukebox)
-        await interaction.edit_original_message(content="Vibe Established 🎧")
+        await interaction.edit_original_response(content="Vibe Established 🎧")
 
 
 def setup(bot: discord.Bot):
     """Entry point for loading cogs. Required for all cogs"""
-    ffmpeg_path = os.getenv("FFMPEG_PATH") or ""
-    if ffmpeg_path != "ffmpeg" and not os.path.isfile(ffmpeg_path):
-        raise FileNotFoundError("Couldn't locate FFMPEG executable")
+
+    if shutil.which("ffmpeg") == None:
+        raise FileNotFoundError("FFMPEG is not available. Make sure it's added to path")
 
     bot.add_cog(Music(bot))

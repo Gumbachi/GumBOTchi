@@ -1,5 +1,6 @@
-import common.utils as utils
 import discord
+
+import common.utils as utils
 from common.cfg import Tenor
 
 from ..embeds import NOTHING_PLAYING
@@ -188,7 +189,7 @@ class Jukebox(discord.ui.View):
             self.enqueue(song_to_play.clone())
             self.description = f"{interaction.user.display_name} queued {song.title}"
 
-        await interaction.edit_original_message(embed=self.embed, view=self)
+        await interaction.edit_original_response(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="🔁", row=1)
     async def repeat_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
