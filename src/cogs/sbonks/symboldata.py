@@ -24,7 +24,7 @@ class SymbolData:
     previous_close: float | None = None
     datalength: int = 390  # What is the max amount of data points
     timeframe: str = "1D"  # The timeframe label to use on the graph
-    style: str = "./src/cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
+    style: str = "src/cogs/sbonks/styles/sbonks.mplstyle"  # The mpl style file
 
     @staticmethod
     def mock(text: str) -> str:

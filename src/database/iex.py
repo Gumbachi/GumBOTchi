@@ -17,7 +17,7 @@ def get_iexkey(id: int) -> str | None:
     return data["iexkey"]
 
 
-def set_iexkey(id: int, key: str):
+def set_iexkey(id: int, key: str) -> None:
     """Set the publishable API key set for the guild."""
 
     # add guild if missing

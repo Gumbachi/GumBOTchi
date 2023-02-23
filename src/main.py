@@ -4,7 +4,7 @@ import os
 import discord
 from dotenv import load_dotenv
 
-print(load_dotenv())
+load_dotenv()
 
 # Create bot based on environment
 if os.getenv("DEBUG", None) is not None:
@@ -23,7 +23,7 @@ else:
 
 
 @bot.listen()
-async def on_ready():
+async def on_ready() -> None:
     """Bot is now ready to rumble."""
     print("Ready to go")
 
