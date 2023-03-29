@@ -32,7 +32,7 @@ cogs = [
     "cogs.games.rps.rps",
     "cogs.games.tictactoe.tictactoe",
     "cogs.games.connectfour.connectfour",
-    "cogs.craigslister.craigslister",
+    "cogs.craigslister.claire",
     "cogs.emojifier.emojifier",
     "cogs.soundboard.soundboard",
     "cogs.polls.polls",

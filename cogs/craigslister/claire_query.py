@@ -1,4 +1,4 @@
-from craigslist import CraigslistForSale
+from craigslist_headless import CraigslistForSale
 from dataclasses import dataclass, field
 from typing import List
 import discord
@@ -29,6 +29,7 @@ class ClaireQuery:
 
     def to_db(self) -> dict:
         """Converts Claire Query to JSON for DB"""
+
         final_dic = {}
         for attr in self.__slots__:
             if attr not in ["sent_listings"]:
@@ -38,6 +39,7 @@ class ClaireQuery:
     def search(self) -> List[dict]:
         """Uses the query to search Craigslist. 
         Returns a list of ALL matching posts"""
+
         listings = []
 
         # Iterate through keywords and search CL
@@ -87,7 +89,9 @@ class ClaireQuery:
         return filtered_listings
 
     def is_spam(self, listing: dict) -> bool:
-        """Checks listing for spam words, if it passes the tolerance then it's omitted"""
+        """Checks listing for spam words, \
+        if it passes the tolerance then it's omitted"""
+
         spam = 0
         body = listing["body"]
 
@@ -112,6 +116,7 @@ class ClaireQuery:
 
     def clean_listings(self, listings: List[dict]) -> List[dict]:
         """Cleans up the listings to prepare for sending."""
+
         clean_listings = []
         for listing in listings:
             clean_listing = listing
@@ -121,8 +126,8 @@ class ClaireQuery:
                     body = [sentence for sentence in clean_listing['body'].split(
                             '\n') if 'http' not in sentence and len(sentence) > 2]
                     body = '\n'.join(body)
-                except:
-                    pass
+                except Exception as e:
+                    print("Error", e)
                 finally:
                     clean_listing['body'] = body
             else:
@@ -137,6 +142,7 @@ class ClaireQuery:
 
     async def send_listings(self, bot, listings):
         """ Sends the listings"""
+
         channel = bot.get_channel(self.channel)
         if self.ping:
             user = bot.get_user(self.owner_id)
@@ -152,7 +158,9 @@ class ClaireQuery:
 
             # Formats and sends the embed
             embed = discord.Embed(
-                                title=f"{listing['price']}, {listing['name']}",
-                                description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
-                                color=discord.Color.blue())
+                title=f"{listing['price']}, {listing['name']}",
+                description=f"{body}\n\n[Link to Craigslist Post]({listing['url']})",
+                color=discord.Color.blue()
+            )
+
             await channel.send(embed=embed)

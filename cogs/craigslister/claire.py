@@ -1,6 +1,3 @@
-from email.policy import default
-from pathlib import Path
-
 import discord
 from discord.ext import tasks
 from discord import ApplicationContext, slash_command, Option
@@ -9,7 +6,7 @@ from common.database import db
 from datetime import datetime
 
 class ClaireCog(discord.Cog):
-    """Handles simple commands and listeners."""
+    """Handles all of the logic for Craigslist monitoring"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -17,20 +14,49 @@ class ClaireCog(discord.Cog):
         self.claire.update()
         self.lookup_queries.start()
 
-    @slash_command(name="StepOnMeClaire")
+    @slash_command(name="steponmeclaire")
     async def clairme(
         self, ctx: ApplicationContext,
-        zip: Option(int, "Zip code to search (eg. 20815)"),
-        state: Option(str, "State to search (eg. MD)"),
-        site: Option(str, "Get from your local site. Eg: https://<washingtondc>.craigslist.org/ would be washingtondc"),
-        budget: Option(int, "Maximum price you will pay"),
-        keywords: Option(str, "Keywords to search for, separate each keyword with a comma. Eg. Desk, Office Desk, Wood Desk"),
-        distance: Option(int, "Maximum distance in miles", default=20),
-        has_image: Option(bool, "Only show listings with image", default=True),
-        spam_tolerance: Option(int, "How many spam words are allowed before the listing is filtered? Default is 5. \
-                                    Lower values mean more posts that might be spam", default=5),
-        ping: Option(bool, "If you want to be pinged or not (defaults to yes)", default=True),
-        category: Option(str, "CL Code to search (Advanced: don't touch unless you know what you're doing)", default="sss"),
+        zip: Option(int,
+            "Zip code to search (eg. 20815)"
+        ),
+        state: Option(str,
+            "State to search (eg. MD)"
+        ),
+        site: Option(str,
+            "Get from your local site. \
+            Eg: https://<washingtondc>.craigslist.org/ would be washingtondc"
+        ),
+        budget: Option(int,
+            "Maximum price you will pay"
+        ),
+        keywords: Option(str,
+            "Keywords to search for, separate each keyword with a \
+            comma. Eg. Desk, Office Desk, Wood Desk"
+        ),
+        distance: Option(int,
+            "Maximum distance in miles",
+            default=20
+        ),
+        has_image: Option(bool,
+            "Only show listings with image",
+            default=True
+        ),
+        spam_tolerance: Option(int,
+            "How many spam words are allowed \
+            before the listing is filtered? Default is 5. \
+            Lower values mean more posts that might be spam",
+            default=5
+        ),
+        ping: Option(bool,
+            "If you want to be pinged or not (defaults to yes)",
+            default=True
+        ),
+        category: Option(str,
+            "CL Code to search \
+            (Advanced: don't touch unless you know what you're doing)",
+            default="sss"
+        ),
     ):
         """Creates a query to monitor in Craigslist"""
 
@@ -47,10 +73,12 @@ class ClaireCog(discord.Cog):
             category=category, 
             has_image=has_image, 
             ping=ping)
+        
         try:
-            new_query.search()
-        except:
-            return await ctx.respond("You created an invalid query please double check your parameters")
+            new_query.search() # Dummy search to see if it works
+        except Exception as e:
+            error = f"Invalid query please double check your parameters (Error: {e})"
+            return await ctx.respond(error)
 
         result = db.insert_query(new_query)
 
@@ -59,13 +87,14 @@ class ClaireCog(discord.Cog):
             self.claire.update()
             return await ctx.respond("Added.")
         else:
-            return await ctx.respond("Failed to add to DB.")
+            return await ctx.respond("Failed to add to DB. Try again later.")
 
-    @slash_command(name="MyBallsArePurple")
+    @slash_command(name="myballsarepurple")
     async def unclaireme(self, ctx,
-                                    index: Option(int, "Index of query you want to delete")
-                                    ):
+                        index: Option(int, "Index of query you want to delete")
+        ):
         """Deletes a Claire query"""
+
         queries = self.claire.get_user_queries(ctx.author.id)
         to_delete = queries[index-1]
         result = db.delete_query(to_delete)
@@ -76,7 +105,7 @@ class ClaireCog(discord.Cog):
         else:
             return await ctx.respond("Didn't work.")
 
-    @slash_command(name="ClaireQueries")
+    @slash_command(name="clairequeries")
     async def show_queries(self, ctx):
         """Display currently monitored queries"""
 
@@ -86,7 +115,7 @@ class ClaireCog(discord.Cog):
             color=discord.Color.blue()
         )
         query_embed.set_footer(
-            text="If this looks empty it's because you don't have any queries being monitored")
+            text="If this looks empty it's because you don't have any queries")
 
         # Populate the embed with data
         for i, query in enumerate(queries, 1):
