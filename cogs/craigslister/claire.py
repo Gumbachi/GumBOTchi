@@ -24,15 +24,13 @@ class ClaireCog(discord.Cog):
             "State to search (eg. MD)"
         ),
         site: Option(str,
-            "Get from your local site. \
-            Eg: https://<washingtondc>.craigslist.org/ would be washingtondc"
+            "Get from your local site. Eg: https://<washingtondc>.craigslist.org would be washingtondc"
         ),
         budget: Option(int,
             "Maximum price you will pay"
         ),
         keywords: Option(str,
-            "Keywords to search for, separate each keyword with a \
-            comma. Eg. Desk, Office Desk, Wood Desk"
+            "Keywords to search for, separate each keyword with a comma. Eg. Desk, Office Desk, Wood Desk"
         ),
         distance: Option(int,
             "Maximum distance in miles",
@@ -43,9 +41,7 @@ class ClaireCog(discord.Cog):
             default=True
         ),
         spam_tolerance: Option(int,
-            "How many spam words are allowed \
-            before the listing is filtered? Default is 5. \
-            Lower values mean more posts that might be spam",
+            "How many spam words are allowed? Default is 5. Lower values mean more posts that might be spam",
             default=5
         ),
         ping: Option(bool,
@@ -61,7 +57,7 @@ class ClaireCog(discord.Cog):
         """Creates a query to monitor in Craigslist"""
 
         new_query = ClaireQuery(
-            uid= ctx.user.id, 
+            owner_id= ctx.user.id, 
             zip_code=zip, 
             state=state, 
             channel=ctx.channel.id, 
@@ -73,6 +69,8 @@ class ClaireCog(discord.Cog):
             category=category, 
             has_image=has_image, 
             ping=ping)
+        
+        await ctx.defer()
         
         try:
             new_query.search() # Dummy search to see if it works
@@ -91,7 +89,7 @@ class ClaireCog(discord.Cog):
 
     @slash_command(name="myballsarepurple")
     async def unclaireme(self, ctx,
-                        index: Option(int, "Index of query you want to delete")
+        index: Option(int, "Index of query you want to delete")
         ):
         """Deletes a Claire query"""
 

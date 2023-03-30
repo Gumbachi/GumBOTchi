@@ -10,24 +10,29 @@ class Claire:
     def update(self):
         """Fetches latest queries from DB, creates custom query objects and check
         if the object is already being tracked in memory"""
+
         queries = db.get_queries()
         for query in queries:
             in_memory = False
 
-            query_obj = ClaireQuery(
-                    uid=query["owner_id"],
-                    zip_code=query["zip_code"],
-                    state=query["state"],
-                    channel=query["channel"],
-                    site=query["site"],
-                    keywords=query["keywords"],
-                    spam_tolerance=query["spam_tolerance"],
-                    budget=query["budget"],
-                    distance=query["distance"],
-                    category=query["category"],
-                    has_image=query["has_image"],
-                    ping=query["ping"]
-                )
+            try:
+                query_obj = ClaireQuery(
+                        owner_id=query["owner_id"],
+                        zip_code=query["zip_code"],
+                        state=query["state"],
+                        channel=query["channel"],
+                        site=query["site"],
+                        keywords=query["keywords"],
+                        spam_tolerance=query["spam_tolerance"],
+                        budget=query["budget"],
+                        distance=query["distance"],
+                        category=query["category"],
+                        has_image=query["has_image"],
+                        ping=query["ping"]
+                    )
+            except Exception as e:
+                print('Corrupted query skipping...', e)
+                continue
             
             # Check if it's already in memory
             for q in self.active_queries:
