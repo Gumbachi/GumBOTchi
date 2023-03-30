@@ -1,2 +1,0 @@
-class NoVoiceClient(Exception):
-    pass
