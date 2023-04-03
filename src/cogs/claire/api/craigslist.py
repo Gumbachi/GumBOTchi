@@ -44,7 +44,7 @@ class Craigslist:
                                 url=listing.get('url'),
                                 posted=datetime.strptime(
                                     listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
-                                price=listing.get('price'),
+                                price=listing.get('price').split("$")[1],
                                 images=listing.get('images'),
                                 details=listing.get('body'),
                                 attributes=listing.get('attrs'),
@@ -62,7 +62,7 @@ class Craigslist:
                                 url=listing.get('url'),
                                 posted=datetime.strptime(
                                     listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
-                                price=listing.get('price'),
+                                price=listing.get('price').split("$")[1],
                                 images=listing.get('images'),
                                 details=listing.get('body'),
                                 attributes=listing.get('attrs'),

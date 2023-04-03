@@ -13,6 +13,8 @@ class ClaireQuery:
     channel: int
     site: str
     state: str
+    lat: float
+    lon: float
     keywords: str
     budget: int = 1000
     distance: int = 30

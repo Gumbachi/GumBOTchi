@@ -4,7 +4,7 @@ from discord import ApplicationContext, slash_command, Option
 from cogs.claire.claire_model import ClaireQuery, Claire
 from database.claire import insert_query, delete_query
 from datetime import datetime
-
+from .api.maps import get_lat_lon
 class ClaireCog(discord.Cog):
     """Handles all of the logic for Craigslist monitoring"""
 
@@ -17,7 +17,7 @@ class ClaireCog(discord.Cog):
     @slash_command(name="steponmeclaire")
     async def clairme(
         self, ctx: ApplicationContext,
-        zip: Option(int,
+        zip_code: Option(int,
             "Zip code to search (eg. 20815)"
         ),
         state: Option(str,
@@ -55,13 +55,15 @@ class ClaireCog(discord.Cog):
         ),
     ):
         """Creates a query to monitor in Craigslist"""
-
+        lat, lon = get_lat_lon(zip_code)
         new_query = ClaireQuery(
             owner_id= ctx.user.id, 
-            zip_code=zip, 
+            zip_code=zip_code, 
             state=state, 
             channel=ctx.channel.id, 
-            site = site, 
+            site = site,
+            lat=lat,
+            lon=lon,
             keywords=keywords, 
             spam_tolerance=spam_tolerance, 
             budget=budget, 
@@ -127,7 +129,7 @@ class ClaireCog(discord.Cog):
 
     @tasks.loop(seconds=300)
     async def lookup_queries(self):
-        print("Checking Craigslist", datetime.now())
+        print("Claire is searching", datetime.now())
         await self.claire.check_queries(self.bot)
         
 

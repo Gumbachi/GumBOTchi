@@ -66,6 +66,9 @@ class ClaireListing:
         )
 
         for attribute in self.attributes:
+            if len(attribute.split(": ")) == 1:
+                continue
+
             kind = attribute.split(": ")[0]
             description = attribute.split(": ")[1]
             embed.add_field(

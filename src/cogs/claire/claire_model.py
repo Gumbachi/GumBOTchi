@@ -19,6 +19,8 @@ class Claire:
                 query_obj = ClaireQuery(
                         owner_id=query["owner_id"],
                         zip_code=query["zip_code"],
+                        lat=query["lat"],
+                        lon=query["lon"],
                         state=query["state"],
                         channel=query["channel"],
                         site=query["site"],
