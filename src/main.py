@@ -30,7 +30,7 @@ async def on_ready() -> None:
 # .py files to load up
 cogs = [
     "cogs.general.general",
-    "cogs.music.music",
+    # "cogs.music.music",
     "cogs.pog.pog",
     "cogs.roast.roast",
     "cogs.sbonks.sbonks",
@@ -39,7 +39,7 @@ cogs = [
     "cogs.games.connectfour.connectfour",
     "cogs.claire.claire",
     "cogs.emojifier.emojifier",
-    "cogs.soundboard.soundboard",
+    # "cogs.soundboard.soundboard",
     "cogs.polls.polls",
 ]
 

@@ -4,7 +4,7 @@ from discord import ApplicationContext, slash_command, Option
 from cogs.claire.claire_model import ClaireQuery, Claire
 from database.claire import insert_query, delete_query
 from datetime import datetime
-from .api.maps import get_lat_lon
+from cogs.claire.api.maps import get_lat_lon
 class ClaireCog(discord.Cog):
     """Handles all of the logic for Craigslist monitoring"""
 
@@ -40,9 +40,9 @@ class ClaireCog(discord.Cog):
             "Only show listings with image",
             default=True
         ),
-        spam_tolerance: Option(int,
-            "How many spam words are allowed? Default is 5. Lower values mean more posts that might be spam",
-            default=5
+        spam_probability: Option(int,
+            "Probability of something being spam before it is filtered out. Default is 80%",
+            default=80
         ),
         ping: Option(bool,
             "If you want to be pinged or not (defaults to yes)",
@@ -65,12 +65,13 @@ class ClaireCog(discord.Cog):
             lat=lat,
             lon=lon,
             keywords=keywords, 
-            spam_tolerance=spam_tolerance, 
+            spam_probability=spam_probability,
             budget=budget, 
             distance=distance, 
             category=category, 
             has_image=has_image, 
-            ping=ping)
+            ping=ping
+        )
         
         await ctx.defer()
         

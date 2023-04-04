@@ -1,10 +1,10 @@
 from datetime import datetime
-from craigslist_headless import CraigslistForSale
+from cogs.claire.api.forky_fork.craigslist_headless import CraigslistForSale
 from typing import TYPE_CHECKING, List
-from ..claire_listing import ClaireListing
+from cogs.claire.claire_listing import ClaireListing
 
 if TYPE_CHECKING:
-    from ..claire_query import ClaireQuery
+    from claire.claire_query import ClaireQuery
 
 class Craigslist:
     
@@ -54,6 +54,7 @@ class Craigslist:
             except Exception as e:
                 for listing in generator.get_results(sort_by='newest'):
                     if listing:
+                        
                         listings.append(
                             ClaireListing(
                                 source=cls.__name__,

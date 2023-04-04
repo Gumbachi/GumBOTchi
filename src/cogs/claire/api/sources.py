@@ -1,7 +1,7 @@
 from enum import Enum
-from .craigslist import Craigslist
-from .offerup import OfferUp
-from .searchable import Searchable
+from cogs.claire.api.craigslist import Craigslist
+from cogs.claire.api.offerup import OfferUp
+from cogs.claire.api.searchable import Searchable
 
 class Sources(Enum):
     CRAIGSLIST=Craigslist

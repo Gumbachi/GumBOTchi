@@ -1,11 +1,10 @@
 from pyOfferUp import fetch
 from typing import TYPE_CHECKING, List
-from ..claire_listing import ClaireListing
-from pyOfferUp import fetch
+from cogs.claire.claire_listing import ClaireListing
 from dateutil import parser
 
 if TYPE_CHECKING:
-    from ..claire_query import ClaireQuery
+    from claire.claire_query import ClaireQuery
 
 class OfferUp:
     
@@ -15,7 +14,6 @@ class OfferUp:
 
         # Iterate through keywords and search CL
         for keyword in query.keywords.split(", "):
-            print(keyword, query.lat, query.lon, query.budget, query.distance)
 
             posts = fetch.get_listings_by_lat_lon(
                 query=keyword,
@@ -28,7 +26,13 @@ class OfferUp:
             try:
                 for post in posts:
                     price = float(post['price'])
-                    if price > query.budget and price > 5:
+
+                    # Skip if price is less than $5
+                    if price < 5:
+                        continue
+
+                    # Skip if price exceeds budget
+                    if price > query.budget:
                         continue
 
                     id = post['listingId']

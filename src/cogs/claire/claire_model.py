@@ -1,4 +1,5 @@
 from cogs.claire.claire_query import ClaireQuery
+from cogs.claire.ml.claire_ml import ClaireSpam
 from database.claire import get_queries, delete_query
 from typing import List
 
@@ -6,6 +7,7 @@ class Claire:
     """Holds all of the queries for Claire Session"""
     def __init__ (self):
         self.active_queries: List[ClaireQuery] = []
+        self.spam_model = ClaireSpam()
     
     def update(self):
         """Fetches latest queries from DB, creates custom query objects and check
@@ -25,7 +27,7 @@ class Claire:
                         channel=query["channel"],
                         site=query["site"],
                         keywords=query["keywords"],
-                        spam_tolerance=query["spam_tolerance"],
+                        spam_probability=query["spam_probability"],
                         budget=query["budget"],
                         distance=query["distance"],
                         category=query["category"],
@@ -61,14 +63,22 @@ class Claire:
             listings = query.search()
 
             # Filter and spam
-            filtered_listings = query.filter_listings(listings)
+            filtered_listings = query.filter_listings(
+                spam_model=self.spam_model,
+                listings=listings
+            )
+
             if filtered_listings:
 
                 # Clean
                 clean_listings = query.clean_listings(filtered_listings)
 
                 # Send
-                await query.send_listings(bot, clean_listings)
+                await query.send_listings(
+                    bot,
+                    spam_model=self.spam_model,
+                    listings=clean_listings
+                )
 
                 # Mark as sent
                 query.mark_sent(clean_listings)

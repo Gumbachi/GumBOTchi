@@ -13,3 +13,7 @@ def delete_query(query: 'ClaireQuery'):
 
 def get_queries():
     return db.Queries.find({})
+
+# def nuke_it():
+#     for q in get_queries():
+#         db.Queries.delete_one(q)

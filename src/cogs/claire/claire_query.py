@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
-from .api.sources import Sources
+from cogs.claire.api.sources import Sources
 
 if TYPE_CHECKING:
     from claire_listing import ClaireListing
+    from cogs.claire.ml.claire_ml import ClaireSpam
 
 @dataclass(slots=True)
 class ClaireQuery:
@@ -21,7 +22,7 @@ class ClaireQuery:
     category: str = "sss"
     has_image: bool = False
     ping: bool = True
-    spam_tolerance: int = 5
+    spam_probability: int = 80
     sent_listings: set = field(default_factory=set)
 
     def to_db(self) -> dict:
@@ -46,54 +47,76 @@ class ClaireQuery:
 
         return listings
 
-    def filter_listings(self, listings: List['ClaireListing']) -> List['ClaireListing']:
+    def filter_listings(
+            self,
+            spam_model: 'ClaireSpam',
+            listings: List['ClaireListing']
+            ) -> List['ClaireListing']:
         """Filters listings down to the ones that are not spam
         and the ones that have not been sent."""
 
         filtered_listings: List['ClaireListing'] = []
         for listing in listings:
             
-            # Not sent
-            if listing.id not in self.sent_listings:
+            # skip if sent
+            if listing.id in self.sent_listings:
+                continue
 
-                # Not Spam
-                if not self.is_spam(listing=listing):
-                    filtered_listings.append(listing)
+            # skip if spam Spam
+            if self.is_spam(
+                spam_model=spam_model,
+                listing=listing
+            ):
+                continue
+
+            filtered_listings.append(listing)
 
         return filtered_listings
 
-    def is_spam(self, listing: 'ClaireListing') -> bool:
-        """Checks listing for spam words, \
-        if it passes the tolerance then it's omitted"""
+    def is_spam(
+            self,
+            spam_model: 'ClaireSpam',
+            listing: 'ClaireListing'
+            ) -> bool:
+        """
+        If the probability that a listing is spam
+        exceeds the threshold, it is flagged as spam
+        """
 
-        spam_words = [
-            'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
-            'Video Games', 'Drones', 'Speakers', 'Cameras',
-            'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
-            'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
-        ]
-
-        spam = 0
-        body = listing.details
-
-        # Only check posts with long descriptions
-        if len(body) > 500:
-
-            # Remove keywords from spam list
-            spam_words = [i for i in [e.upper() for e in spam_words] if i not in [
-                j.upper() for j in self.keywords]]
-            
-            for word in spam_words:
-
-                # -1 means the word is not found
-                if body.find(word) != -1:
-                    spam += 1
-                
-                # Too spammy so break
-                if spam > self.spam_tolerance:
-                    return True
-
+        prob_spam = spam_model.probability_of_spam(listing.details) * 100
+        if prob_spam > self.spam_probability:
+            return True
+        
         return False
+        
+        # spam_words = [
+        #     'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
+        #     'Video Games', 'Drones', 'Speakers', 'Cameras',
+        #     'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
+        #     'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
+        # ]
+
+        # spam = 0
+        # body = listing.details
+
+        # # Only check posts with long descriptions
+        # if len(body) > 500:
+
+        #     # Remove keywords from spam list
+        #     spam_words = [i for i in [e.upper() for e in spam_words] if i not in [
+        #         j.upper() for j in self.keywords]]
+            
+        #     for word in spam_words:
+
+        #         # -1 means the word is not found
+        #         if body.find(word) != -1:
+        #             spam += 1
+                
+        #         # Too spammy so break
+        #         if spam > self.spam_tolerance:
+        #             return True
+
+        # return False
 
     def clean_listings(self, listings: List['ClaireListing']) -> List['ClaireListing']:
         """Cleans up the listings to prepare for sending."""
@@ -109,7 +132,7 @@ class ClaireQuery:
         for listing in listings:
             self.sent_listings.add(listing.id)
 
-    async def send_listings(self, bot, listings: List['ClaireListing']):
+    async def send_listings(self, bot, spam_model: 'ClaireSpam', listings: List['ClaireListing']):
         """ Sends the listings"""
 
         channel = bot.get_channel(self.channel)
@@ -118,5 +141,5 @@ class ClaireQuery:
             await channel.send(f"{user.mention}, here are some new listings for {self.keywords}.")
 
         for listing in listings:
-            embed = listing.discord_embed()
+            embed = listing.discord_embed(spam_model=spam_model)
             await channel.send(embed=embed)
