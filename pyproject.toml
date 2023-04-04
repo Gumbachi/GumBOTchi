@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "gumbotchi"
+version = "3.2.1"
+description = "Discord Bot"
+authors = ["Gumbachi <jaredremsberg@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+py-cord = { version = "^2.4.1", extras = ["voice"] }
+pymongo = { version = "^4.3.3", extras = ["srv"] }
+matplotlib = "^3.7.1"
+yt-dlp = "^2023.3.4"
+python-dotenv = "^1.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.260"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

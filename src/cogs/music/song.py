@@ -1,5 +1,4 @@
 import asyncio
-import os
 import time
 from typing import Any
 
@@ -23,7 +22,7 @@ YDL_OPTS = {
 }
 
 FFMPEG_OPTS = {
-    "executable": os.getenv("FFMPEG_PATH"),
+    "executable": "ffmpeg",
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
     "options": "-vn",
 }

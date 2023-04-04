@@ -1,4 +1,3 @@
-import os
 import shutil
 
 import discord
@@ -40,7 +39,7 @@ class Music(discord.Cog):
 def setup(bot: discord.Bot):
     """Entry point for loading cogs. Required for all cogs"""
 
-    if shutil.which("ffmpeg") == None:
+    if shutil.which("ffmpeg") is None:
         raise FileNotFoundError("FFMPEG is not available. Make sure it's added to path")
 
     bot.add_cog(Music(bot))
