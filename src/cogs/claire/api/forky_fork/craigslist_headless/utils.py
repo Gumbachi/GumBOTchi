@@ -35,12 +35,14 @@ def requests_get(browser, *args, **kwargs):
         url = args[0]
     try:
         browser.visit(url)
-        page_source = browser.show_source(wait)
-        # if "unrecoverableError" in str(page_source):
-        #     logger.warning("We have been found out?")
-            # quit_browser()
-            # raise Exception("We've been had!")
-        return page_source
+        print(url, wait)
+        try:
+            page_source = browser.show_source(wait)
+            return page_source
+        except Exception as e:
+            print(e)
+            return None 
+        
     except RequestException as exc:
         if logger:
             logger.warning('Request failed (%s). Retrying ...', exc)
@@ -48,19 +50,19 @@ def requests_get(browser, *args, **kwargs):
         return browser.show_source(wait)
 
 
-def get_all_sites():
-    response = requests.get(ALL_SITES_URL)
-    response.raise_for_status()  # Something failed?
-    soup = BeautifulSoup(response.content, 'html.parser')
-    sites = set()
+# def get_all_sites():
+#     response = requests.get(ALL_SITES_URL)
+#     response.raise_for_status()  # Something failed?
+#     soup = BeautifulSoup(response.content, 'html.parser')
+#     sites = set()
 
-    for box in soup.findAll('div', {'class': 'box'}):
-        for a in box.findAll('a'):
-            # Remove protocol and get subdomain
-            site = a.attrs['href'].rsplit('//', 1)[1].split('.')[0]
-            sites.add(site)
+#     for box in soup.findAll('div', {'class': 'box'}):
+#         for a in box.findAll('a'):
+#             # Remove protocol and get subdomain
+#             site = a.attrs['href'].rsplit('//', 1)[1].split('.')[0]
+#             sites.add(site)
 
-    return sites
+#     return sites
 
 
 def get_all_areas(site):

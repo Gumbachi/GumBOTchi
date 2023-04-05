@@ -17,7 +17,7 @@ from six.moves import range
 
 from . import utils
 
-ALL_SITES = utils.get_all_sites()  # All the Craiglist sites
+# ALL_SITES = utils.get_all_sites()  # All the Craiglist sites
 RESULTS_PER_REQUEST = 100  # Craigslist returns 100 results per request
 
 
@@ -62,16 +62,16 @@ class CraigslistBase(object):
         self.set_logger(log_level, init=True)
 
         self.site = site or self.default_site
-        if self.site not in ALL_SITES:
-            msg = "'%s' is not a valid site" % self.site
-            self.logger.error(msg)
-            raise ValueError(msg)
+        # if self.site not in ALL_SITES:
+        #     msg = "'%s' is not a valid site" % self.site
+        #     self.logger.error(msg)
+        #     raise ValueError(msg)
 
-        if area:
-            if not self.is_valid_area(area):
-                msg = "'%s' is not a valid area for site '%s'" % (area, site)
-                self.logger.error(msg)
-                raise ValueError(msg)
+        # if area:
+        #     if not self.is_valid_area(area):
+        #         msg = "'%s' is not a valid area for site '%s'" % (area, site)
+        #         self.logger.error(msg)
+        #         raise ValueError(msg)
         self.area = area
 
         self.category = category or self.default_category
@@ -132,13 +132,16 @@ class CraigslistBase(object):
         self.logger.setLevel(log_level)
         self.handler.setLevel(log_level)
 
-    def is_valid_area(self, area):
-        base_url = self.url_templates['base']
-        page_source = utils.requests_get(self.browser, base_url % {'site': self.site},
-                                      logger=self.logger)
-        soup = utils.bs(page_source)
-        sublinks = soup.find('ul', {'class': 'sublinks'})
-        return sublinks and sublinks.find('a', text=area) is not None
+    # def is_valid_area(self, area):
+    #     base_url = self.url_templates['base']
+    #     page_source = utils.requests_get(
+    #         self.browser,
+    #         base_url % {'site': self.site},
+    #         logger=self.logger
+    #     )
+    #     soup = utils.bs(page_source)
+    #     sublinks = soup.find('ul', {'class': 'sublinks'})
+    #     return sublinks and sublinks.find('a', text=area) is not None
 
     def get_results_approx_count(self, soup=None):
         """
@@ -151,8 +154,14 @@ class CraigslistBase(object):
         """
 
         if soup is None:
-            page_source = utils.requests_get(self.browser, self.url, params=self.filters,
-                                          logger=self.logger)
+            page_source = utils.requests_get(
+                self.browser,
+                self.url,
+                params=self.filters,
+                logger=self.logger
+            )
+            if not page_source:
+                return 0
 
             soup = utils.bs(page_source)
 
@@ -183,8 +192,15 @@ class CraigslistBase(object):
 
         while True:
             self.filters['s'] = start
-            page_source = utils.requests_get(self.browser, self.url, params=self.filters,
-                                          logger=self.logger, wait=True)
+            page_source = utils.requests_get(
+                self.browser,
+                self.url,
+                params=self.filters,
+                logger=self.logger, wait=True
+            )
+
+            if not page_source:
+                break
 
             soup = utils.bs(page_source)
             if not total:
@@ -368,7 +384,14 @@ class CraigslistBase(object):
                     break
 
     def fetch_content(self, url):
-        page_source = utils.requests_get(self.browser, url, logger=self.logger)
+        page_source = utils.requests_get(
+            self.browser,
+            url,
+            logger=self.logger
+        )
+
+        if not page_source:
+            return None
 
 
         # if response.ok:
