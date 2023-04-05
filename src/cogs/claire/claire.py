@@ -1,10 +1,17 @@
-import discord
-from discord.ext import tasks
-from discord import ApplicationContext, slash_command, Option
-from cogs.claire.claire_model import ClaireQuery, Claire
-from database.claire import insert_query, delete_query
 from datetime import datetime
+
+import discord
+from discord import ApplicationContext, Option, slash_command
+from discord.ext import tasks
+
 from cogs.claire.api.maps import get_lat_lon
+from cogs.claire.api.sources import Sources
+from cogs.claire.claire_model import Claire, ClaireQuery
+from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
+from common.cfg import Emoji
+from database.claire import delete_query, insert_query
+
+
 class ClaireCog(discord.Cog):
     """Handles all of the logic for Craigslist monitoring"""
 
@@ -127,12 +134,28 @@ class ClaireCog(discord.Cog):
             )
 
         return await ctx.respond(embed=query_embed)
+    
+    @discord.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user.id == 224506294801793025:
+            if reaction.emoji in [Emoji.CHECK, Emoji.CROSS]:
+                if reaction.message.embeds:
+                    embed = reaction.message.embeds[0]
+                    if embed.author.name.lower() in [source.name.lower() for source in Sources]:
+                        dic = {
+                            'name': embed.title.split(" - ")[1],
+                            'label': 1 if reaction.emoji == Emoji.CROSS else 0
+                        }
+                        for field in embed.fields:
+                            if field.name == 'Details':
+                                dic['details'] = field.value
+                        if dic.get('details'):
+                            ml_insert_query(dic)
 
     @tasks.loop(seconds=300)
     async def lookup_queries(self):
         print("Claire is searching", datetime.now())
         await self.claire.check_queries(self.bot)
-        
 
     @lookup_queries.before_loop
     async def before_loop(self):

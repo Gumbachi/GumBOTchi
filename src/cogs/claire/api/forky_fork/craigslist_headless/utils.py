@@ -35,13 +35,14 @@ def requests_get(browser, *args, **kwargs):
         url = args[0]
     try:
         browser.visit(url)
-        print(url, wait)
+        # page_source = browser.show_source(wait)
+        # return page_source
         try:
             page_source = browser.show_source(wait)
             return page_source
         except Exception as e:
             print(e)
-            return None 
+            return None
         
     except RequestException as exc:
         if logger:
