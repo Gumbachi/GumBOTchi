@@ -55,7 +55,7 @@ class ClaireListing:
 
         body = self.details if self.details else ''
         if len(body) > display_limit:
-            body = f"{body[0 : display_limit]}..."
+            body = f"{body[0 : display_limit]} ... (more on site)"
 
         posted = self.posted.strftime('%m/%d at %H:%M')
         sent = datetime.now().strftime('%m/%d at %H:%M')

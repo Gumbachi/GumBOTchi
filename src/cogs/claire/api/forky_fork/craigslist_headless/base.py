@@ -25,9 +25,9 @@ class CraigslistBase(object):
     """ Base class for all Craiglist wrappers. """
 
     url_templates = {
-        'base': 'http://%(site)s.craigslist.org',
-        'no_area': 'http://%(site)s.craigslist.org/search/%(category)s',
-        'area': 'http://%(site)s.craigslist.org/search/%(area)s/%(category)s'
+        'base': 'https://%(site)s.craigslist.org',
+        'no_area': 'https://%(site)s.craigslist.org/search/%(category)s',
+        'area': 'https://%(site)s.craigslist.org/search/%(area)s/%(category)s'
     }
 
     default_site = 'sfbay'
@@ -62,16 +62,6 @@ class CraigslistBase(object):
         self.set_logger(log_level, init=True)
 
         self.site = site or self.default_site
-        # if self.site not in ALL_SITES:
-        #     msg = "'%s' is not a valid site" % self.site
-        #     self.logger.error(msg)
-        #     raise ValueError(msg)
-
-        # if area:
-        #     if not self.is_valid_area(area):
-        #         msg = "'%s' is not a valid area for site '%s'" % (area, site)
-        #         self.logger.error(msg)
-        #         raise ValueError(msg)
         self.area = area
 
         self.category = category or self.default_category
@@ -131,17 +121,6 @@ class CraigslistBase(object):
             self.logger.addHandler(self.handler)
         self.logger.setLevel(log_level)
         self.handler.setLevel(log_level)
-
-    # def is_valid_area(self, area):
-    #     base_url = self.url_templates['base']
-    #     page_source = utils.requests_get(
-    #         self.browser,
-    #         base_url % {'site': self.site},
-    #         logger=self.logger
-    #     )
-    #     soup = utils.bs(page_source)
-    #     sublinks = soup.find('ul', {'class': 'sublinks'})
-    #     return sublinks and sublinks.find('a', text=area) is not None
 
     def get_results_approx_count(self, soup=None):
         """
@@ -209,9 +188,11 @@ class CraigslistBase(object):
             rows = soup.find('ol')
             result_count = rows.find('div', {'class' : 'result-count'})
             limit = int(result_count.text.split(' ')[0])
+
             for row in rows.find_all('li', {'class': 'cl-search-result'}, recursive=False):
                 if limit is not None and results_yielded >= limit:
                     break
+
                 self.logger.debug('Processing %s of %s results ...',
                                   total_so_far + 1, total or '(undefined)')
 
@@ -220,16 +201,16 @@ class CraigslistBase(object):
                 results_yielded += 1
                 total_so_far += 1
 
-            if results_yielded == limit:
-                break
             if (total_so_far - start) < RESULTS_PER_REQUEST:
                 break
+
             start = total_so_far
 
     def process_row(self, row, geotagged=False, include_details=False):
         if row.find('div', {'class': 'gallery-card spacer'}) is not None:
             self.logger.debug('found a spacer, skipping')
             return
+        
         id = row.attrs['data-pid']
         repost_of = row.attrs.get('data-repost-of')
 
@@ -237,14 +218,12 @@ class CraigslistBase(object):
         name = row.attrs.get('title')
         url = urljoin(self.url, link.attrs['href'])
         price = row.find('span', {'class': 'priceinfo'})
-
         has_pic = row.find('div', {'class': 'dots'}) is not None
 
         meta = row.find('div', {'class': 'meta'})
         if meta is not None:
             meta_text = meta.text
             metas = meta_text.split('·')
-            relative_time = metas[0]
             location = metas[-1]
 
         result = {'id': id,

@@ -4,8 +4,8 @@ from requests.exceptions import RequestException
 from urllib.parse import urlencode
 from .browser import CraigslistBrowser
 
-ALL_SITES_URL = 'http://www.craigslist.org/about/sites'
-SITE_URL = 'http://%s.craigslist.org'
+ALL_SITES_URL = 'https://www.craigslist.org/about/sites'
+SITE_URL = 'https://%s.craigslist.org'
 USER_AGENT = 'Mozilla/5.0'
 
 def bs(content):
