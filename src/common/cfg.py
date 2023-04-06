@@ -89,10 +89,3 @@ poggers_activation_phrases = {
     "pogeroni and cheese",
     "pogflip"
 }
-
-spam_words = [
-    'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
-    'Video Games', 'Drones', 'Speakers', 'Cameras',
-    'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
-    'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
-]

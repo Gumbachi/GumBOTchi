@@ -10,3 +10,4 @@ graph.png
 discord.log
 secrets.py
 keys.py
+*.log

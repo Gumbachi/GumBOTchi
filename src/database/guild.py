@@ -11,7 +11,6 @@ db = connection["GumbotchiDB"]
 
 print("Connected to DB")
 
-
 def generate_default_guild(id: int) -> dict[str, Any]:
     return {"_id": id, "iexkey": None, "pogactivators": [], "pogresponses": []}
 
