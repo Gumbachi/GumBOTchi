@@ -56,7 +56,6 @@ class CraigslistBase(object):
 
     def __init__(self, site=None, area=None, category=None, filters=None,
                  log_level=logging.WARNING):
-        self.browser = CraigslistBrowser()
 
         # Logging
         self.set_logger(log_level, init=True)
@@ -73,7 +72,7 @@ class CraigslistBase(object):
         self.filters = self.get_filters(filters)
 
     def quit(self):
-        self.browser.quit()
+        CraigslistBrowser.quit()
 
     def get_filters(self, filters):
         """Parses filters passed by the user into GET parameters."""
@@ -134,7 +133,6 @@ class CraigslistBase(object):
 
         if soup is None:
             page_source = utils.requests_get(
-                self.browser,
                 self.url,
                 params=self.filters,
                 logger=self.logger
@@ -172,7 +170,6 @@ class CraigslistBase(object):
         while True:
             self.filters['s'] = start
             page_source = utils.requests_get(
-                self.browser,
                 self.url,
                 params=self.filters,
                 logger=self.logger, wait=True
@@ -364,7 +361,6 @@ class CraigslistBase(object):
 
     def fetch_content(self, url):
         page_source = utils.requests_get(
-            self.browser,
             url,
             logger=self.logger
         )
@@ -417,12 +413,11 @@ class CraigslistBase(object):
 
     @classmethod
     def show_categories(cls):
-        browser = CraigslistBrowser()
         url = cls.url_templates["no_area"] % {
             "site": cls.default_site,
             "category": cls.default_category,
         }
-        page_source = utils.requests_get(browser, url)
+        page_source = utils.requests_get(url)
         soup = utils.bs(page_source)
 
         cat_html = soup.find_all("input", {"class": "catcheck multi_checkbox"})
@@ -433,7 +428,7 @@ class CraigslistBase(object):
         print("%s categories:" % cls.__name__)
         for cat_name, cat_id in sorted(zip(cat_names, cat_ids)):
             print("* %s = %s" % (cat_id, cat_name))
-        browser.quit()
+        CraigslistBrowser.quit()
 
     @classmethod
     def show_filters(cls, category=None):

@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-import requests
 from requests.exceptions import RequestException
 from urllib.parse import urlencode
 from .browser import CraigslistBrowser
@@ -19,7 +18,7 @@ def isiterable(var):
         return False
 
 
-def requests_get(browser, *args, **kwargs):
+def requests_get(*args, **kwargs):
     """
     Retries if a RequestException is raised (could be a connection error or
     a timeout).
@@ -34,51 +33,22 @@ def requests_get(browser, *args, **kwargs):
     else:
         url = args[0]
     try:
-        browser.visit(url)
-        # page_source = browser.show_source(wait)
-        # return page_source
-        try:
-            page_source = browser.show_source(wait)
-            return page_source
-        except Exception as e:
-            print(e)
-            return None
+        CraigslistBrowser.visit(url)
+        page_source = CraigslistBrowser.show_source(wait)
+        return page_source
         
     except RequestException as exc:
         if logger:
             logger.warning('Request failed (%s). Retrying ...', exc)
-        browser.visit(url)
-        return browser.show_source(wait)
-
-
-# def get_all_sites():
-#     response = requests.get(ALL_SITES_URL)
-#     response.raise_for_status()  # Something failed?
-#     soup = BeautifulSoup(response.content, 'html.parser')
-#     sites = set()
-
-#     for box in soup.findAll('div', {'class': 'box'}):
-#         for a in box.findAll('a'):
-#             # Remove protocol and get subdomain
-#             site = a.attrs['href'].rsplit('//', 1)[1].split('.')[0]
-#             sites.add(site)
-
-#     return sites
-
-
-def get_all_areas(site):
-    response = requests.get(SITE_URL % site)
-    response.raise_for_status()  # Something failed?
-    soup = BeautifulSoup(response.content, 'html.parser')
-    raw = soup.select('ul.sublinks li a')
-    sites = set(a.attrs['href'].rsplit('/')[1] for a in raw)
-    return sites
-
+        CraigslistBrowser.visit(url)
+        return CraigslistBrowser.show_source(wait)
+    except Exception as e:
+            print(e)
+            return None
 
 def get_list_filters(url):
-    browser = CraigslistBrowser()
     list_filters = {}
-    page_source = requests_get(browser, url)
+    page_source = requests_get(url)
     soup = bs(page_source)
     for list_filter in soup.find_all('div', class_='search-attribute'):
         filter_key = list_filter.attrs['data-attr']
@@ -86,5 +56,4 @@ def get_list_filters(url):
         options = {opt.text.strip(): opt.find('input').get('value')
                    for opt in filter_labels}
         list_filters[filter_key] = {'url_key': filter_key, 'value': options}
-    browser.quit()
     return list_filters

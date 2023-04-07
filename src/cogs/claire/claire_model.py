@@ -1,13 +1,16 @@
 from cogs.claire.claire_query import ClaireQuery
 from cogs.claire.ml.claire_ml import ClaireSpam
 from database.claire import get_queries, delete_query
+from datetime import datetime
 from typing import List
+from cogs.claire.api.forky_fork.craigslist_headless.browser import CraigslistBrowser
 
 class Claire:
     """Holds all of the queries for Claire Session"""
     def __init__ (self):
         self.active_queries: List[ClaireQuery] = []
         self.spam_model = ClaireSpam()
+        CraigslistBrowser.check_activity()
     
     def update(self):
         """Fetches latest queries from DB, creates custom query objects and check
@@ -82,6 +85,7 @@ class Claire:
 
                 # Mark as sent
                 query.mark_sent(clean_listings)
+        return datetime.now()
                 
     def delete_query(self, query: ClaireQuery):
         """Nukes query from existence"""

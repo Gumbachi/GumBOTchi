@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import timedelta, datetime
 
 import discord
 from discord import ApplicationContext, Option, slash_command
@@ -13,15 +13,16 @@ from database.claire import delete_query, insert_query
 
 
 class ClaireCog(discord.Cog):
-    """Handles all of the logic for Craigslist monitoring"""
+    """Handles all of the logic for deals monitoring"""
 
     def __init__(self, bot):
         self.bot = bot
         self.claire = Claire()
         self.claire.update()
         self.lookup_queries.start()
+        self.last_checked = None
 
-    @slash_command(name="steponmeclaire")
+    @slash_command(name="steponme")
     async def clairme(
         self, ctx: ApplicationContext,
         zip_code: Option(int,
@@ -97,7 +98,7 @@ class ClaireCog(discord.Cog):
         else:
             return await ctx.respond("Failed to add to DB. Try again later.")
 
-    @slash_command(name="myballsarepurple")
+    @slash_command(name="safeword")
     async def unclaireme(self, ctx,
         index: Option(int, "Index of query you want to delete")
         ):
@@ -113,27 +114,62 @@ class ClaireCog(discord.Cog):
         else:
             return await ctx.respond("Didn't work.")
 
-    @slash_command(name="clairequeries")
+    @slash_command(name="claire_queries")
     async def show_queries(self, ctx):
         """Display currently monitored queries"""
 
         queries = self.claire.get_user_queries(ctx.author.id)
         query_embed = discord.Embed(
-            title=f"Claire queries {ctx.author.name}",
+            title="Currently monitoring:",
             color=discord.Color.blue()
         )
         query_embed.set_footer(
-            text="If this looks empty it's because you don't have any queries")
+            text="If this looks empty it's because it is (probably)")
+        
+        query_embed.set_author(name=ctx.author.name)
 
         # Populate the embed with data
         for i, query in enumerate(queries, 1):
             query_embed.add_field(
-                name=f"{i}. {query.keywords}",
+                name=f"{i}. {query.keywords.title()}",
                 value=f"Budget: ${query.budget}\n Ping: {query.ping}",
                 inline=False
             )
 
         return await ctx.respond(embed=query_embed)
+
+    @slash_command(name="claire_status")
+    async def status(self, ctx):
+        """Display information on last update"""
+        next_check = "Now"
+        ETA = 0
+        if self.last_checked:
+            next_check = self.last_checked + timedelta(seconds=300)
+            ETA = round(abs((next_check - datetime.now()).total_seconds()))
+
+        status_embed = discord.Embed(
+            title="Status Report:",
+            color=discord.Color.blue()
+        )
+        
+        status_embed.set_author(name='Claire')
+
+        status_embed.add_field(
+            name="Last:",
+            value=f"{self.last_checked}"
+        )
+
+        status_embed.add_field(
+            name="Next:",
+            value=f"{next_check}"
+        )
+
+        status_embed.add_field(
+            name="ETA:",
+            value=f"{ETA} second{'s' if ETA > 1 else ''}"
+        )
+
+        return await ctx.respond(embed=status_embed)
     
     @discord.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -154,8 +190,8 @@ class ClaireCog(discord.Cog):
 
     @tasks.loop(seconds=300)
     async def lookup_queries(self):
-        print("Claire is searching", datetime.now())
-        await self.claire.check_queries(self.bot)
+        self.currently_checking = True
+        self.last_checked = await self.claire.check_queries(self.bot)
 
     @lookup_queries.before_loop
     async def before_loop(self):
