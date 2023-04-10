@@ -145,7 +145,7 @@ class ClaireCog(discord.Cog):
         ETA = 0
         if self.last_checked:
             next_check = self.last_checked + timedelta(seconds=300)
-            ETA = round(abs((next_check - datetime.now()).total_seconds()))
+            ETA = round((next_check - datetime.now().total_seconds()))
 
         status_embed = discord.Embed(
             title="Status Report:",
@@ -164,10 +164,16 @@ class ClaireCog(discord.Cog):
             value=f"{next_check}"
         )
 
-        status_embed.add_field(
-            name="ETA:",
-            value=f"{ETA} second{'s' if ETA > 1 else ''}"
-        )
+        if ETA < 0:
+            status_embed.add_field(
+                name="ETA:",
+                value="I'm busted'"
+            )
+        else:
+            status_embed.add_field(
+                name="ETA:",
+                value=f"{ETA} second{'s' if ETA > 1 else ''}"
+            )
 
         return await ctx.respond(embed=status_embed)
     

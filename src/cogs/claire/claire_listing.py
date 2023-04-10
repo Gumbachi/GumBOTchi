@@ -30,7 +30,8 @@ class ClaireListing:
         if self.images:
             for image in self.images:
                 if "images" in image:
-                    return image
+                    if 'http' in image:
+                        return image
         
     def clean(self):
         """Cleans up the body of the listing by removing short sentences and links"""
