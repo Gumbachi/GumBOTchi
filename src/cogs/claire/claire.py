@@ -1,15 +1,16 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 import discord
+from common.cfg import Emoji
+from database.claire import delete_query, insert_query
 from discord import ApplicationContext, Option, slash_command
 from discord.ext import tasks
 
+from cogs.claire.api.craigslist import Craigslist
 from cogs.claire.api.maps import get_lat_lon
 from cogs.claire.api.sources import Sources
 from cogs.claire.claire_model import Claire, ClaireQuery
 from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
-from common.cfg import Emoji
-from database.claire import delete_query, insert_query
 
 
 class ClaireCog(discord.Cog):
@@ -145,7 +146,7 @@ class ClaireCog(discord.Cog):
         ETA = 0
         if self.last_checked:
             next_check = self.last_checked + timedelta(seconds=300)
-            ETA = round((next_check - datetime.now().total_seconds()))
+            ETA = round((next_check - datetime.now()).total_seconds())
 
         status_embed = discord.Embed(
             title="Status Report:",
@@ -193,6 +194,39 @@ class ClaireCog(discord.Cog):
                                 dic['details'] = field.value
                         if dic.get('details'):
                             ml_insert_query(dic)
+
+    @slash_command(name="add_spam")
+    @discord.default_permissions(administrator=True)
+    async def add_spam(
+            self, ctx,
+            url: Option(str,
+                "URL of craigslist post"
+            ),
+        ):
+        """Gets URL details and adds them to spam list"""
+
+        await ctx.defer()
+
+        try:
+            listing = Craigslist.get(url)
+
+            if listing.details:
+
+                dic = {
+                    'name': "Added by URL",
+                    'label': 1
+                }
+
+                dic['details'] = listing.details
+
+                ml_insert_query(dic)
+                return await ctx.respond("Success")
+            
+            return await ctx.respond("Nothing to add")
+            
+        except Exception as e:
+            return await ctx.respond("Error", e)
+    
 
     @tasks.loop(seconds=300)
     async def lookup_queries(self):
