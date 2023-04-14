@@ -46,13 +46,19 @@ def requests_get(*args, **kwargs):
 def get_list_filters(url):
     list_filters = {}
     page_source = requests_get(url)
-    soup = bs(page_source)
-    for list_filter in soup.find_all('div', class_='search-attribute'):
-        filter_key = list_filter.attrs['data-attr']
-        filter_labels = list_filter.find_all('label')
-        options = {opt.text.strip(): opt.find('input').get('value')
-                   for opt in filter_labels}
-        list_filters[filter_key] = {'url_key': filter_key, 'value': options}
+    try:
+        soup = bs(page_source)
+        for list_filter in soup.find_all('div', class_='search-attribute'):
+            filter_key = list_filter.attrs['data-attr']
+            filter_labels = list_filter.find_all('label')
+            options = {opt.text.strip(): opt.find('input').get('value')
+                    for opt in filter_labels}
+            list_filters[filter_key] = {'url_key': filter_key, 'value': options}
+    except Exception as e:
+        print("Filter error")
+        print(type(page_source), page_source)
+        print(e)
+
     return list_filters
 
 def get_url(url):
