@@ -39,11 +39,15 @@ class CraigslistBrowser:
     def show_source(cls, wait=False):
         if wait:
             cls.waiting = True
-            WebDriverWait(cls.DRIVER, 10).until(
-                EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, '#search-results-page-1 > ol > div')
+            try:
+                WebDriverWait(cls.DRIVER, 10).until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, '#search-results-page-1 > ol > div')
+                    )
                 )
-            )
+            except Exception:
+                cls.waiting = False
+                return
             
         data = cls.DRIVER.execute_script("return document.documentElement.outerHTML")
 

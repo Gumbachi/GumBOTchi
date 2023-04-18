@@ -30,18 +30,9 @@ def requests_get(*args, **kwargs):
         url = args[0] + "?" + query_string
     else:
         url = args[0]
-    try:
-        CraigslistBrowser.visit(url)
-        return CraigslistBrowser.show_source(wait)
-        
-    except RequestException as exc:
-        if logger:
-            logger.warning('Request failed (%s). Retrying ...', exc)
-        CraigslistBrowser.visit(url)
-        return CraigslistBrowser.show_source(wait)
-    except Exception as e:
-        print(e)
-        return None
+
+    CraigslistBrowser.visit(url)
+    return CraigslistBrowser.show_source(wait)
 
 def get_list_filters(url):
     list_filters = {}
@@ -67,6 +58,9 @@ def get_url(url):
 
     CraigslistBrowser.visit(url)
     source = CraigslistBrowser.show_source()
+    
+    if not source:
+        return
 
     soup = BeautifulSoup(source)
     body = soup.find('section', id='postingbody')

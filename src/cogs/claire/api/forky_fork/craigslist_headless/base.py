@@ -145,7 +145,11 @@ class CraigslistBase(object):
         totalcount = soup.find('span', {'class': 'totalcount'})
         return int(totalcount.text) if totalcount else None
 
-    def get_results(self, limit=None, start=0, sort_by=None, geotagged=False,
+    def get_results(self,
+                    limit=None,
+                    start=0,
+                    sort_by=None,
+                    geotagged=False,
                     include_details=False):
         """
         Gets results from Craigslist based on the specified filters.
@@ -366,7 +370,7 @@ class CraigslistBase(object):
         )
 
         if not page_source:
-            return None
+            return
 
 
         # if response.ok:
