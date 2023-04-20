@@ -31,8 +31,13 @@ def requests_get(*args, **kwargs):
     else:
         url = args[0]
 
-    CraigslistBrowser.visit(url)
-    return CraigslistBrowser.show_source(wait)
+    try:
+        CraigslistBrowser.visit(url)
+        src = CraigslistBrowser.show_source(wait)
+        return src
+    except Exception as e:
+        print(e)
+        return
 
 def get_list_filters(url):
     list_filters = {}
