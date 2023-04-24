@@ -1,7 +1,6 @@
 from cogs.claire.claire_query import ClaireQuery
 from cogs.claire.ml.claire_ml import ClaireSpam
 from database.claire import get_queries, delete_query
-from datetime import datetime
 from typing import List
 from cogs.claire.api.forky_fork.craigslist_headless.browser import CraigslistBrowser
 
@@ -55,12 +54,12 @@ class Claire:
         """Gets queries for specified user"""
         return [query for query in self.active_queries if query.owner_id == uid]
 
-    async def check_queries(self, bot):
+    def check_queries(self) -> List[dict]:
         """Searches for new results in tracked queries"""
+        new_listings = []
         for query in self.active_queries:
-            channel = bot.get_channel(query.channel)
-            if channel is None:
-                continue 
+            if query.owner_id != 224506294801793025:
+                continue
 
             # Search
             listings = query.search()
@@ -76,16 +75,19 @@ class Claire:
                 # Clean
                 clean_listings = query.clean_listings(filtered_listings)
 
-                # Send
-                await query.send_listings(
-                    bot,
-                    spam_model=self.spam_model,
-                    listings=clean_listings
+                for listing in clean_listings:
+                    listing.set_spam_score(self.spam_model)
+
+                new_listings.append(
+                    {
+                        'query' : query,
+                        'listings' : clean_listings
+                    }
                 )
 
                 # Mark as sent
                 query.mark_sent(clean_listings)
-        return datetime.now()
+        return new_listings
                 
     def delete_query(self, query: ClaireQuery):
         """Nukes query from existence"""

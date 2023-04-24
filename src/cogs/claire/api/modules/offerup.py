@@ -29,8 +29,8 @@ class OfferUp:
                     price = float(post['price'])
 
                     # Skip if price is less than $5
-                    if price < 5:
-                        continue
+                    # if price < 5:
+                    #     continue
 
                     # Skip if price exceeds budget
                     if price > query.budget:
@@ -63,7 +63,7 @@ class OfferUp:
                             posted=posted_date,
                             price=details.get('price'),
                             images=[details.get('photos', [{}])[0].get('detailFull', {}).get('url')],
-                            details=details.get('description'),
+                            body=details.get('description'),
                             attributes=[
                                 f"condition: {details.get('condition')}",
                             ],

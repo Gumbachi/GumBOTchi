@@ -83,7 +83,7 @@ class ClaireQuery:
         exceeds the threshold, it is flagged as spam
         """
 
-        prob_spam = spam_model.probability_of_spam(listing.details) * 100
+        prob_spam = spam_model.probability_of_spam(listing.body) * 100
         if prob_spam > self.spam_probability:
             return True
         
@@ -132,7 +132,7 @@ class ClaireQuery:
         for listing in listings:
             self.sent_listings.add(listing.id)
 
-    async def send_listings(self, bot, spam_model: 'ClaireSpam', listings: List['ClaireListing']):
+    async def send_listings(self, bot, listings: List['ClaireListing']):
         """ Sends the listings"""
 
         channel = bot.get_channel(self.channel)
@@ -141,5 +141,5 @@ class ClaireQuery:
             await channel.send(f"{user.mention}, here are some new listings for {self.keywords}.")
 
         for listing in listings:
-            embed = listing.discord_embed(spam_model=spam_model)
+            embed = listing.discord_embed()
             await channel.send(embed=embed)
