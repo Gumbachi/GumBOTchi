@@ -12,7 +12,7 @@ from cogs.claire.claire_listing import ClaireListing
 # from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
 import httpx
 
-BASE_URL = "http://claire-server:80"
+BASE_URL = "http://127.0.0.1:80"
 
 class ClaireCog(discord.Cog):
     """Handles all of the logic for deals monitoring"""

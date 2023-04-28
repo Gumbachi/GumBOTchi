@@ -1,8 +1,12 @@
 """Runs the discord bot"""
 import os
 
+import uvicorn
 import discord
+import multiprocessing
+
 from dotenv import load_dotenv
+from cogs.claire.api.server import app
 
 load_dotenv()
 
@@ -43,7 +47,17 @@ cogs = [
     "cogs.claire.claire",
 ]
 
-if __name__ == '__main__':
-    bot.load_extensions(*cogs)
 
-bot.run(os.getenv("TOKEN"))  # runs the bot
+def run_bot():
+    bot.load_extensions(*cogs)
+    bot.run(os.getenv("TOKEN"))  # runs the bot
+
+def run_server():
+    uvicorn.run(app, host="127.0.0.1", port=80)
+
+if __name__ == '__main__':
+    bot_process = multiprocessing.Process(target=run_bot)
+    server_process = multiprocessing.Process(target=run_server)
+
+    bot_process.start()
+    server_process.start()

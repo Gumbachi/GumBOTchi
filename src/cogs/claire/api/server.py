@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-import uvicorn
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -96,6 +95,3 @@ async def search():
         'time' : datetime.now(),
         'results' : new_listings
     }
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=80)
