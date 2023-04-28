@@ -45,14 +45,19 @@ class Craigslist:
                     'search_titles': False,
                     'posted_today': True,
                     'bundle_duplicates': True,
-                    'min_price': 5
+                    'min_price': 0
                 }
             )
 
-            # Adds listings to a list, include details returns an error if listing doesn't have body
+            # Adds listings to a list, include details returns 
+            # an error if listing doesn't have body
             try:
-                for listing in generator.get_results(sort_by='newest', include_details=True):
+                for listing in generator.get_results(sort_by='newest',
+                                                     include_details=True):
                     if listing:
+                        if not listing.get('price'):
+                            continue
+
                         listings.append(
                             ClaireListing(
                                 source=cls.__name__,
@@ -60,10 +65,12 @@ class Craigslist:
                                 name=listing.get('name', 'Unknown?'),
                                 url=listing.get('url'),
                                 posted=datetime.strptime(
-                                    listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
+                                    listing.get('created', '2001-01-01 00:00'),
+                                                '%Y-%m-%d %H:%M'
+                                ),
                                 price=listing.get('price').split("$")[1],
                                 images=listing.get('images'),
-                                details=listing.get('body'),
+                                body=listing.get('body'),
                                 attributes=listing.get('attrs'),
                             )
                         )
@@ -82,7 +89,7 @@ class Craigslist:
                                     listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
                                 price=listing.get('price').split("$")[1],
                                 images=listing.get('images'),
-                                details=listing.get('body'),
+                                body=listing.get('body'),
                                 attributes=listing.get('attrs'),
                             )
                         )

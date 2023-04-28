@@ -1,5 +1,4 @@
 import time
-import threading
 from selenium.webdriver.support import expected_conditions as EC
 
 from selenium.webdriver.common.by import By
@@ -39,18 +38,13 @@ class CraigslistBrowser:
     def show_source(cls, wait=False):
         if wait:
             cls.waiting = True
-            try:
-                WebDriverWait(cls.DRIVER, 10).until(
-                    EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, '#search-results-page-1 > ol > div')
-                    )
+            WebDriverWait(cls.DRIVER, 10).until(
+                EC.presence_of_element_located(
+                    (By.CLASS_NAME, 'count')
                 )
-            except Exception:
-                cls.waiting = False
-                return
-            
+            )
+        
         data = cls.DRIVER.execute_script("return document.documentElement.outerHTML")
-
         cls.waiting = False
         return data
 
@@ -61,9 +55,3 @@ class CraigslistBrowser:
                 
         cls.DRIVER.quit()
         cls.DRIVER = None
-
-    @classmethod
-    def check_activity(cls):
-        if (time.time() - cls.last_called >= 5) and not cls.waiting:
-            cls.quit()
-        threading.Timer(5, cls.check_activity).start()

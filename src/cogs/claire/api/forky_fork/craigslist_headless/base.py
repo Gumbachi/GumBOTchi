@@ -55,7 +55,7 @@ class CraigslistBase(object):
     }
 
     def __init__(self, site=None, area=None, category=None, filters=None,
-                 log_level=logging.WARNING):
+                 log_level=logging.CRITICAL):
 
         # Logging
         self.set_logger(log_level, init=True)
@@ -187,8 +187,11 @@ class CraigslistBase(object):
                 total = self.get_results_approx_count(soup=soup)
 
             rows = soup.find('ol')
-            result_count = rows.find('div', {'class' : 'result-count'})
-            limit = int(result_count.text.split(' ')[0])
+            try:
+                result_count = rows.find(class_='count')
+                limit = int(result_count.text.split(' ')[0])
+            except Exception as e:
+                limit = 0
 
             for row in rows.find_all('li', {'class': 'cl-search-result'}, recursive=False):
                 if limit is not None and results_yielded >= limit:
@@ -411,9 +414,7 @@ class CraigslistBase(object):
 
     @classmethod
     def get_list_filters(cls, url):
-        if cls.__list_filters.get(url) is None:
-            cls.__list_filters[url] = utils.get_list_filters(url)
-        return cls.__list_filters[url]
+        return {}
 
     @classmethod
     def show_categories(cls):

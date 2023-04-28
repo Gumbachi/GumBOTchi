@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  discord_bot:
+    build:
+      context: .
+      dockerfile: dockerfiles/bot.dockerfile
+
+  claire-server:
+    build:
+      context: .
+      dockerfile: dockerfiles/claire.dockerfile
+    ports:
+    - 80:80

@@ -1,27 +1,34 @@
 from datetime import datetime, timedelta
 
 import discord
-from common.cfg import Emoji
-from database.claire import delete_query, insert_query
+# from common.cfg import Emoji
 from discord import ApplicationContext, Option, slash_command
 from discord.ext import tasks
 
-from cogs.claire.api.craigslist import Craigslist
-from cogs.claire.api.maps import get_lat_lon
-from cogs.claire.api.sources import Sources
-from cogs.claire.claire_model import Claire, ClaireQuery
-from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
+# from cogs.claire.api.modules.craigslist import Craigslist
+# from cogs.claire.api.sources import Sources
+from cogs.claire.claire_query import ClaireQuery
+from cogs.claire.claire_listing import ClaireListing
+# from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
+import httpx
 
+BASE_URL = "http://claire-server:80"
 
 class ClaireCog(discord.Cog):
     """Handles all of the logic for deals monitoring"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.claire = Claire()
-        self.claire.update()
-        self.lookup_queries.start()
+        self.currently_checking = False
         self.last_checked = None
+        self.lookup_queries.start()
+
+    async def am_busy(self, ctx) -> bool:
+        if self.currently_checking:
+            msg = "Currently searching... give me a minute"
+            await ctx.send(msg)
+        
+        return self.currently_checking
 
     @slash_command(name="steponme")
     async def clairme(
@@ -64,40 +71,16 @@ class ClaireCog(discord.Cog):
         ),
     ):
         """Creates a query to monitor in Craigslist"""
-        lat, lon = get_lat_lon(zip_code)
-        new_query = ClaireQuery(
-            owner_id= ctx.user.id, 
-            zip_code=zip_code, 
-            state=state, 
-            channel=ctx.channel.id, 
-            site = site,
-            lat=lat,
-            lon=lon,
-            keywords=keywords, 
-            spam_probability=spam_probability,
-            budget=budget, 
-            distance=distance, 
-            category=category, 
-            has_image=has_image, 
-            ping=ping
-        )
-        
+
+        await self.am_busy(ctx)
         await ctx.defer()
-        
-        try:
-            new_query.search() # Dummy search to see if it works
-        except Exception as e:
-            error = f"Invalid query please double check your parameters (Error: {e})"
-            return await ctx.respond(error)
 
-        result = insert_query(new_query)
+        args = f"uid={ctx.user.id}&channel_id={ctx.channel.id}&zip_code={zip_code}&state={state}&site={site}&budget={budget}&keywords={keywords}&distance={distance}&has_image={has_image}&spam_probability={spam_probability}&ping={ping}&category={category}"
 
-        if result:
-            self.claire.active_queries.append(new_query)
-            self.claire.update()
-            return await ctx.respond("Added.")
-        else:
-            return await ctx.respond("Failed to add to DB. Try again later.")
+        url = f"{BASE_URL}/add_query/?{args}"
+        response = await make_request(url)
+
+        return await ctx.respond(f"{response.get('message')} {response.get('error', '')}")
 
     @slash_command(name="safeword")
     async def unclaireme(self, ctx,
@@ -105,27 +88,33 @@ class ClaireCog(discord.Cog):
         ):
         """Deletes a Claire query"""
 
-        queries = self.claire.get_user_queries(ctx.author.id)
-        to_delete = queries[index-1]
-        result = delete_query(to_delete)
-        if result:
-            self.claire.active_queries.remove(to_delete)
-            self.claire.update()
-            return await ctx.respond("Query removed.")
-        else:
-            return await ctx.respond("Didn't work.")
+        await self.am_busy(ctx)
+        await ctx.defer()
+        
+        url = f"{BASE_URL}/delete_query/?uid={ctx.user.id}&index={index}"
+        response = await make_request(url)
+
+        return await ctx.respond(response.get('message'))
 
     @slash_command(name="claire_queries")
     async def show_queries(self, ctx):
         """Display currently monitored queries"""
 
-        queries = self.claire.get_user_queries(ctx.author.id)
+        await self.am_busy(ctx)
+        await ctx.defer()
+
+        url = f"{BASE_URL}/claire_queries/?uid={ctx.user.id}"
+        response = await make_request(url)
+
+        queries = [ClaireQuery(**query) for query in response.get('queries')]
+
         query_embed = discord.Embed(
             title="Currently monitoring:",
             color=discord.Color.blue()
         )
+
         query_embed.set_footer(
-            text="If this looks empty it's because it is (probably)")
+            text="If this recently added a query it might still be processing.")
         
         query_embed.set_author(name=ctx.author.name)
 
@@ -142,8 +131,8 @@ class ClaireCog(discord.Cog):
     @slash_command(name="claire_status")
     async def status(self, ctx):
         """Display information on last update"""
+        ETA = -1
         next_check = "Now"
-        ETA = 0
         if self.last_checked:
             next_check = self.last_checked + timedelta(seconds=300)
             ETA = round((next_check - datetime.now()).total_seconds())
@@ -166,10 +155,16 @@ class ClaireCog(discord.Cog):
         )
 
         if ETA < 0:
-            status_embed.add_field(
-                name="ETA:",
-                value="I'm busted'"
-            )
+            if self.currently_checking:
+                status_embed.add_field(
+                    name="ETA:",
+                    value="Currently searching"
+                )
+            else:
+                status_embed.add_field(
+                    name="ETA:",
+                    value="I'm busted"
+                )
         else:
             status_embed.add_field(
                 name="ETA:",
@@ -178,65 +173,89 @@ class ClaireCog(discord.Cog):
 
         return await ctx.respond(embed=status_embed)
     
-    @discord.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if user.id == 224506294801793025:
-            if reaction.emoji in [Emoji.CHECK, Emoji.CROSS]:
-                if reaction.message.embeds:
-                    embed = reaction.message.embeds[0]
-                    if embed.author.name.lower() in [source.name.lower() for source in Sources]:
-                        dic = {
-                            'name': embed.title.split(" - ")[1],
-                            'label': 1 if reaction.emoji == Emoji.CROSS else 0
-                        }
-                        for field in embed.fields:
-                            if field.name == 'Details':
-                                dic['details'] = field.value
-                        if dic.get('details'):
-                            ml_insert_query(dic)
+    # @discord.Cog.listener()
+    # async def on_reaction_add(self, reaction, user):
+    #     if user.id == 224506294801793025:
+    #         if reaction.emoji in [Emoji.CHECK, Emoji.CROSS]:
+    #             if reaction.message.embeds:
+    #                 embed = reaction.message.embeds[0]
+    #                 if embed.author.name.lower() in [source.name.lower() for source in Sources]:
+    #                     dic = {
+    #                         'name': embed.title.split(" - ")[1],
+    #                         'label': 1 if reaction.emoji == Emoji.CROSS else 0
+    #                     }
+    #                     for field in embed.fields:
+    #                         if field.name == 'Details':
+    #                             dic['details'] = field.value
+    #                     if dic.get('details'):
+    #                         ml_insert_query(dic)
 
-    @slash_command(name="add_spam")
-    @discord.default_permissions(administrator=True)
-    async def add_spam(
-            self, ctx,
-            url: Option(str,
-                "URL of craigslist post"
-            ),
-        ):
-        """Gets URL details and adds them to spam list"""
+    # @slash_command(name="add_spam")
+    # @discord.default_permissions(administrator=True)
+    # async def add_spam(
+    #         self, ctx,
+    #         url: Option(str,
+    #             "URL of craigslist post"
+    #         ),
+    #     ):
+    #     """Gets URL details and adds them to spam list"""
 
-        await ctx.defer()
+    #     await self.am_busy(ctx)
+    #     await ctx.defer()
 
-        try:
-            listing = Craigslist.get(url)
+    #     try:
+    #         listing = Craigslist.get(url)
 
-            if listing.details:
+    #         if listing.body:
 
-                dic = {
-                    'name': "Added by URL",
-                    'label': 1
-                }
+    #             dic = {
+    #                 'name': "Added by URL",
+    #                 'label': 1
+    #             }
 
-                dic['details'] = listing.details
+    #             dic['details'] = listing.body
 
-                ml_insert_query(dic)
-                return await ctx.respond("Success")
+    #             ml_insert_query(dic)
+    #             return await ctx.respond("Success")
             
-            return await ctx.respond("Nothing to add")
+    #         return await ctx.respond("Nothing to add")
             
-        except Exception as e:
-            return await ctx.respond("Error", e)
+    #     except Exception as e:
+    #         return await ctx.respond("Error", e)
     
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=300, reconnect=True)
     async def lookup_queries(self):
+        if self.currently_checking:
+            return
+        
         self.currently_checking = True
-        self.last_checked = await self.claire.check_queries(self.bot)
+        url = f"{BASE_URL}/search/"
+
+        response = await make_request(url)
+
+        for query in response.get('results'):
+            current_query = ClaireQuery(**query['query'])
+            channel = self.bot.get_channel(current_query.channel)
+            if channel is None:
+                continue
+
+            await current_query.send_listings(
+                self.bot,
+                listings=[ClaireListing(**listing) for listing in query.get('listings')]
+            )
+
+        self.currently_checking = False
+        self.last_checked = datetime.now()
 
     @lookup_queries.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
 
+async def make_request(url):
+    async with httpx.AsyncClient(timeout=300) as client:
+        response = await client.get(url)
+        return response.json()
 
 def setup(bot):
     """Entry point for loading cogs."""

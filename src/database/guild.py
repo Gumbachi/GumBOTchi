@@ -1,7 +1,7 @@
 import os
-from typing import Any
-
 import pymongo
+
+from typing import Any
 
 # database connection setup
 mongo_string = f"mongodb+srv://Gumbachi:{os.getenv('MONGO_PASS')}@discordbotcluster.afgyl.mongodb.net/GumbotchiDB?retryWrites=true&w=majority"

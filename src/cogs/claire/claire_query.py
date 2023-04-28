@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
-from cogs.claire.api.sources import Sources
 
 if TYPE_CHECKING:
     from claire_listing import ClaireListing
@@ -37,6 +36,8 @@ class ClaireQuery:
     def search(self) -> List['ClaireListing']:
         """Uses the query to search Craigslist. 
         Returns a list of ALL matching posts"""
+
+        from cogs.claire.api.sources import Sources
 
         listings: List['ClaireListing'] = []
 
@@ -83,40 +84,11 @@ class ClaireQuery:
         exceeds the threshold, it is flagged as spam
         """
 
-        prob_spam = spam_model.probability_of_spam(listing.details) * 100
+        prob_spam = spam_model.probability_of_spam(listing.body) * 100
         if prob_spam > self.spam_probability:
             return True
         
         return False
-        
-        # spam_words = [
-        #     'Smartphones', 'iPhone', 'Samsung', 'LG', 'Android', 'Laptops',
-        #     'Video Games', 'Drones', 'Speakers', 'Cameras',
-        #     'Music Equipment', 'Headsets', 'Airpods', 'https://gameboxhero.com'
-        #     'Top Buyer', 'Quote', 'Sprint', 'ATT', 'Verizon', 'TMobile',
-        # ]
-
-        # spam = 0
-        # body = listing.details
-
-        # # Only check posts with long descriptions
-        # if len(body) > 500:
-
-        #     # Remove keywords from spam list
-        #     spam_words = [i for i in [e.upper() for e in spam_words] if i not in [
-        #         j.upper() for j in self.keywords]]
-            
-        #     for word in spam_words:
-
-        #         # -1 means the word is not found
-        #         if body.find(word) != -1:
-        #             spam += 1
-                
-        #         # Too spammy so break
-        #         if spam > self.spam_tolerance:
-        #             return True
-
-        # return False
 
     def clean_listings(self, listings: List['ClaireListing']) -> List['ClaireListing']:
         """Cleans up the listings to prepare for sending."""
@@ -132,14 +104,18 @@ class ClaireQuery:
         for listing in listings:
             self.sent_listings.add(listing.id)
 
-    async def send_listings(self, bot, spam_model: 'ClaireSpam', listings: List['ClaireListing']):
+    async def send_listings(self, bot, listings: List['ClaireListing']):
         """ Sends the listings"""
 
         channel = bot.get_channel(self.channel)
+
+        if not channel:
+            return
+        
         if self.ping:
             user = bot.get_user(self.owner_id)
-            await channel.send(f"{user.mention}, here are some new listings for {self.keywords}.")
+            await channel.send(f"{user.mention}. New listings for {self.keywords}.")
 
         for listing in listings:
-            embed = listing.discord_embed(spam_model=spam_model)
+            embed = listing.discord_embed()
             await channel.send(embed=embed)
