@@ -16,7 +16,6 @@ def isiterable(var):
     except TypeError:
         return False
 
-
 def requests_get(*args, **kwargs):
     """
     Retries if a RequestException is raised (could be a connection error or
@@ -34,14 +33,8 @@ def requests_get(*args, **kwargs):
 
     try:
         CraigslistBrowser.visit(url)
-        page_source = CraigslistBrowser.show_source(wait)
-        return page_source
-        
-    except RequestException as exc:
-        if logger:
-            logger.warning('Request failed (%s). Retrying ...', exc)
-        CraigslistBrowser.visit(url)
-        return CraigslistBrowser.show_source(wait)
+        src = CraigslistBrowser.show_source(wait)
+        return src
     except Exception as e:
         print(f"Failed getting source: {url}")
         return None

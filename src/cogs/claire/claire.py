@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 import discord
 # from common.cfg import Emoji
@@ -135,7 +135,7 @@ class ClaireCog(discord.Cog):
         next_check = "Now"
         if self.last_checked:
             next_check = self.last_checked + timedelta(seconds=300)
-            ETA = round(abs((next_check - datetime.now()).total_seconds()))
+            ETA = round((next_check - datetime.now()).total_seconds())
 
         status_embed = discord.Embed(
             title="Status Report:",
