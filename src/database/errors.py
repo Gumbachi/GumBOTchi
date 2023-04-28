@@ -1,10 +1,8 @@
-import discord
-
-
 class DatabaseError(Exception):
-
     @property
-    def embed(self) -> discord.Embed:
+    def embed(self):
+        import discord
+
         embed = discord.Embed(
             title="Database Error",
             color=discord.Color.red()

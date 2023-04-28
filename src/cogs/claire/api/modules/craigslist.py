@@ -7,25 +7,6 @@ if TYPE_CHECKING:
     from claire.claire_query import ClaireQuery
 
 class Craigslist:
-<<<<<<< Updated upstream:src/cogs/claire/api/craigslist.py
-=======
-
-    @classmethod
-    def get(cls, url) -> ClaireListing:
-        listing = get_url(url)
-        return ClaireListing(
-            source=cls.__name__,
-            id=listing.get("id"),
-            name=listing.get('name', 'Manual Pull'),
-            url=listing.get('url'),
-            posted=datetime.strptime(
-                listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
-            price=0,
-            images=listing.get('images'),
-            body=listing.get('body'),
-            attributes=listing.get('attrs'),
-        )
->>>>>>> Stashed changes:src/cogs/claire/api/modules/craigslist.py
     
     @classmethod
     def search(cls, query: 'ClaireQuery') -> List[ClaireListing]:

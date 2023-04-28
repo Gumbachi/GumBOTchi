@@ -21,6 +21,7 @@ pandas = "^2.0.0"
 selenium = "^4.8.3"
 uvicorn = "^0.21.1"
 fastapi = "^0.95.1"
+httpx = "^0.24.0"
 
 
 [tool.poetry.group.dev.dependencies]

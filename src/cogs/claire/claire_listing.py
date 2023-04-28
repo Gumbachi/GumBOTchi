@@ -1,7 +1,6 @@
 from datetime import datetime
 from dateutil.parser import parse
 from typing import List
-import discord
 
 class ClaireListing:
     def __init__(
@@ -61,6 +60,8 @@ class ClaireListing:
     
     def discord_embed(self):
         """Creates embed for discord"""
+
+        import discord
 
         display_limit = 250 # Characters
 

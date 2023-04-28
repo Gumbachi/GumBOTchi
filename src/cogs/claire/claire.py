@@ -1,29 +1,19 @@
 from datetime import timedelta, datetime
 
 import discord
-<<<<<<< Updated upstream
-from discord import ApplicationContext, Option, slash_command
-from discord.ext import tasks
-
-from cogs.claire.api.maps import get_lat_lon
-=======
 from common.cfg import Emoji
 from discord import ApplicationContext, Option, slash_command
 from discord.ext import tasks
 
 from cogs.claire.api.modules.craigslist import Craigslist
->>>>>>> Stashed changes
 from cogs.claire.api.sources import Sources
 from cogs.claire.claire_model import ClaireQuery
 from cogs.claire.claire_listing import ClaireListing
 from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
-<<<<<<< Updated upstream
-from common.cfg import Emoji
-from database.claire import delete_query, insert_query
-=======
-import requests
->>>>>>> Stashed changes
+import httpx
 
+# BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://claire-server:80"
 
 class ClaireCog(discord.Cog):
     """Handles all of the logic for deals monitoring"""
@@ -80,7 +70,8 @@ class ClaireCog(discord.Cog):
 
         args = f"uid={ctx.user.id}&channel_id={ctx.channel.id}&zip_code={zip_code}&state={state}&site={site}&budget={budget}&keywords={keywords}&distance={distance}&has_image={has_image}&spam_probability={spam_probability}&ping={ping}&category={category}"
 
-        response = requests.get(f"http://127.0.0.1:8000/add_query/?{args}").json()
+        url = f"{BASE_URL}/add_query/?{args}"
+        response = await make_request(url)
 
         return await ctx.respond(f"{response.get('message')} {response.get('error', '')}")
 
@@ -91,8 +82,9 @@ class ClaireCog(discord.Cog):
         """Deletes a Claire query"""
 
         await ctx.defer()
-
-        response = requests.get(f"http://127.0.0.1:8000/delete_query/?uid={ctx.user.id}&index={index}").json()
+        
+        url = f"{BASE_URL}/delete_query/?uid={ctx.user.id}&index={index}"
+        response = await make_request(url)
 
         return await ctx.respond(response.get('message'))
 
@@ -102,7 +94,8 @@ class ClaireCog(discord.Cog):
 
         await ctx.defer()
 
-        response = requests.get(f"http://127.0.0.1:8000/claire_queries/?uid={ctx.user.id}").json()
+        url = f"{BASE_URL}/claire_queries/?uid={ctx.user.id}"
+        response = await make_request(url)
 
         queries = [ClaireQuery(**query) for query in response.get('queries')]
 
@@ -129,7 +122,7 @@ class ClaireCog(discord.Cog):
     @slash_command(name="claire_status")
     async def status(self, ctx):
         """Display information on last update"""
-        ETA = 1
+        ETA = -1
         next_check = "Now"
         if self.last_checked:
             next_check = self.last_checked + timedelta(seconds=300)
@@ -152,12 +145,6 @@ class ClaireCog(discord.Cog):
             value=f"{next_check}"
         )
 
-<<<<<<< Updated upstream
-        status_embed.add_field(
-            name="ETA:",
-            value=f"{ETA} second{'s' if ETA > 1 else ''}"
-        )
-=======
         if ETA < 0:
             if self.currently_checking:
                 status_embed.add_field(
@@ -174,7 +161,6 @@ class ClaireCog(discord.Cog):
                 name="ETA:",
                 value=f"{ETA} second{'s' if ETA > 1 else ''}"
             )
->>>>>>> Stashed changes
 
         return await ctx.respond(embed=status_embed)
     
@@ -195,8 +181,6 @@ class ClaireCog(discord.Cog):
                         if dic.get('details'):
                             ml_insert_query(dic)
 
-<<<<<<< Updated upstream
-=======
     @slash_command(name="add_spam")
     @discord.default_permissions(administrator=True)
     async def add_spam(
@@ -230,12 +214,15 @@ class ClaireCog(discord.Cog):
             return await ctx.respond("Error", e)
     
 
->>>>>>> Stashed changes
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=300, reconnect=True)
     async def lookup_queries(self):
-        print("I'm searching (not relaly)")
+        if self.currently_checking:
+            return
+        
         self.currently_checking = True
-        response = requests.get("http://127.0.0.1:8000/search/").json()
+        url = f"{BASE_URL}/search/"
+
+        response = await make_request(url)
 
         for query in response.get('results'):
             current_query = ClaireQuery(**query['query'])
@@ -248,8 +235,6 @@ class ClaireCog(discord.Cog):
                 listings=[ClaireListing(**listing) for listing in query.get('listings')]
             )
 
-        print("finished")
-
         self.currently_checking = False
         self.last_checked = datetime.now()
 
@@ -257,6 +242,10 @@ class ClaireCog(discord.Cog):
     async def before_loop(self):
         await self.bot.wait_until_ready()
 
+async def make_request(url):
+    async with httpx.AsyncClient(timeout=300) as client:
+        response = await client.get(url)
+        return response.json()
 
 def setup(bot):
     """Entry point for loading cogs."""
