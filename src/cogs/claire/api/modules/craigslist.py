@@ -2,28 +2,11 @@ from datetime import datetime
 from cogs.claire.api.forky_fork.craigslist_headless import CraigslistForSale
 from typing import TYPE_CHECKING, List
 from cogs.claire.claire_listing import ClaireListing
-from cogs.claire.api.forky_fork.craigslist_headless.utils import get_url
 
 if TYPE_CHECKING:
     from claire.claire_query import ClaireQuery
 
 class Craigslist:
-
-    @classmethod
-    def get(cls, url) -> ClaireListing:
-        listing = get_url(url)
-        return ClaireListing(
-            source=cls.__name__,
-            id=listing.get("id"),
-            name=listing.get('name', 'Manual Pull'),
-            url=listing.get('url'),
-            posted=datetime.strptime(
-                listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
-            price=0,
-            images=listing.get('images'),
-            details=listing.get('body'),
-            attributes=listing.get('attrs'),
-        )
     
     @classmethod
     def search(cls, query: 'ClaireQuery') -> List[ClaireListing]:
