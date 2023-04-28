@@ -4,7 +4,6 @@ scikit-learn==1.2.1
 python-dotenv==1.0.0
 pyOfferUp==0.3
 pymongo==4.3.3
-httpx==0.23.3
 fastapi==0.95.1
 six==1.16.0
 beautifulsoup4==4.11.2

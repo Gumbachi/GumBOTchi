@@ -122,7 +122,7 @@ class Jukebox(discord.ui.View):
         print(f"PLAY NEXT ENTERED: {error=}")
 
         if error:
-            print(type(error), error)
+            print(f"{type(error)}, {error}")
 
         if self.current is not None:
             # dont add duplicates

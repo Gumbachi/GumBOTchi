@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 from typing import List
 from database.guild import db
 
@@ -6,8 +9,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-import numpy as np
-import pandas as pd
 
 class ClaireSpam:
     def __init__(self):

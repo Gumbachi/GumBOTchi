@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/bot.dockerfile
-  
+
   claire-server:
     build:
       context: .

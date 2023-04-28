@@ -10,7 +10,6 @@ USER_AGENT = 'Mozilla/5.0'
 def bs(content):
     return BeautifulSoup(content, 'html.parser')
 
-
 def isiterable(var):
     try:
         return iter(var) and True
@@ -32,6 +31,7 @@ def requests_get(*args, **kwargs):
         url = args[0] + "?" + query_string
     else:
         url = args[0]
+
     try:
         CraigslistBrowser.visit(url)
         page_source = CraigslistBrowser.show_source(wait)
@@ -43,17 +43,5 @@ def requests_get(*args, **kwargs):
         CraigslistBrowser.visit(url)
         return CraigslistBrowser.show_source(wait)
     except Exception as e:
-            print(e)
-            return None
-
-def get_list_filters(url):
-    list_filters = {}
-    page_source = requests_get(url)
-    soup = bs(page_source)
-    for list_filter in soup.find_all('div', class_='search-attribute'):
-        filter_key = list_filter.attrs['data-attr']
-        filter_labels = list_filter.find_all('label')
-        options = {opt.text.strip(): opt.find('input').get('value')
-                   for opt in filter_labels}
-        list_filters[filter_key] = {'url_key': filter_key, 'value': options}
-    return list_filters
+        print(f"Failed getting source: {url}")
+        return None

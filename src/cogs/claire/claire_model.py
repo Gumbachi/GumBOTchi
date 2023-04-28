@@ -1,7 +1,8 @@
+from typing import List
+
+from database.claire import get_queries, delete_query
 from cogs.claire.claire_query import ClaireQuery
 from cogs.claire.ml.claire_ml import ClaireSpam
-from database.claire import get_queries, delete_query
-from typing import List
 from cogs.claire.api.forky_fork.craigslist_headless.browser import CraigslistBrowser
 
 class Claire:
@@ -9,7 +10,6 @@ class Claire:
     def __init__ (self):
         self.active_queries: List[ClaireQuery] = []
         self.spam_model = ClaireSpam()
-        CraigslistBrowser.check_activity()
     
     def update(self):
         """Fetches latest queries from DB, creates custom query objects and check
@@ -35,9 +35,9 @@ class Claire:
                         category=query["category"],
                         has_image=query["has_image"],
                         ping=query["ping"]
-                    )
+                )
             except Exception as e:
-                print('Corrupted query skipping...', e)
+                print(f'Corrupted query skipping... {e}')
                 continue
             
             # Check if it's already in memory
@@ -58,8 +58,6 @@ class Claire:
         """Searches for new results in tracked queries"""
         new_listings = []
         for query in self.active_queries:
-            if query.owner_id != 224506294801793025:
-                continue
 
             # Search
             listings = query.search()
@@ -87,6 +85,8 @@ class Claire:
 
                 # Mark as sent
                 query.mark_sent(clean_listings)
+        
+        CraigslistBrowser.quit()
         return new_listings
                 
     def delete_query(self, query: ClaireQuery):

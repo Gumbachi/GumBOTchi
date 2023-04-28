@@ -13,4 +13,5 @@ COPY src/ ./src
 RUN pip3 install -r src/cogs/claire/api/requirements.txt
 
 EXPOSE 80
+
 ENTRYPOINT python3 -u src/cogs/claire/api/server.py

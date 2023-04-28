@@ -39,7 +39,7 @@ class ClaireListing:
 
         if self.images:
             for image in self.images:
-                if "images" in image:
+                if "images" in image and image.startswith('https://'):
                     return image
         
     def clean(self):
@@ -108,7 +108,11 @@ class ClaireListing:
         if photo:
             embed.set_image(url=photo)
 
-        embed.set_footer(text=f"Posted: {posted}.\nSent: {sent}\nAlleged Probability of Spam: {self.spam}%")
+        foot = f"Posted: {posted}.\nSent: {sent}"
+        if hasattr(self, 'spam'):
+            embed.set_footer(text=f"{foot}\nAlleged Probability of Spam: {self.spam}%")
+        else:
+            embed.set_footer(text=foot)
 
         return embed
 

@@ -1,18 +1,17 @@
 from datetime import timedelta, datetime
 
 import discord
-from common.cfg import Emoji
+# from common.cfg import Emoji
 from discord import ApplicationContext, Option, slash_command
 from discord.ext import tasks
 
-from cogs.claire.api.modules.craigslist import Craigslist
-from cogs.claire.api.sources import Sources
-from cogs.claire.claire_model import ClaireQuery
+# from cogs.claire.api.modules.craigslist import Craigslist
+# from cogs.claire.api.sources import Sources
+from cogs.claire.claire_query import ClaireQuery
 from cogs.claire.claire_listing import ClaireListing
-from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
+# from cogs.claire.ml.claire_ml import insert_query as ml_insert_query
 import httpx
 
-# BASE_URL = "http://127.0.0.1:8000"
 BASE_URL = "http://claire-server:80"
 
 class ClaireCog(discord.Cog):
@@ -23,6 +22,13 @@ class ClaireCog(discord.Cog):
         self.currently_checking = False
         self.last_checked = None
         self.lookup_queries.start()
+
+    async def am_busy(self, ctx) -> bool:
+        if self.currently_checking:
+            msg = "Currently searching... give me a minute"
+            await ctx.send(msg)
+        
+        return self.currently_checking
 
     @slash_command(name="steponme")
     async def clairme(
@@ -65,7 +71,8 @@ class ClaireCog(discord.Cog):
         ),
     ):
         """Creates a query to monitor in Craigslist"""
-        
+
+        await self.am_busy(ctx)
         await ctx.defer()
 
         args = f"uid={ctx.user.id}&channel_id={ctx.channel.id}&zip_code={zip_code}&state={state}&site={site}&budget={budget}&keywords={keywords}&distance={distance}&has_image={has_image}&spam_probability={spam_probability}&ping={ping}&category={category}"
@@ -81,6 +88,7 @@ class ClaireCog(discord.Cog):
         ):
         """Deletes a Claire query"""
 
+        await self.am_busy(ctx)
         await ctx.defer()
         
         url = f"{BASE_URL}/delete_query/?uid={ctx.user.id}&index={index}"
@@ -92,6 +100,7 @@ class ClaireCog(discord.Cog):
     async def show_queries(self, ctx):
         """Display currently monitored queries"""
 
+        await self.am_busy(ctx)
         await ctx.defer()
 
         url = f"{BASE_URL}/claire_queries/?uid={ctx.user.id}"
@@ -164,54 +173,55 @@ class ClaireCog(discord.Cog):
 
         return await ctx.respond(embed=status_embed)
     
-    @discord.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if user.id == 224506294801793025:
-            if reaction.emoji in [Emoji.CHECK, Emoji.CROSS]:
-                if reaction.message.embeds:
-                    embed = reaction.message.embeds[0]
-                    if embed.author.name.lower() in [source.name.lower() for source in Sources]:
-                        dic = {
-                            'name': embed.title.split(" - ")[1],
-                            'label': 1 if reaction.emoji == Emoji.CROSS else 0
-                        }
-                        for field in embed.fields:
-                            if field.name == 'Details':
-                                dic['details'] = field.value
-                        if dic.get('details'):
-                            ml_insert_query(dic)
+    # @discord.Cog.listener()
+    # async def on_reaction_add(self, reaction, user):
+    #     if user.id == 224506294801793025:
+    #         if reaction.emoji in [Emoji.CHECK, Emoji.CROSS]:
+    #             if reaction.message.embeds:
+    #                 embed = reaction.message.embeds[0]
+    #                 if embed.author.name.lower() in [source.name.lower() for source in Sources]:
+    #                     dic = {
+    #                         'name': embed.title.split(" - ")[1],
+    #                         'label': 1 if reaction.emoji == Emoji.CROSS else 0
+    #                     }
+    #                     for field in embed.fields:
+    #                         if field.name == 'Details':
+    #                             dic['details'] = field.value
+    #                     if dic.get('details'):
+    #                         ml_insert_query(dic)
 
-    @slash_command(name="add_spam")
-    @discord.default_permissions(administrator=True)
-    async def add_spam(
-            self, ctx,
-            url: Option(str,
-                "URL of craigslist post"
-            ),
-        ):
-        """Gets URL details and adds them to spam list"""
+    # @slash_command(name="add_spam")
+    # @discord.default_permissions(administrator=True)
+    # async def add_spam(
+    #         self, ctx,
+    #         url: Option(str,
+    #             "URL of craigslist post"
+    #         ),
+    #     ):
+    #     """Gets URL details and adds them to spam list"""
 
-        await ctx.defer()
+    #     await self.am_busy(ctx)
+    #     await ctx.defer()
 
-        try:
-            listing = Craigslist.get(url)
+    #     try:
+    #         listing = Craigslist.get(url)
 
-            if listing.body:
+    #         if listing.body:
 
-                dic = {
-                    'name': "Added by URL",
-                    'label': 1
-                }
+    #             dic = {
+    #                 'name': "Added by URL",
+    #                 'label': 1
+    #             }
 
-                dic['details'] = listing.body
+    #             dic['details'] = listing.body
 
-                ml_insert_query(dic)
-                return await ctx.respond("Success")
+    #             ml_insert_query(dic)
+    #             return await ctx.respond("Success")
             
-            return await ctx.respond("Nothing to add")
+    #         return await ctx.respond("Nothing to add")
             
-        except Exception as e:
-            return await ctx.respond("Error", e)
+    #     except Exception as e:
+    #         return await ctx.respond("Error", e)
     
 
     @tasks.loop(seconds=300, reconnect=True)
