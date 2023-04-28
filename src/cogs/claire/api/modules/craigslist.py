@@ -55,8 +55,13 @@ class Craigslist:
                 for listing in generator.get_results(sort_by='newest',
                                                      include_details=True):
                     if listing:
-                        if not listing.get('price'):
+                        list_price = listing.get('price')
+                        if not list_price:
                             continue
+
+                        list_price = float(list_price.split("$")[1])
+                        if list_price > query.budget:
+                            continue 
 
                         listings.append(
                             ClaireListing(
@@ -68,7 +73,7 @@ class Craigslist:
                                     listing.get('created', '2001-01-01 00:00'),
                                                 '%Y-%m-%d %H:%M'
                                 ),
-                                price=listing.get('price').split("$")[1],
+                                price=list_price,
                                 images=listing.get('images'),
                                 body=listing.get('body'),
                                 attributes=listing.get('attrs'),
@@ -78,6 +83,13 @@ class Craigslist:
             except Exception as e:
                 for listing in generator.get_results(sort_by='newest'):
                     if listing:
+                        list_price = listing.get('price')
+                        if not list_price:
+                            continue
+
+                        list_price = float(list_price.split("$")[1])
+                        if list_price > query.budget:
+                            continue 
                         
                         listings.append(
                             ClaireListing(
@@ -87,7 +99,7 @@ class Craigslist:
                                 url=listing.get('url'),
                                 posted=datetime.strptime(
                                     listing.get('created', '2001-01-01 00:00'), '%Y-%m-%d %H:%M'),
-                                price=listing.get('price').split("$")[1],
+                                price=list_price,
                                 images=listing.get('images'),
                                 body=listing.get('body'),
                                 attributes=listing.get('attrs'),
