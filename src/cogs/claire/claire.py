@@ -253,7 +253,7 @@ class ClaireCog(discord.Cog):
         await self.bot.wait_until_ready()
 
 async def make_request(url):
-    async with httpx.AsyncClient(timeout=300) as client:
+    async with httpx.AsyncClient(timeout=3600) as client:
         response = await client.get(url)
         return response.json()
 
