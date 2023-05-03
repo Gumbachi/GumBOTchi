@@ -79,8 +79,11 @@ class ClaireCog(discord.Cog):
 
         url = f"{BASE_URL}/add_query/?{args}"
         response = await make_request(url)
-
-        return await ctx.respond(f"{response.get('message')} {response.get('error', '')}")
+        if not response:
+            return await ctx.respond("Failed to hear back.")
+        
+        msg = f"{response.get('message')} {response.get('error', '')}"
+        return await ctx.respond(msg)
 
     @slash_command(name="safeword")
     async def unclaireme(self, ctx,
@@ -93,6 +96,8 @@ class ClaireCog(discord.Cog):
         
         url = f"{BASE_URL}/delete_query/?uid={ctx.user.id}&index={index}"
         response = await make_request(url)
+        if not response:
+            return await ctx.respond("Failed to hear back.")
 
         return await ctx.respond(response.get('message'))
 
@@ -105,6 +110,8 @@ class ClaireCog(discord.Cog):
 
         url = f"{BASE_URL}/claire_queries/?uid={ctx.user.id}"
         response = await make_request(url)
+        if not response:
+            return await ctx.respond("Failed to hear back.")
 
         queries = [ClaireQuery(**query) for query in response.get('queries')]
 
@@ -233,6 +240,8 @@ class ClaireCog(discord.Cog):
         url = f"{BASE_URL}/search/"
 
         response = await make_request(url)
+        if not response:
+            return
 
         for query in response.get('results'):
             current_query = ClaireQuery(**query['query'])
@@ -253,9 +262,13 @@ class ClaireCog(discord.Cog):
         await self.bot.wait_until_ready()
 
 async def make_request(url):
-    async with httpx.AsyncClient(timeout=3600) as client:
-        response = await client.get(url)
-        return response.json()
+    try:
+        async with httpx.AsyncClient(timeout=300) as client:
+            response = await client.get(url)
+            return response.json()
+    except Exception as e:
+        print('failed to hear back from', url, e)
+        return
 
 def setup(bot):
     """Entry point for loading cogs."""
