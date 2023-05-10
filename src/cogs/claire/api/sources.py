@@ -6,7 +6,7 @@ from cogs.claire.api.modules.searchable import Searchable
 
 
 class Sources(Enum):
-    CRAIGSLIST=Craigslist
+    # CRAIGSLIST=Craigslist
     OFFERUP=OfferUp
 
     def is_valid(self) -> bool:
