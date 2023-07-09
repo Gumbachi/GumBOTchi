@@ -27,6 +27,7 @@ class Tenor:
     KERMIT_LOST = "https://tenor.com/view/kermit-the-frog-looking-for-directions-navigate-is-lost-gif-11835765"
     HE_BOUGHT = "https://tenor.com/view/bogdanoff-dump-it-stocks-crypto-gif-20477588"
     HE_SOLD = "https://tenor.com/view/bogdanoff-he-sold-pump-it-gif-23606817"
+    MY_MAN = "https://tenor.com/view/woody-toy-story-buzz-dab-me-up-dab-up-gif-26395273"
 
 
 class Role:

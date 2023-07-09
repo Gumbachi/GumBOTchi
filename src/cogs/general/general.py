@@ -56,6 +56,10 @@ class GeneralCommands(discord.Cog):
                 response = random.choice(list(path.iterdir()))
                 await message.channel.send(file=discord.File(response))
 
+        # my man listener
+        if message.content.lower() == "my man":
+            await message.channel.send(Tenor.MY_MAN)
+
     @loop(seconds=300)
     async def activity_cycler(self):
         """Cycle the bot's presence to the next activity."""
