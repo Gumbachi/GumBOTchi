@@ -59,6 +59,10 @@ class GeneralCommands(commands.Cog):
         if message.content.lower() == "f":
             await message.channel.send("https://tenor.com/view/press-f-pay-respect-coffin-burial-gif-12855021")
 
+        # my man listener
+        if message.content.lower() == "my man":
+            await message.channel.send("https://tenor.com/view/woody-toy-story-buzz-dab-me-up-dab-up-gif-26395273")
+
     @tasks.loop(seconds=300)
     async def activity_switcher(self):
         await self.bot.change_presence(activity=next(cfg.activities))
