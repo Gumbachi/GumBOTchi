@@ -44,7 +44,7 @@ cogs = [
     "cogs.polls.polls",
     "cogs.music.music",
     "cogs.soundboard.soundboard",
-    "cogs.claire.claire",
+    # "cogs.claire.claire",
 ]
 
 
@@ -56,8 +56,11 @@ def run_server():
     uvicorn.run(app, host="127.0.0.1", port=80)
 
 if __name__ == '__main__':
-    bot_process = multiprocessing.Process(target=run_bot)
-    server_process = multiprocessing.Process(target=run_server)
 
-    bot_process.start()
-    server_process.start()
+    run_bot()
+
+    # bot_process = multiprocessing.Process(target=run_bot)
+    # server_process = multiprocessing.Process(target=run_server)
+
+    # bot_process.start()
+    # server_process.start()
