@@ -13,18 +13,6 @@ pymongo = { version = "^4.3.3", extras = ["srv"] }
 matplotlib = "^3.7.1"
 yt-dlp = "^2023.7.6"
 python-dotenv = "^1.0.0"
-typing-extensions = "^4.5.0"
-httpx = "^0.24.0"
-uvicorn = "^0.22.0"
-selenium = "^4.9.0"
-scikit-learn = "^1.2.2"
-pyofferup = "^0.3"
-fastapi = "^0.95.1"
-six = "^1.16.0"
-beautifulsoup4 = "^4.12.2"
-python-dateutil = "^2.8.2"
-pandas = "^2.0.1"
-
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.260"
