@@ -25,7 +25,7 @@ else:
 @bot.listen()
 async def on_ready() -> None:
     """Bot is now ready to rumble."""
-    print("Ready to go")
+    print("Ready to go.")
 
 # .py files to load up
 cogs = [
