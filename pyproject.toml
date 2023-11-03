@@ -7,10 +7,10 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 py-cord = { version = "^2.4.1", extras = ["voice"] }
-pymongo = { version = "^4.3.3", extras = ["srv"] }
-yt-dlp = "^2023.7.6"
+pymongo = { version = "^4.6.0", extras = ["srv"] }
+yt-dlp = "^2023.10.13"
 python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]

@@ -103,9 +103,15 @@ class Jukebox(discord.ui.View):
         print("STOPPING FOR WHATEVER REASON")
 
         self.current = None
-        self.voice_client.stop()
+
+        try:
+            self.voice_client.stop()
+            self.disconnect()
+        except NoVoiceClient:
+            pass
+
         self.update_play_buttons()
-        self.disconnect()
+        
 
     def enqueue(self, song: Song):
         """Add a song to the queue."""
