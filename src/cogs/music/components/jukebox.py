@@ -106,11 +106,15 @@ class Jukebox(discord.ui.View):
 
         try:
             self.voice_client.stop()
-            self.disconnect()
         except NoVoiceClient:
             pass
 
         self.update_play_buttons()
+
+        try:
+            self.disconnect()
+        except NoVoiceClient:
+            pass
         
 
     def enqueue(self, song: Song):
