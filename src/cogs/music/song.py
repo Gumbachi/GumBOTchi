@@ -31,6 +31,11 @@ FFMPEG_OPTS = {
 class Song(discord.PCMVolumeTransformer):
     """Represents song/youtube video as a discord audio object."""
 
+    __slots__ = (
+        "_metadata", "title", "duration_in_seconds",
+        "url", "webpage_url", "thumbnail", "songvolume"
+    )
+
     def __init__(
         self,
         source: discord.FFmpegPCMAudio,
@@ -74,7 +79,10 @@ class Song(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
 
         with YoutubeDL(YDL_OPTS) as ydl:
-            song_info = await loop.run_in_executor(None, lambda: ydl.extract_info(f"ytsearch:{query}", download=False))
+            song_info = await loop.run_in_executor(
+                None,
+                lambda: ydl.extract_info(f"ytsearch:{query}", download=False)
+            )
 
             try:
                 info = song_info["entries"][0]
