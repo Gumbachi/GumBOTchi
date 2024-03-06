@@ -103,6 +103,7 @@ def display(
     buffer = io.BytesIO()
     plt.savefig(buffer)
     buffer = buffer.getvalue()
+    
     return discord.File(
         fp=io.BytesIO(buffer),
         filename=f"{name}.png"

@@ -85,6 +85,9 @@ class SbonkCommands(discord.Cog):
             length = chart_length,
         )
 
+        if not chart:
+            await ctx.respond("No chart created??")
+
         await ctx.respond(
             file=chart
         )
