@@ -1,5 +1,6 @@
 """Draws sbonks for the people. Styling found is res/sbonks.mplstyle ."""
 import re
+import random
 
 import discord
 from .alpha_vantage import AlphaVantage, AlphaVantageError
@@ -118,6 +119,10 @@ class SbonkCommands(discord.Cog):
 
         # Parse symbols from message and check if there are any
         symbols = self.extract_symbols(message.content)
+
+        if not symbols and random.randint(0, 100) != 69:
+            return
+
 
         # Fetch data from AV and check if there is any
         try:
