@@ -2,10 +2,10 @@
 import re
 
 import discord
-from cogs.sbonks.alpha_vantage import AlphaVantage, AlphaVantageError
-from cogs.sbonks.components import ApiKeyModal
-from cogs.sbonks.graphing import display
-from cogs.sbonks.time_series import ChartLength, DataType
+from .alpha_vantage import AlphaVantage, AlphaVantageError
+from .components import ApiKeyModal
+from .graphing import display
+from .time_series import ChartLength, DataType
 from common.cfg import Emoji, Tenor
 from discord import guild_only, option, slash_command
 
