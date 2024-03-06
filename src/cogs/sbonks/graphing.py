@@ -6,7 +6,7 @@ import discord
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from time_series import ChartLength, TimeSeriesData
+from .time_series import ChartLength, TimeSeriesData
 
 plt.style.use("./processing/style.mplstyle")
 

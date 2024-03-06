@@ -1,7 +1,7 @@
 from typing import List
 import database as db
 import requests
-from time_series import DataType, TimeInterval, TimeSeriesData
+from .time_series import DataType, TimeInterval, TimeSeriesData
 
 class AlphaVantageError(Exception):
     pass
