@@ -25,7 +25,7 @@ def display(
 
     # Filter only relevant data and sort by date
     df = df.query(
-        "type==@kind.value and (@start <= date <= @end)") \
+        "type==(@start <= date <= @end)") \
         .sort_values(
             by='date',
             ascending=False
