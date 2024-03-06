@@ -37,6 +37,7 @@ cogs = [
     "cogs.games.connectfour.connectfour",
     "cogs.polls.polls",
     "cogs.music.music",
+    "cogs.sbonks.sbonks"
 ]
 
 if __name__ == '__main__':
