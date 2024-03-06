@@ -14,5 +14,5 @@ class ApiKeyModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         key = self.children[0].value
-        db.set_alpha(id=interaction.guild.id, key=key)
+        db.set_alphavantage(id=interaction.guild.id, key=key)
         await interaction.response.send_message("Successfully set API key")
