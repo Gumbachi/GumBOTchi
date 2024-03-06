@@ -30,7 +30,7 @@ class AlphaVantage:
         """
         match data_type:
             case DataType.INTRADAY:
-                return f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval={interval}&outputsize=full&apikey={self.API_KEY}"
+                return f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval={interval.value}&outputsize=full&apikey={self.API_KEY}"
             case DataType.DAILY:
                 return f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&outputsize=full&apikey={self.API_KEY}"
             case DataType.WEEKLY:

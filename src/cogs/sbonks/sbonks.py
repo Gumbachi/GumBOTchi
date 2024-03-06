@@ -154,7 +154,9 @@ class SbonkCommands(discord.Cog):
                 time_series_data = data,
                 length = ChartLength.DAY,
             )
-            charts.append(chart)
+
+            if chart:
+                charts.append(chart)
 
         async with message.channel.typing():
             if not charts:
