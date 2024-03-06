@@ -8,7 +8,7 @@ import pandas as pd
 
 from .time_series import ChartLength, TimeSeriesData
 
-plt.style.use("./processing/style.mplstyle")
+plt.style.use("./processing/sbonks.mplstyle")
 
 def display(
     name: str,
