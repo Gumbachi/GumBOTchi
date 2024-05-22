@@ -39,7 +39,7 @@ class GeneralCommands(discord.Cog):
 
     # User commands and message commands can have spaces in their names
     @message_command(name="Toggle Reddit Link")
-    async def toggle_reddit_link(ctx: discord.ApplicationContext, message: discord.Message):
+    async def toggle_reddit_link(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Toggle reddit links between old reddit and new reddit"""
         if message.content.lower().startswith("https://old.reddit.com"):
             return await ctx.respond(message.content.replace("https://old.reddit.com", "https://reddit.com"))
