@@ -3,7 +3,7 @@ from pathlib import Path
 
 import discord
 from common.cfg import Role, Tenor, Vip, activities
-from discord.commands import option, slash_command
+from discord.commands import option, slash_command, message_command
 from discord.ext.tasks import loop
 
 
@@ -36,6 +36,16 @@ class GeneralCommands(discord.Cog):
 
         messages = await ctx.channel.purge(limit=amount + 1)
         await ctx.respond(f"purged {len(messages)} messages")
+
+    # User commands and message commands can have spaces in their names
+    @message_command(name="Toggle Reddit Link")
+    async def toggle_reddit_link(ctx: discord.ApplicationContext, message: discord.Message):
+        """Toggle reddit links between old reddit and new reddit"""
+        if message.content.lower().startswith("https://old.reddit.com"):
+            return await ctx.respond(message.content.replace("https://old.reddit.com", "https://reddit.com"))
+        
+        if message.content.lower().startswith("https://reddit.com"):
+            await ctx.respond(message.content.replace("https://reddit.com", "https://old.reddit.com"))
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
