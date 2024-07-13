@@ -120,7 +120,7 @@ class SbonkCommands(discord.Cog):
         # Parse symbols from message and check if there are any
         symbols = self.extract_symbols(message.content)
 
-        if not symbols and random.randint(0, 1000) != 69:
+        if not symbols and random.randint(0, 1500) != 69:
             return
 
 
