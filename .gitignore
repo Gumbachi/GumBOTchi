@@ -11,3 +11,13 @@ discord.log
 secrets.py
 keys.py
 *.log
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
