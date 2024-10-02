@@ -1,6 +1,9 @@
 { pkgs, lib, config, inputs, ... }:
 
 {
+
+  name = "gumbotchi";
+
   # https://devenv.sh/basics/
   env.GREET = "devenv";
 
@@ -11,6 +14,10 @@
     libopus
     ffmpeg
    ];
+
+  env = {
+    OPUS = "${pkgs.libopus}/lib/libopus.so";
+  };
 
   # https://devenv.sh/languages/
   dotenv.enable = true;

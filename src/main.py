@@ -4,7 +4,7 @@ import os
 import discord
 
 # Create bot based on environment
-if os.getenv("DEBUG", None) is not None:
+if os.getenv("DEBUG") is not None:
     print("DEBUG ENVIRONMENT")
     bot = discord.Bot(
         owner_id=128595549975871488,
@@ -38,5 +38,10 @@ cogs = [
 ]
 
 if __name__ == '__main__':
+
+    # Load opus manually if necessary (NixOS)
+    if libopus := os.getenv("OPUS"):
+        discord.opus.load_opus(libopus)
+
     bot.load_extensions(*cogs)
     bot.run(os.getenv("TOKEN"))  # runs the bot
