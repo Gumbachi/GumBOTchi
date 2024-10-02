@@ -17,7 +17,6 @@ class PogCommands(discord.Cog):
     pog = SlashCommandGroup(
         name="pog",
         description="Edit the way pog functionality behaves",
-        guild_only=True,
         default_member_permissions=discord.Permissions(manage_messages=True)
     )
 

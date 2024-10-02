@@ -8,6 +8,7 @@
   packages = with pkgs; [ 
     python312Packages.numpy
     python312Packages.matplotlib
+    libopus
     ffmpeg
    ];
 

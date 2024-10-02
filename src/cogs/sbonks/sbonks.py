@@ -8,7 +8,7 @@ from .components import ApiKeyModal
 from .graphing import display
 from .time_series import ChartLength, DataType
 from common.cfg import Emoji, Tenor
-from discord import guild_only, option, slash_command
+from discord import option, slash_command
 
 
 class SbonkCommands(discord.Cog):
@@ -29,7 +29,6 @@ class SbonkCommands(discord.Cog):
 
     @slash_command(name="set-sbonks-apikey")
     @discord.default_permissions(administrator=True)
-    @guild_only()
     async def set_sbonks_apikey(self, ctx: discord.ApplicationContext):
         """Set your publishable AlphaVantage API key to enable sbonks."""
         modal = ApiKeyModal()
@@ -43,7 +42,6 @@ class SbonkCommands(discord.Cog):
         choices=["1D", "1W", "1M", "3M", "6M", "1Y", "MAX"],
         default="1D"
     )
-    @guild_only()
     async def get_sbonk_chart(
         self, ctx: discord.ApplicationContext,
         symbol: str,

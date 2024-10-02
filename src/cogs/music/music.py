@@ -1,10 +1,9 @@
 import shutil
 
 import discord
-from discord import guild_only, option, slash_command
+from discord import option, slash_command
 
 from .components.jukebox import Jukebox
-
 
 class Music(discord.Cog):
     """Handles simple commands and listeners."""
@@ -14,7 +13,6 @@ class Music(discord.Cog):
         self.players: dict[int, discord.Message] = {}
 
     @slash_command(name="jukebox")
-    @guild_only()
     @option(name="fresh", description="Start with a brand new jukebox. Deletes the previous", default=False)
     async def send_jukebox(self, ctx: discord.ApplicationContext, fresh: bool):
         """Get the music player and its buttons."""

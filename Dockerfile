@@ -1,17 +1,17 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.12-slim-bullseye
 
 RUN apt-get update \
     && apt-get install -y ffmpeg --no-install-recommends \
     && apt-get install -y chromium-driver \
-    && pip3 install poetry \
-    && rm -rf /var/lib/apt/lists/* \
-    && poetry config virtualenvs.create false
+    && pip3 install uv \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock *.env ./
-RUN poetry install --no-dev
+COPY pyproject.toml uv.lock ./
+
+# RUN uv sync
 
 COPY src ./src
 
-ENTRYPOINT python3 -u src/main.py
+ENTRYPOINT uv run src/main.py
