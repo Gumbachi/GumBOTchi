@@ -11,7 +11,6 @@ class Piece:
 
 
 class Game(discord.ui.View):
-
     ROWS = 6
     COLS = 7
 
@@ -22,7 +21,9 @@ class Game(discord.ui.View):
 
         self.cursor_position = self.COLS // 2
 
-        self.title = f"{Piece.RED} {p1.display_name} VS {p2.display_name} {Piece.YELLOW}"
+        self.title = (
+            f"{Piece.RED} {p1.display_name} VS {p2.display_name} {Piece.YELLOW}"
+        )
         self.finished = False
 
         self.labels = {p1: Piece.RED, p2: Piece.YELLOW}
@@ -36,7 +37,7 @@ class Game(discord.ui.View):
 
     def visual_board(self, draw_cursor=True) -> str:
         """A visual representation of the board."""
-        board = '\n'.join([' '.join(row) for row in self.board])
+        board = "\n".join([" ".join(row) for row in self.board])
         if not draw_cursor:
             return board
 
@@ -57,14 +58,18 @@ class Game(discord.ui.View):
         """Formats the game into a discord Embed."""
 
         if not self.finished:
-            color = discord.Color.red() if self.turn == self.p1 else discord.Color.yellow()
+            color = (
+                discord.Color.red() if self.turn == self.p1 else discord.Color.yellow()
+            )
         else:
-            color = discord.Color.yellow() if self.turn == self.p1 else discord.Color.red()
+            color = (
+                discord.Color.yellow() if self.turn == self.p1 else discord.Color.red()
+            )
 
         return discord.Embed(
             title=self.title,
             description=self.visual_board(draw_cursor=not self.finished),
-            color=color
+            color=color,
         )
 
     def count_moves(self, piece: str) -> int:
@@ -123,13 +128,13 @@ class Game(discord.ui.View):
         # horizontal check
         for row in self.board:
             for i in range(len(row) - 3):
-                if row[i] != Piece.EMPTY and row[i:i+4].count(row[i]) == 4:
+                if row[i] != Piece.EMPTY and row[i : i + 4].count(row[i]) == 4:
                     return True, self.players[row[i]]
 
         # vertical check
         for col in (self.get_column(x) for x in range(self.COLS)):
             for i in range(len(col) - 3):
-                if col[i] != Piece.EMPTY and col[i:i+4].count(col[i]) == 4:
+                if col[i] != Piece.EMPTY and col[i : i + 4].count(col[i]) == 4:
                     return True, self.players[col[i]]
 
         # ascending diagonal check
@@ -137,21 +142,23 @@ class Game(discord.ui.View):
             for col in range(self.COLS - 3):  # diagonal asc not possible in last 3 cols
                 group = [
                     self.board[row][col],
-                    self.board[row-1][col+1],
-                    self.board[row-2][col+2],
-                    self.board[row-3][col+3]
+                    self.board[row - 1][col + 1],
+                    self.board[row - 2][col + 2],
+                    self.board[row - 3][col + 3],
                 ]
                 if group[0] != Piece.EMPTY and group.count(group[0]) == 4:
                     return True, self.players[group[0]]
 
         # descending diagonal check
-        for row in range(self.ROWS - 3):  # diagonal desc cannot happen from bottom 3 rows
+        for row in range(
+            self.ROWS - 3
+        ):  # diagonal desc cannot happen from bottom 3 rows
             for col in range(self.COLS - 3):  # diagonal asc not possible in last 3 cols
                 group = [
                     self.board[row][col],
-                    self.board[row+1][col+1],
-                    self.board[row+2][col+2],
-                    self.board[row+3][col+3]
+                    self.board[row + 1][col + 1],
+                    self.board[row + 2][col + 2],
+                    self.board[row + 3][col + 3],
                 ]
                 if group[0] != Piece.EMPTY and group.count(group[0]) == 4:
                     return True, self.players[group[0]]
@@ -176,7 +183,9 @@ class Game(discord.ui.View):
         return interaction.user == self.turn
 
     @discord.ui.button(emoji="◀️")
-    async def left_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def left_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Moves the cursor left."""
         if self.cursor_position == 0:
             self.cursor_position = self.COLS - 1
@@ -186,7 +195,9 @@ class Game(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="✅")
-    async def submit_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def submit_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Submits the move and switches the turn."""
 
         self.submit_move(self.cursor_position)
@@ -194,7 +205,9 @@ class Game(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="▶️")
-    async def right_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def right_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Moves the cursor right."""
         if self.cursor_position >= self.COLS - 1:
             self.cursor_position = 0

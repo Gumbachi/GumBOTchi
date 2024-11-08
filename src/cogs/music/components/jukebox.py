@@ -11,7 +11,6 @@ from .song_modal import SongModal
 
 
 class Jukebox(discord.ui.View):
-
     instances: dict[int, "Jukebox"] = {}
     PAGESIZE = 3
 
@@ -54,12 +53,11 @@ class Jukebox(discord.ui.View):
         if self.cover_display:
             return discord.Embed(
                 title=f"{self.current.title}",
-                description=f"{self.current.duration}  •  [YouTube]({self.current.webpage_url})"
+                description=f"{self.current.duration}  •  [YouTube]({self.current.webpage_url})",
             ).set_image(url=self.current.thumbnail)
 
         embed = discord.Embed(
-            title="GumBOTchi's Jukebox",
-            description=f"*{self.description}*\n"
+            title="GumBOTchi's Jukebox", description=f"*{self.description}*\n"
         )
         embed.set_thumbnail(url=self.current.thumbnail)
         embed.set_footer(text=utils.ellipsize(self.footer))
@@ -115,7 +113,6 @@ class Jukebox(discord.ui.View):
             self.disconnect()
         except NoVoiceClient:
             pass
-        
 
     def enqueue(self, song: Song):
         """Add a song to the queue."""
@@ -164,16 +161,18 @@ class Jukebox(discord.ui.View):
         placeholder="Queue a song from history...",
         options=[
             discord.SelectOption(
-                label="PlACEHOLDER",
-                description="You found an easter egg"
+                label="PlACEHOLDER", description="You found an easter egg"
             )
         ],
-        disabled=True
+        disabled=True,
     )
-    async def history_select_callback(self, select: discord.ui.Select, interaction: discord.Interaction):
-
+    async def history_select_callback(
+        self, select: discord.ui.Select, interaction: discord.Interaction
+    ):
         if interaction.user.voice == None:
-            return await interaction.response.send_message(Tenor.KERMIT_LOST, ephemeral=True)
+            return await interaction.response.send_message(
+                Tenor.KERMIT_LOST, ephemeral=True
+            )
 
         await interaction.response.defer()
 
@@ -190,11 +189,15 @@ class Jukebox(discord.ui.View):
                 song_to_play = song
                 break
         else:
-            song_to_play = await Song.from_query(select.values[0], loop=self.voice_client.loop)
+            song_to_play = await Song.from_query(
+                select.values[0], loop=self.voice_client.loop
+            )
 
         if self.current is None:
             self.play(song_to_play.clone())
-            self.description = f"{interaction.user.name} got this party started with {song.title}"
+            self.description = (
+                f"{interaction.user.name} got this party started with {song.title}"
+            )
         else:
             self.enqueue(song_to_play.clone())
             self.description = f"{interaction.user.display_name} queued {song.title}"
@@ -202,7 +205,9 @@ class Jukebox(discord.ui.View):
         await interaction.edit_original_response(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="🔁", row=1)
-    async def repeat_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def repeat_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Repeat button cycles repeat type for the jukebox"""
         match self.repeat:
             case RepeatType.REPEATOFF:
@@ -219,14 +224,18 @@ class Jukebox(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(emoji="⏪", row=1, disabled=True)
-    async def rewind_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def rewind_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Restarts the song the jukebox is playing."""
         self.play(self.current.clone())
         self.footer = f"{interaction.user.display_name} rewound {self.current.title}"
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="▶️", row=1, disabled=True)
-    async def play_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def play_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         if self.voice_client.is_paused():
             self.voice_client.resume()
 
@@ -237,9 +246,13 @@ class Jukebox(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="⏩", row=1, disabled=True)
-    async def skip_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def skip_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Restarts the song the jukebox is playing."""
-        self.voice_client._player.after = None  # clear the after because play next is called manually
+        self.voice_client._player.after = (
+            None  # clear the after because play next is called manually
+        )
         self.play_next_song()
 
         try:
@@ -250,21 +263,34 @@ class Jukebox(discord.ui.View):
 
         await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(emoji="🖼️", row=1, )
-    async def cover_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        emoji="🖼️",
+        row=1,
+    )
+    async def cover_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.cover_display = not self.cover_display
-        button.style = discord.ButtonStyle.green if self.cover_display else discord.ButtonStyle.gray
+        button.style = (
+            discord.ButtonStyle.green
+            if self.cover_display
+            else discord.ButtonStyle.gray
+        )
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="🗑️", row=2)
-    async def clear_history_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def clear_history_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Clears the history the bot has recorded."""
         self.history.clear()
         self.update_history_select()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(emoji="\u25C0", row=2, disabled=True)
-    async def left_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(emoji="\u25c0", row=2, disabled=True)
+    async def left_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         if self.page > 1:
             self.page -= 1
 
@@ -272,11 +298,15 @@ class Jukebox(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="🪙", style=discord.ButtonStyle.gray, row=2)
-    async def add_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def add_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         await interaction.response.send_modal(SongModal(self))
 
-    @discord.ui.button(emoji="\u25B6", row=2, disabled=True)
-    async def right_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(emoji="\u25b6", row=2, disabled=True)
+    async def right_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         if self.page < self.total_pages:
             self.page += 1
 
@@ -284,7 +314,9 @@ class Jukebox(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji="♾️", row=2)
-    async def infinite_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def infinite_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Sets the bot to automatically pick songs"""
         if self.infinite:
             self.infinite = False
@@ -332,17 +364,14 @@ class Jukebox(discord.ui.View):
             self.history_select.disabled = True
             self.history_select.options = [
                 discord.SelectOption(
-                    label="PlACEHOLDER",
-                    description="You found an easter egg"
+                    label="PlACEHOLDER", description="You found an easter egg"
                 )
             ]
         else:
             self.history_select.disabled = False
             self.history_select.options = [
-                discord.SelectOption(
-                    label=song.title,
-                    description=song.duration
-                ) for song in self.history
+                discord.SelectOption(label=song.title, description=song.duration)
+                for song in self.history
             ]
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -352,7 +381,7 @@ class Jukebox(discord.ui.View):
         if not interaction.user.voice:
             await interaction.response.send_message(
                 content="My brother in christ you need to be in a voice channel to listen to music",
-                ephemeral=True
+                ephemeral=True,
             )
             return False
 
@@ -363,8 +392,7 @@ class Jukebox(discord.ui.View):
 
         if interaction.user.voice.channel != vcc.channel:
             await interaction.response.send_message(
-                content="Trying to steal the bot are we?",
-                ephemeral=True
+                content="Trying to steal the bot are we?", ephemeral=True
             )
             return False
 

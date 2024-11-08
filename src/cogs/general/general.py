@@ -21,16 +21,20 @@ class GeneralCommands(discord.Cog):
 
     @slash_command(name="purge")
     @discord.default_permissions(administrator=True)
-    @option(name="amount", description="The amount of messages to SEARCH THROUGH. If target is not specified this is the amount to delete")
+    @option(
+        name="amount",
+        description="The amount of messages to SEARCH THROUGH. If target is not specified this is the amount to delete",
+    )
     @option(name="target", description="We all know who this is for", required=False)
-    async def purge(self, ctx: discord.ApplicationContext, amount: int, target: discord.Member):
+    async def purge(
+        self, ctx: discord.ApplicationContext, amount: int, target: discord.Member
+    ):
         """purge a specific amount of messages"""
         await ctx.defer()
 
         if target:
             messages = await ctx.channel.purge(
-                limit=amount,
-                check=lambda x: x.author == target
+                limit=amount, check=lambda x: x.author == target
             )
             return await ctx.respond(f"purged {len(messages)} messages")
 
@@ -39,13 +43,19 @@ class GeneralCommands(discord.Cog):
 
     # User commands and message commands can have spaces in their names
     @message_command(name="Toggle Reddit Link")
-    async def toggle_reddit_link(self, ctx: discord.ApplicationContext, message: discord.Message):
+    async def toggle_reddit_link(
+        self, ctx: discord.ApplicationContext, message: discord.Message
+    ):
         """Toggle reddit links between old reddit and new reddit"""
         if message.content.lower().startswith("https://old.reddit.com"):
-            return await ctx.respond(message.content.replace("https://old.reddit.com", "https://reddit.com"))
-        
+            return await ctx.respond(
+                message.content.replace("https://old.reddit.com", "https://reddit.com")
+            )
+
         if message.content.lower().startswith("https://reddit.com"):
-            await ctx.respond(message.content.replace("https://reddit.com", "https://old.reddit.com"))
+            await ctx.respond(
+                message.content.replace("https://reddit.com", "https://old.reddit.com")
+            )
 
     @discord.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -62,7 +72,7 @@ class GeneralCommands(discord.Cog):
         if message.author.id == Vip.DIDNA and message.role_mentions:
             if message.role_mentions[0].id == Role.RAINBOW:
                 # Get random list of files in response dir
-                path = Path('./res/img/r6_responses/')
+                path = Path("./res/img/r6_responses/")
                 response = random.choice(list(path.iterdir()))
                 await message.channel.send(file=discord.File(response))
 

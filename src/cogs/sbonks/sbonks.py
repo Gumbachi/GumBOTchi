@@ -1,9 +1,12 @@
 """Draws sbonks for the people. Styling found is res/sbonks.mplstyle ."""
+
 import re
 import random
+from pprint import pprint
 
 import discord
 from .alpha_vantage import AlphaVantage, AlphaVantageError
+from .yahoo import YahooFinance
 from .components import ApiKeyModal
 from .graphing import display
 from .time_series import ChartLength, DataType
@@ -16,6 +19,7 @@ class SbonkCommands(discord.Cog):
 
     def __init__(self, bot: discord.Bot):
         self.bot = bot
+        self.api = YahooFinance()
 
     @staticmethod
     def extract_symbols(string: str):
@@ -26,6 +30,12 @@ class SbonkCommands(discord.Cog):
 
         # Format string as "NVDA", rather than "$nVdA,". 10 symbol limit
         return [s.replace("$", "")[:-1].upper() for s in prefixed_symbols][:10]
+
+    @slash_command(name="sbonks-debug")
+    async def sbonks_debug(self, ctx: discord.ApplicationContext):
+        """Just for testing."""
+        pprint(self.api.get_history("ACB"))
+        await ctx.respond("done")
 
     @slash_command(name="set-sbonks-apikey")
     @discord.default_permissions(administrator=True)
@@ -40,10 +50,11 @@ class SbonkCommands(discord.Cog):
         "timeframe",
         description="This one is pretty self-explanatory",
         choices=["1D", "1W", "1M", "3M", "6M", "1Y", "MAX"],
-        default="1D"
+        default="1D",
     )
     async def get_sbonk_chart(
-        self, ctx: discord.ApplicationContext,
+        self,
+        ctx: discord.ApplicationContext,
         symbol: str,
         timeframe: str,
     ):
@@ -57,39 +68,33 @@ class SbonkCommands(discord.Cog):
         try:
             api = AlphaVantage(ctx.guild.id)
         except AlphaVantageError:
-            return await ctx.respond("No API Key set. You should fix that with `/set-sbonks-apikey` if you want sbonks.")
+            return await ctx.respond(
+                "No API Key set. You should fix that with `/set-sbonks-apikey` if you want sbonks."
+            )
 
         chart_length = ChartLength.from_str(timeframe)
         data_type = chart_length.get_data_type()
 
-        url = api.get_url(
-            ticker = symbol,
-            data_type = data_type
-        )
+        url = api.get_url(ticker=symbol, data_type=data_type)
 
         try:
-            data = api.get_data(
-                url = url,
-                data_type = data_type
-            )
+            data = api.get_data(url=url, data_type=data_type)
         except AlphaVantageError:
             return await ctx.respond(Emoji.WEIRDCHAMP)
 
         if not data:
             return await ctx.respond(Emoji.WEIRDCHAMP)
-        
+
         chart = display(
-            name = symbol,
-            time_series_data = data,
-            length = chart_length,
+            name=symbol,
+            time_series_data=data,
+            length=chart_length,
         )
 
         if not chart:
             await ctx.respond("No chart created??")
 
-        await ctx.respond(
-            file=chart
-        )
+        await ctx.respond(file=chart)
 
     @discord.Cog.listener("on_message")
     async def sbonks_quick_responses(self, message: discord.Message):
@@ -121,7 +126,6 @@ class SbonkCommands(discord.Cog):
         if not symbols and random.randint(0, 1500) != 69:
             return
 
-
         # Fetch data from AV and check if there is any
         try:
             api = AlphaVantage(message.guild.id)
@@ -130,27 +134,20 @@ class SbonkCommands(discord.Cog):
 
         charts = []
         for symbol in symbols:
-
-            url = api.get_url(
-                ticker = symbol,
-                data_type = DataType.INTRADAY
-            )
+            url = api.get_url(ticker=symbol, data_type=DataType.INTRADAY)
 
             try:
-                data = api.get_data(
-                    url = url,
-                    data_type = DataType.INTRADAY
-                )
+                data = api.get_data(url=url, data_type=DataType.INTRADAY)
             except AlphaVantageError:
                 continue
 
             if not data:
                 continue
-            
+
             chart = display(
-                name = symbol,
-                time_series_data = data,
-                length = ChartLength.DAY,
+                name=symbol,
+                time_series_data=data,
+                length=ChartLength.DAY,
             )
 
             if chart:

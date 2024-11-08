@@ -3,11 +3,13 @@ from datetime import datetime, date
 from enum import Enum
 from typing import List
 
+
 class DataType(str, Enum):
     INTRADAY = "intraday"
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
+
 
 class TimeInterval(str, Enum):
     ONE = "1min"
@@ -15,6 +17,7 @@ class TimeInterval(str, Enum):
     FIFTHTEEN = "15min"
     THIRTY = "30min"
     HOUR = "60min"
+
 
 class ChartLength(int, Enum):
     DAY = 1
@@ -33,9 +36,8 @@ class ChartLength(int, Enum):
                 return DataType.DAILY
             case ChartLength.MONTH:
                 return DataType.WEEKLY
-        
-        return DataType.MONTHLY
 
+        return DataType.MONTHLY
 
     @classmethod
     def from_str(cls, str):
@@ -52,8 +54,9 @@ class ChartLength(int, Enum):
                 return cls.HALF
             case "1Y":
                 return cls.FULL
-        
+
         return cls.DAY
+
 
 @dataclass
 class TimeSeriesData:
@@ -72,9 +75,9 @@ class TimeSeriesData:
             "close": self.close,
             "high": self.high,
             "low": self.low,
-            "volume": self.volume
+            "volume": self.volume,
         }
-        dic['type'] = self.type if isinstance(self.type, str) else self.type.value
+        dic["type"] = self.type if isinstance(self.type, str) else self.type.value
         return dic
 
     @classmethod
@@ -89,27 +92,27 @@ class TimeSeriesData:
         Returns:
         List[TimeSeriesData]
         """
-        
+
         time_series: List[cls] = []
         for key in data.keys():
             if "Time Series" in key:
                 datapoint = data[key]
                 for date in datapoint.keys():
-                    info = { k[3:]: v for (k, v) in datapoint[date].items() }
+                    info = {k[3:]: v for (k, v) in datapoint[date].items()}
 
                     try:
-                        dt = datetime.strptime(date,'%Y-%m-%d %H:%M:%S')
+                        dt = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
                     except ValueError:
-                        dt = datetime.strptime(date,'%Y-%m-%d')
+                        dt = datetime.strptime(date, "%Y-%m-%d")
 
                     temp = cls(
                         type=data_type,
-                        date=dt, # 2023-02-24 18:40:00
+                        date=dt,  # 2023-02-24 18:40:00
                         open=float(info["open"]),
                         close=float(info["close"]),
                         high=float(info["high"]),
                         low=float(info["low"]),
-                        volume=int(info["volume"])
+                        volume=int(info["volume"]),
                     )
                     time_series.append(temp)
         return time_series

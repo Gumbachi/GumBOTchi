@@ -29,28 +29,36 @@ class Game(discord.ui.View):
         return interaction.user in (self.p1, self.p2)
 
     @discord.ui.button(emoji="🪨")
-    async def _rock_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _rock_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Handle a player hitting rock."""
         self.moves[interaction.user] = "rock"
         self.check_win()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(label="🧻")
-    async def _paper_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _paper_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Handle a player hitting paper."""
         self.moves[interaction.user] = "paper"
         self.check_win()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(label="✂️")
-    async def _scissors_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _scissors_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Handle a player hitting scissors."""
         self.moves[interaction.user] = "scissors"
         self.check_win()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(label="Rematch", disabled=True)
-    async def _rematch_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _rematch_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """Handle a player hitting rematch."""
 
         # Reset buttons
@@ -63,7 +71,9 @@ class Game(discord.ui.View):
 
         # Reset moves
         self.moves[self.p1] = None
-        self.moves[self.p2] = random.choice(("rock", "paper", "scissors")) if self.p2.bot else None
+        self.moves[self.p2] = (
+            random.choice(("rock", "paper", "scissors")) if self.p2.bot else None
+        )
 
         # Reset
         self.headline = f"{self.p1.display_name} VS {self.p2.display_name}"
@@ -76,7 +86,7 @@ class Game(discord.ui.View):
         return discord.Embed(
             title=f"{self.headline} \u2022 {self.score[0]} - {self.score[1]}",
             description=self.play_tracker,
-            color=discord.Color.blue()
+            color=discord.Color.blue(),
         )
 
     @property
@@ -109,7 +119,9 @@ class Game(discord.ui.View):
                 self.score[1] += 1
                 self.end(winner=self.p2)
             case _:
-                self.headline = f"{self.p2.display_name} copied {self.p1.display_name}'s homework"
+                self.headline = (
+                    f"{self.p2.display_name} copied {self.p1.display_name}'s homework"
+                )
                 self.end(winner=None)
 
     def end(self, winner: discord.Member | None):

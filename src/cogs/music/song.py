@@ -32,8 +32,13 @@ class Song(discord.PCMVolumeTransformer):
     """Represents song/youtube video as a discord audio object."""
 
     __slots__ = (
-        "_metadata", "title", "duration_in_seconds",
-        "url", "webpage_url", "thumbnail", "songvolume"
+        "_metadata",
+        "title",
+        "duration_in_seconds",
+        "url",
+        "webpage_url",
+        "thumbnail",
+        "songvolume",
     )
 
     def __init__(
@@ -62,7 +67,7 @@ class Song(discord.PCMVolumeTransformer):
         return Song(
             source=discord.FFmpegPCMAudio(self.url, **FFMPEG_OPTS),
             metadata=self._metadata,
-            volume=self.songvolume
+            volume=self.songvolume,
         )
 
     @property
@@ -73,15 +78,16 @@ class Song(discord.PCMVolumeTransformer):
         return time.strftime("%H:%M:%S", time.gmtime(self.duration_in_seconds))
 
     @classmethod
-    async def from_query(cls, query: str, loop: asyncio.AbstractEventLoop | None = None):
+    async def from_query(
+        cls, query: str, loop: asyncio.AbstractEventLoop | None = None
+    ):
         """Uses youtubeDL(ytdlp) to query song data."""
 
         loop = loop or asyncio.get_event_loop()
 
         with YoutubeDL(YDL_OPTS) as ydl:
             song_info = await loop.run_in_executor(
-                None,
-                lambda: ydl.extract_info(f"ytsearch:{query}", download=False)
+                None, lambda: ydl.extract_info(f"ytsearch:{query}", download=False)
             )
 
             try:

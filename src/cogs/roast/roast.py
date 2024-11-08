@@ -1,4 +1,5 @@
 """Roast functionality."""
+
 import random
 
 import discord
@@ -17,7 +18,7 @@ class Roast(discord.Cog):
         await ctx.respond(
             embed=discord.Embed(
                 title=f"Hey {member.display_name}, {random.choice(self.roasts)}",
-                color=discord.Color.orange()
+                color=discord.Color.orange(),
             )
         )
 

@@ -3,8 +3,10 @@ import database as db
 import requests
 from .time_series import DataType, TimeInterval, TimeSeriesData
 
+
 class AlphaVantageError(Exception):
     pass
+
 
 class AlphaVantage:
     def __init__(self, guild_id: int) -> None:
@@ -17,7 +19,7 @@ class AlphaVantage:
         self,
         ticker: str,
         data_type: DataType,
-        interval: TimeInterval = TimeInterval.FIVE
+        interval: TimeInterval = TimeInterval.FIVE,
     ):
         """
         Gets the method for retrieving specified data type.
@@ -54,10 +56,7 @@ class AlphaVantage:
             if data.get("Note"):
                 return print("Out of API calls, try again later.")
 
-            data = TimeSeriesData.load_json(
-                data_type=data_type,
-                data=data
-            )
+            data = TimeSeriesData.load_json(data_type=data_type, data=data)
             return data
         except Exception as e:
             raise AlphaVantageError(f"Error getting data: {e}")

@@ -7,39 +7,51 @@ from .remove_dropdown import PogRemovalDropdown
 
 
 class PogManager(discord.ui.View):
-
     def __init__(self, guild: discord.Guild) -> None:
-
         self.pogtype = PogType.ACTIVATOR  # type is taken by discord.Component
         self.responses = db.get_pogresponses(id=guild.id)
         self.activators = db.get_pogactivators(id=guild.id)
 
-        super().__init__(
-            PogRemovalDropdown(manager=self),
-            timeout=None
-        )
+        super().__init__(PogRemovalDropdown(manager=self), timeout=None)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check permissions to use the manager"""
-        if not interaction.user.guild_permissions.manage_messages and interaction.custom_id in ("POGADDBUTTON", "POGDROPDOWN"):
-            await interaction.response.send_message("With what permissions?", ephemeral=True)
+        if (
+            not interaction.user.guild_permissions.manage_messages
+            and interaction.custom_id in ("POGADDBUTTON", "POGDROPDOWN")
+        ):
+            await interaction.response.send_message(
+                "With what permissions?", ephemeral=True
+            )
             return False
 
         return True
 
-    @discord.ui.button(label="ADD", style=discord.ButtonStyle.blurple, custom_id="POGADDBUTTON")
-    async def add_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        label="ADD", style=discord.ButtonStyle.blurple, custom_id="POGADDBUTTON"
+    )
+    async def add_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         await interaction.response.send_modal(modal=PogAddModal(self))
 
-    @discord.ui.button(label="REFRESH", style=discord.ButtonStyle.blurple, custom_id="POGREFRESHBUTTON")
-    async def refresh_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        label="REFRESH", style=discord.ButtonStyle.blurple, custom_id="POGREFRESHBUTTON"
+    )
+    async def refresh_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.responses = db.get_pogresponses(id=interaction.guild.id)
         self.activators = db.get_pogactivators(id=interaction.guild.id)
         self.update()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(label="POGFLIP", style=discord.ButtonStyle.blurple, custom_id="POGFLIPBUTTON")
-    async def flip_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        label="POGFLIP", style=discord.ButtonStyle.blurple, custom_id="POGFLIPBUTTON"
+    )
+    async def flip_button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.flip()
         await interaction.response.edit_message(embed=self.embed, view=self)
 
@@ -49,12 +61,11 @@ class PogManager(discord.ui.View):
             case PogType.ACTIVATOR:
                 return discord.Embed(
                     title="Activators",
-                    description=", ".join([f"`{a}`" for a in self.activators])
+                    description=", ".join([f"`{a}`" for a in self.activators]),
                 ).set_footer(text="Hint: Hit the pogflip button to see responses")
             case PogType.RESPONSE:
                 return discord.Embed(
-                    title="Responses",
-                    description="\n".join(self.responses)
+                    title="Responses", description="\n".join(self.responses)
                 ).set_footer(text="Hint: Hit the pogflip button to see activators")
 
     def flip(self):

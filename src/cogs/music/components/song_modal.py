@@ -25,10 +25,11 @@ class SongModal(Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-
         # no user voice state
         if interaction.user.voice == None:
-            return await interaction.response.send_message(Tenor.KERMIT_LOST, ephemeral=True)
+            return await interaction.response.send_message(
+                Tenor.KERMIT_LOST, ephemeral=True
+            )
 
         user_vc = interaction.user.voice.channel
 
@@ -48,14 +49,19 @@ class SongModal(Modal):
             self.jukebox.description = f"{interaction.user.display_name} got this party started with {song.title}"
         else:
             self.jukebox.enqueue(song)
-            self.jukebox.description = f"{interaction.user.display_name} queued {song.title}"
+            self.jukebox.description = (
+                f"{interaction.user.display_name} queued {song.title}"
+            )
 
         await interaction.followup.send(f"Added {song.title}", delete_after=1)
         await interaction.message.edit(embed=self.jukebox.embed, view=self.jukebox)
 
-    async def on_error(self, error: Exception, interaction: discord.Interaction) -> None:
-
+    async def on_error(
+        self, error: Exception, interaction: discord.Interaction
+    ) -> None:
         if isinstance(error, SongError):
-            return await interaction.followup.send("Failed to queue song", ephemeral=True)
+            return await interaction.followup.send(
+                "Failed to queue song", ephemeral=True
+            )
 
         raise error

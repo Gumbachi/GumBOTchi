@@ -9,5 +9,6 @@ dependencies = [
     "pandas>=2.2.3",
     "py-cord[voice]>=2.6.1",
     "pymongo>=4.10.1",
+    "yfinance[nospam]>=0.2.44",
     "yt-dlp>=2024.9.27",
 ]

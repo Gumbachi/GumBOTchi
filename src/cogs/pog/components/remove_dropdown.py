@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class PogRemovalDropdown(discord.ui.Select):
-
     def __init__(self, manager: "PogManager"):
         self.manager = manager
 
@@ -23,9 +22,10 @@ class PogRemovalDropdown(discord.ui.Select):
         super().__init__(
             custom_id="POGDROPDOWN",
             placeholder=f"Remove a pog {self.manager.pogtype.value}",
-            options=[SelectOption(label=o) for o in options] or [SelectOption(label="0")],
+            options=[SelectOption(label=o) for o in options]
+            or [SelectOption(label="0")],
             row=1,
-            disabled=not options  # if options enabled else disabled
+            disabled=not options,  # if options enabled else disabled
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -33,7 +33,11 @@ class PogRemovalDropdown(discord.ui.Select):
             case PogType.RESPONSE:
                 db.remove_pogresponse(id=interaction.guild.id, response=self.values[0])
             case PogType.ACTIVATOR:
-                db.remove_pogactivator(id=interaction.guild.id, activator=self.values[0])
+                db.remove_pogactivator(
+                    id=interaction.guild.id, activator=self.values[0]
+                )
 
         self.manager.update()
-        await interaction.response.edit_message(embed=self.manager.embed, view=self.manager)
+        await interaction.response.edit_message(
+            embed=self.manager.embed, view=self.manager
+        )

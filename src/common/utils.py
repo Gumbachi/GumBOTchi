@@ -1,6 +1,5 @@
 """Utility functions that are used in multiple places"""
 
-
 from typing import Any
 
 

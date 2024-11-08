@@ -13,10 +13,7 @@ def get_pogresponses(id: int, from_cache=True) -> list[str]:
         return response_cache[id]
 
     # find guild or use default if not found
-    data = db["Guilds"].find_one(
-        {"_id": id},
-        {"_id": False, "pogresponses": True}
-    )
+    data = db["Guilds"].find_one({"_id": id}, {"_id": False, "pogresponses": True})
 
     if data is None:
         data = insert_guild(id=id)
@@ -38,12 +35,13 @@ def add_pogresponse(id: int, response: str) -> None:
         insert_guild(id=id)
 
     result = db["Guilds"].update_one(
-        filter={"_id": id},
-        update={"$addToSet": {"pogresponses": response}}
+        filter={"_id": id}, update={"$addToSet": {"pogresponses": response}}
     )
 
     if result.modified_count == 0:
-        raise PogDatabaseError("Couldn't add pog response", "Typically due to a duplicate response")
+        raise PogDatabaseError(
+            "Couldn't add pog response", "Typically due to a duplicate response"
+        )
 
     # update cache
     if id in response_cache:
@@ -58,8 +56,7 @@ def remove_pogresponse(id: int, response: str):
         insert_guild(id=id)
 
     result = db["Guilds"].update_one(
-        filter={"_id": id},
-        update={"$pull": {"pogresponses": response}}
+        filter={"_id": id}, update={"$pull": {"pogresponses": response}}
     )
 
     if result.modified_count == 0:
@@ -78,10 +75,7 @@ def get_pogactivators(id: int, from_cache=True) -> list[str]:
         return activator_cache[id]
 
     # find guild or use default if not found
-    data = db["Guilds"].find_one(
-        {"_id": id},
-        {"_id": False, "pogactivators": True}
-    )
+    data = db["Guilds"].find_one({"_id": id}, {"_id": False, "pogactivators": True})
 
     if data is None:
         data = insert_guild(id=id)
@@ -103,12 +97,13 @@ def add_pogactivator(id: int, activator: str) -> None:
         insert_guild(id=id)
 
     result = db["Guilds"].update_one(
-        filter={"_id": id},
-        update={"$addToSet": {"pogactivators": activator}}
+        filter={"_id": id}, update={"$addToSet": {"pogactivators": activator}}
     )
 
     if result.modified_count == 0:
-        raise PogDatabaseError("Couldn't add pog activtor", "Typically due to a duplicate")
+        raise PogDatabaseError(
+            "Couldn't add pog activtor", "Typically due to a duplicate"
+        )
 
     # update cache
     if id in activator_cache:
@@ -123,8 +118,7 @@ def remove_pogactivator(id: int, activator: str):
         insert_guild(id=id)
 
     result = db["Guilds"].update_one(
-        filter={"_id": id},
-        update={"$pull": {"pogactivators": activator}}
+        filter={"_id": id}, update={"$pull": {"pogactivators": activator}}
     )
 
     if result.modified_count == 0:

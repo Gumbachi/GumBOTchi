@@ -3,10 +3,7 @@ class DatabaseError(Exception):
     def embed(self):
         import discord
 
-        embed = discord.Embed(
-            title="Database Error",
-            color=discord.Color.red()
-        )
+        embed = discord.Embed(title="Database Error", color=discord.Color.red())
         match self.args:
             case [title, description]:
                 embed.title = title

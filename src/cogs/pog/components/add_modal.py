@@ -15,23 +15,29 @@ class PogAddModal(discord.ui.Modal):
 
         super().__init__(
             discord.ui.InputText(label="Phrase"),
-            title=f"Add a pog {manager.pogtype.value}"
+            title=f"Add a pog {manager.pogtype.value}",
         )
 
     async def callback(self, interaction: discord.Interaction):
-
         match self.manager.pogtype:
             case PogType.RESPONSE:
-                db.add_pogresponse(id=interaction.guild.id, response=self.children[0].value)
+                db.add_pogresponse(
+                    id=interaction.guild.id, response=self.children[0].value
+                )
             case PogType.ACTIVATOR:
-                db.add_pogactivator(id=interaction.guild.id, activator=self.children[0].value)
+                db.add_pogactivator(
+                    id=interaction.guild.id, activator=self.children[0].value
+                )
 
         self.manager.update()
-        await interaction.response.edit_message(embed=self.manager.embed, view=self.manager)
+        await interaction.response.edit_message(
+            embed=self.manager.embed, view=self.manager
+        )
 
     async def on_error(self, error: Exception, interaction: discord.Interaction):
-
         if isinstance(error, db.PogDatabaseError):
-            return await interaction.response.send_message(embed=error.embed, ephemeral=True)
+            return await interaction.response.send_message(
+                embed=error.embed, ephemeral=True
+            )
 
         raise error

@@ -1,4 +1,5 @@
 """Runs the discord bot"""
+
 import os
 
 import discord
@@ -9,7 +10,7 @@ if os.getenv("DEBUG") is not None:
     bot = discord.Bot(
         owner_id=128595549975871488,
         intents=discord.Intents.all(),
-        debug_guilds=[565257922356051973]
+        debug_guilds=[565257922356051973],
     )
 else:
     print("LIVE ENVIRONMENT")
@@ -24,6 +25,7 @@ async def on_ready() -> None:
     """Bot is now ready to rumble."""
     print("Ready to go.")
 
+
 # .py files to load up
 cogs = [
     "cogs.general.general",
@@ -33,11 +35,11 @@ cogs = [
     "cogs.games.tictactoe.tictactoe",
     "cogs.games.connectfour.connectfour",
     "cogs.music.music",
-    "cogs.sbonks.sbonks"
+    "cogs.sbonks.sbonks",
 ]
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
+    
     # Load opus manually if necessary (NixOS)
     if libopus := os.getenv("OPUS"):
         discord.opus.load_opus(libopus)

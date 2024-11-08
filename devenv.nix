@@ -11,6 +11,7 @@
   packages = with pkgs; [ 
     python312Packages.numpy
     python312Packages.matplotlib
+    python312Packages.pandas
     libopus
     ffmpeg
    ];
@@ -40,6 +41,7 @@
   enterShell = ''
     hello
     git --version
+    source .devenv/state/venv/bin/activate
   '';
 
   # https://devenv.sh/tasks/

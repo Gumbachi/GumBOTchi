@@ -5,6 +5,7 @@ from discord import option, slash_command
 
 from .components.jukebox import Jukebox
 
+
 class Music(discord.Cog):
     """Handles simple commands and listeners."""
 
@@ -13,13 +14,17 @@ class Music(discord.Cog):
         self.players: dict[int, discord.Message] = {}
 
     @slash_command(name="jukebox")
-    @option(name="fresh", description="Start with a brand new jukebox. Deletes the previous", default=False)
+    @option(
+        name="fresh",
+        description="Start with a brand new jukebox. Deletes the previous",
+        default=False,
+    )
     async def send_jukebox(self, ctx: discord.ApplicationContext, fresh: bool):
         """Get the music player and its buttons."""
         interaction = await ctx.respond("Establishing Vibe...")
 
         if fresh:
-            if (jukebox := Jukebox.instances.pop(ctx.guild.id, None)):
+            if jukebox := Jukebox.instances.pop(ctx.guild.id, None):
                 jukebox.stop()
 
         try:
