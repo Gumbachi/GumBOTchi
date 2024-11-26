@@ -1,0 +1,6 @@
+services:
+  gumbotchi:
+    container_name: gumbotchi
+    build: .
+    env_file: .env
+    restart: always
